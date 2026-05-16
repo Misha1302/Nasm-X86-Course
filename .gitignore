@@ -1,0 +1,12 @@
+node_modules/
+.DS_Store
+
+# VitePress
+/docs/.vitepress/cache/
+/docs/.vitepress/dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
