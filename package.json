@@ -1,0 +1,15 @@
+{
+  "name": "nasm-x86-course",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "docs:dev": "vitepress dev docs --host 0.0.0.0",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs --host 0.0.0.0",
+    "docs:clean": "rm -rf docs/.vitepress/cache docs/.vitepress/dist"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4"
+  }
+}
