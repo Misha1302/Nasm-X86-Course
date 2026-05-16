@@ -1,0 +1,119 @@
+:root {
+  --vp-c-brand-1: #c26a2e;
+  --vp-c-brand-2: #d28445;
+  --vp-c-brand-3: #8f4a21;
+  --vp-c-brand-soft: rgba(194, 106, 46, 0.16);
+
+  --vp-c-bg: #f7f3ee;
+  --vp-c-bg-alt: #efe7dd;
+  --vp-c-bg-elv: #fffaf4;
+  --vp-c-bg-soft: #f1e7dc;
+
+  --vp-c-text-1: #1f2933;
+  --vp-c-text-2: #4b5563;
+  --vp-c-text-3: #6b7280;
+
+  --vp-font-family-base: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --vp-font-family-mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(120deg, #c26a2e 20%, #374151 85%);
+  --vp-home-hero-image-background-image: linear-gradient(135deg, rgba(194, 106, 46, 0.35), rgba(31, 41, 55, 0.25));
+  --vp-home-hero-image-filter: blur(48px);
+}
+
+.dark {
+  --vp-c-bg: #111827;
+  --vp-c-bg-alt: #0f172a;
+  --vp-c-bg-elv: #182133;
+  --vp-c-bg-soft: #1f2937;
+
+  --vp-c-text-1: #f8fafc;
+  --vp-c-text-2: #d1d5db;
+  --vp-c-text-3: #9ca3af;
+
+  --vp-c-brand-1: #f59e57;
+  --vp-c-brand-2: #f2b06e;
+  --vp-c-brand-3: #c26a2e;
+  --vp-c-brand-soft: rgba(245, 158, 87, 0.18);
+}
+
+.VPNavBar .title {
+  letter-spacing: -0.02em;
+  font-weight: 740;
+}
+
+.VPHomeHero .name,
+.VPHomeHero .text {
+  letter-spacing: -0.045em;
+}
+
+.VPHomeHero .tagline {
+  max-width: 760px;
+  font-size: 20px;
+  line-height: 1.65;
+}
+
+.VPFeature {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: linear-gradient(180deg, var(--vp-c-bg-elv), var(--vp-c-bg-soft));
+}
+
+.vp-doc h1,
+.vp-doc h2,
+.vp-doc h3 {
+  letter-spacing: -0.028em;
+}
+
+.vp-doc h2 {
+  margin-top: 44px;
+  border-top: 1px solid rgba(148, 163, 184, 0.24);
+  padding-top: 28px;
+}
+
+.vp-doc p,
+.vp-doc li {
+  line-height: 1.78;
+}
+
+.vp-doc table {
+  display: table;
+  width: 100%;
+  font-size: 14px;
+}
+
+.vp-doc th {
+  background: rgba(194, 106, 46, 0.08);
+}
+
+.vp-doc div[class*='language-'] {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.vp-doc blockquote {
+  border-left-color: var(--vp-c-brand-1);
+  background: var(--vp-c-brand-soft);
+  border-radius: 10px;
+  padding: 10px 18px;
+}
+
+.custom-block.tip {
+  border-color: rgba(194, 106, 46, 0.28);
+}
+
+.custom-block.warning {
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.custom-block.danger {
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.ascii-card {
+  overflow-x: auto;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 14px;
+  padding: 16px;
+  background: var(--vp-code-block-bg);
+}
