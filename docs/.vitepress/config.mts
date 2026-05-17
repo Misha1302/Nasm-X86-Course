@@ -9,8 +9,9 @@ export default defineConfig({
         nav: [
             { text: "Старт", link: "/" },
             { text: "Как решать", link: "/how_to_solve_tasks" },
+            { text: "Паттерны", link: "/patterns/" },
+            { text: "Идеи задач", link: "/tasks/" },
             { text: "Ошибки", link: "/debug_cards" },
-            { text: "Домашки", link: "/day_10" },
             { text: "C ABI", link: "/c_abi" },
             { text: "Финал", link: "/day_25" }
         ],
@@ -57,6 +58,58 @@ export default defineConfig({
                     { text: "День 17 — CDECL", link: "/day_17" },
                     { text: "День 18 — reverse", link: "/day_18" },
                     { text: "День 19 — структуры", link: "/day_19" }
+                ]
+            },
+
+            {
+                text: "Экзаменационные паттерны",
+                items: [
+                    { text: "Обзор", link: "/patterns/" },
+                    { text: "Branchless-маски", link: "/patterns/branchless" },
+                    { text: "Битовые циклы", link: "/patterns/bit_counting" },
+                    { text: "Десятичные алгоритмы", link: "/patterns/decimal" },
+                    { text: "Рекурсия", link: "/patterns/recursion" },
+                    { text: "libc и alignment", link: "/patterns/libc_alignment" },
+                    { text: "Строки и файлы", link: "/patterns/strings_files" },
+                    { text: "Массивная связность", link: "/patterns/array_linked_list" },
+                    { text: "Advanced stack", link: "/patterns/advanced_stack" },
+                    { text: "Big integer", link: "/patterns/bigint" }
+                ]
+            },
+            {
+                text: "Идеи задач — Spring 01",
+                items: [
+                    { text: "Обзор задач", link: "/tasks/" },
+                    { text: "01-4 Книжки", link: "/tasks/spring-01/01-04-books" },
+                    { text: "01-8 Masked merge", link: "/tasks/spring-01/01-08-masked-merge" },
+                    { text: "01-14 Огород", link: "/tasks/spring-01/01-14-garden" },
+                    { text: "01-15 Площадь", link: "/tasks/spring-01/01-15-triangle-area" },
+                    { text: "01-16 Система", link: "/tasks/spring-01/01-16-bit-system" }
+                ]
+            },
+            {
+                text: "Идеи задач — Spring 02",
+                items: [
+                    { text: "02-3 Экстремумы", link: "/tasks/spring-02/02-03-local-extrema" },
+                    { text: "02-6 K битов", link: "/tasks/spring-02/02-06-max-bit-window" },
+                    { text: "02-9 Прямоугольник", link: "/tasks/spring-02/02-09-rectangle" },
+                    { text: "02-12 Нули лайт", link: "/tasks/spring-02/02-12-binary-zeros-lite" },
+                    { text: "02-14 Нули", link: "/tasks/spring-02/02-14-binary-zeros" }
+                ]
+            },
+            {
+                text: "Идеи задач — Spring 03/04",
+                items: [
+                    { text: "03-4 Разворот", link: "/tasks/spring-03/03-04-half-reverse" },
+                    { text: "03-5 Палиндромы", link: "/tasks/spring-03/03-05-palindromes" },
+                    { text: "03-9 Недостаточные", link: "/tasks/spring-03/03-09-deficient" },
+                    { text: "03-10 Дроби", link: "/tasks/spring-03/03-10-fractions" },
+                    { text: "03-18 Произведение", link: "/tasks/spring-03/03-18-signed-product" },
+                    { text: "04-2 Подстрока", link: "/tasks/spring-04/04-02-substring" },
+                    { text: "04-4 Count file", link: "/tasks/spring-04/04-04-count-in-file" },
+                    { text: "04-7 Разные строки", link: "/tasks/spring-04/04-07-distinct-strings" },
+                    { text: "04-11 Перемешивание", link: "/tasks/spring-04/04-11-two-shuffle" },
+                    { text: "04-13 Стек", link: "/tasks/spring-04/04-13-stack-fun" }
                 ]
             },
             {

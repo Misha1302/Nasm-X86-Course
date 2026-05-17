@@ -546,3 +546,17 @@ memory -> register -> operation -> flags / memory / stack
 ```
 
 Если эти вопросы стали привычными, ты уже не “боишься NASM”, а читаешь его как нормальный низкоуровневый язык.
+
+## Что покрывает база, а что требует паттернов
+
+| Навык | Где повторить |
+|---|---|
+| 01-7…01-10 | [День 10](/day_10) |
+| обычные циклы и массивы | [День 13](/day_13), [День 15](/day_15) |
+| CDECL-функции | [День 17](/day_17), [C ABI](/c_abi) |
+| рекурсия | [Рекурсия](/patterns/recursion) |
+| файлы/строки/libc | [Строки и файлы](/patterns/strings_files) |
+| 16-byte alignment | [libc и alignment](/patterns/libc_alignment) |
+| function pointers/varargs | [Advanced stack](/patterns/advanced_stack) |
+| большой результат | [Big integer](/patterns/bigint) |
+| идеи загруженных задач | [Идеи решений задач](/tasks/) |

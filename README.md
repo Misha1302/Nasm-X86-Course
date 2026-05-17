@@ -65,6 +65,9 @@ gcc -m32 -no-pie main.o -o main
 | [`docs/how_to_solve_tasks.md`](docs/how_to_solve_tasks.md) | алгоритм решения NASM-задач |
 | [`docs/debug_cards.md`](docs/debug_cards.md) | быстрый справочник типовых ошибок |
 | [`docs/course_style.md`](docs/course_style.md) | стандарт структуры глав |
+
+| [`docs/patterns/index.md`](docs/patterns/index.md) | экзаменационные паттерны: branchless, recursion, strings/files, bigint |
+| [`docs/tasks/index.md`](docs/tasks/index.md) | краткие идеи решений загруженных задач |
 | [`docs/code_patterns.md`](docs/code_patterns.md) | готовые шаблоны кода |
 | [`docs/c_abi.md`](docs/c_abi.md) | CDECL и вызовы C-функций |
 

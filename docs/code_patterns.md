@@ -857,3 +857,96 @@ printf("%f") ждёт double, то есть qword.
 ```
 
 Этого достаточно, чтобы уверенно стартовать с большинством учебных задач.
+
+## 31. Branchless select
+
+```asm
+; eax = a
+; edx = b
+; ecx = mask: 0 или FFFFFFFFh
+and eax, ecx
+not ecx
+and edx, ecx
+or eax, edx
+```
+
+Смысл:
+
+```text
+mask = FFFFFFFFh -> выбрать a
+mask = 00000000h -> выбрать b
+```
+
+## 32. Ceil division
+
+Для положительных чисел:
+
+```text
+ceil(a / b) = (a + b - 1) / b
+```
+
+NASM-shape:
+
+```asm
+mov eax, [a]
+add eax, [b]
+dec eax
+xor edx, edx
+div dword [b]
+```
+
+## 33. Min/max через сравнение
+
+```asm
+; eax = current min
+; ecx = candidate
+cmp ecx, eax
+jge .keep
+mov eax, ecx
+.keep:
+```
+
+Для signed-чисел используй signed jumps.
+
+## 34. Recursive function skeleton
+
+```asm
+func:
+    push ebp
+    mov ebp, esp
+    sub esp, 4
+
+    ; base case
+    ; recursive call
+
+    mov esp, ebp
+    pop ebp
+    ret
+```
+
+## 35. Decimal reverse
+
+```text
+rev = 0
+while x != 0:
+    digit = x % 10
+    rev = rev * 10 + digit
+    x /= 10
+```
+
+## 36. GCD
+
+```text
+while b != 0:
+    r = a % b
+    a = b
+    b = r
+```
+
+## 37. libc call checklist
+
+- аргументы справа налево;
+- адрес строки, не `[строка]`;
+- caller clean-up;
+- `eax/ecx/edx` могут быть испорчены;
+- для Spring-04 проверить 16-byte alignment.
