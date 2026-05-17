@@ -6,7 +6,8 @@ const courseSidebar = [
     collapsed: false,
     items: [
       { text: 'Главная', link: '/' },
-      { text: 'Полный учебник', link: '/textbook' }
+      { text: 'Полный учебник', link: '/textbook' },
+      { text: 'x86 C ABI / CDECL', link: '/c_abi' }
     ]
   },
   {
@@ -48,6 +49,7 @@ const courseSidebar = [
     items: [
       { text: 'День 16. push, pop, call, ret', link: '/day_16' },
       { text: 'День 17. Фрейм и CDECL', link: '/day_17' },
+      { text: 'x86 C ABI / CDECL', link: '/c_abi' },
       { text: 'День 18. Reverse engineering', link: '/day_18' },
       { text: 'День 19. Структуры', link: '/day_19' }
     ]
@@ -92,6 +94,7 @@ export default defineConfig({
     nav: [
       { text: 'Главная', link: '/' },
       { text: 'Полный учебник', link: '/textbook' },
+      { text: 'x86 C ABI', link: '/c_abi' },
       { text: 'Начать', link: '/day_01' },
       { text: 'Домашки 01-7…01-10', link: '/day_10' },
       { text: 'Финальная проверка', link: '/day_25' }
