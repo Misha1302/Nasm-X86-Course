@@ -8,13 +8,23 @@ export default defineConfig({
     themeConfig: {
         nav: [
             { text: "Старт", link: "/" },
+            { text: "Как решать", link: "/how_to_solve_tasks" },
+            { text: "Ошибки", link: "/debug_cards" },
             { text: "Домашки", link: "/day_10" },
             { text: "C ABI", link: "/c_abi" },
-            { text: "Паттерны", link: "/code_patterns" },
             { text: "Финал", link: "/day_25" }
         ],
 
         sidebar: [
+            {
+                text: "Как учиться",
+                items: [
+                    { text: "Старт", link: "/" },
+                    { text: "Как решать задачи", link: "/how_to_solve_tasks" },
+                    { text: "Карточки ошибок", link: "/debug_cards" },
+                    { text: "Стиль глав курса", link: "/course_style" }
+                ]
+            },
             {
                 text: "База",
                 items: [
