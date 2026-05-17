@@ -7,6 +7,8 @@ const courseSidebar = [
     items: [
       { text: 'Главная', link: '/' },
       { text: 'Полный учебник', link: '/textbook' },
+      { text: 'Популярные инструкции', link: '/popular_instructions' },
+      { text: 'Шаблоны кода', link: '/code_patterns' },
       { text: 'x86 C ABI / CDECL', link: '/c_abi' }
     ]
   },
@@ -55,6 +57,14 @@ const courseSidebar = [
     ]
   },
   {
+    text: 'Справочники для задач',
+    collapsed: false,
+    items: [
+      { text: 'Популярные инструкции', link: '/popular_instructions' },
+      { text: 'Шаблоны кода', link: '/code_patterns' }
+    ]
+  },
+  {
     text: 'Системные темы и финал',
     collapsed: false,
     items: [
@@ -94,8 +104,9 @@ export default defineConfig({
     nav: [
       { text: 'Главная', link: '/' },
       { text: 'Полный учебник', link: '/textbook' },
+      { text: 'Инструкции', link: '/popular_instructions' },
+      { text: 'Шаблоны', link: '/code_patterns' },
       { text: 'x86 C ABI', link: '/c_abi' },
-      { text: 'Начать', link: '/day_01' },
       { text: 'Домашки 01-7…01-10', link: '/day_10' },
       { text: 'Финальная проверка', link: '/day_25' }
     ],
