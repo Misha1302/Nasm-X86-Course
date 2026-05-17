@@ -2,6 +2,14 @@ import { defineConfig } from 'vitepress';
 
 const courseSidebar = [
   {
+    text: 'Учиться по курсу',
+    collapsed: false,
+    items: [
+      { text: 'Главная', link: '/' },
+      { text: 'Полный учебник', link: '/textbook' }
+    ]
+  },
+  {
     text: 'Старт курса',
     collapsed: false,
     items: [
@@ -83,6 +91,7 @@ export default defineConfig({
 
     nav: [
       { text: 'Главная', link: '/' },
+      { text: 'Полный учебник', link: '/textbook' },
       { text: 'Начать', link: '/day_01' },
       { text: 'Домашки 01-7…01-10', link: '/day_10' },
       { text: 'Финальная проверка', link: '/day_25' }
