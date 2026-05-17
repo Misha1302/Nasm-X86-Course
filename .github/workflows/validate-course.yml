@@ -1,0 +1,45 @@
+name: Validate course
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build VitePress site
+        run: npm run docs:build
+
+  asm-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install NASM and 32-bit toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nasm gcc-multilib libc6-dev-i386
+
+      - name: Build examples
+        run: |
+          set -eux
+          for file in examples/*.asm; do
+            name="$(basename "$file" .asm)"
+            nasm -f elf32 "$file" -o "/tmp/$name.o"
+            gcc -m32 -no-pie "/tmp/$name.o" -o "/tmp/$name"
+            "/tmp/$name" >/tmp/$name.out
+          done

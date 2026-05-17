@@ -69,7 +69,7 @@ global main
 
 ---
 
-# 1. Ещё раз: путь сборки
+## 1. Ещё раз: путь сборки
 
 До запуска программа проходит несколько стадий.
 
@@ -97,7 +97,7 @@ process in memory
 
 ```bash
 nasm -f elf32 main.asm -o main.o
-gcc -m32 main.o -o main
+gcc -m32 -no-pie main.o -o main
 ./main
 ```
 
@@ -113,7 +113,7 @@ gcc -m32 main.o -o main
 
 ---
 
-# 2. Что делает loader
+## 2. Что делает loader
 
 Loader — часть ОС, которая загружает программу в память.
 
@@ -156,7 +156,7 @@ lower addresses
 
 ---
 
-# 3. Начальный стек
+## 3. Начальный стек
 
 Когда программа только стартует, ОС кладёт на стек данные запуска.
 
@@ -192,7 +192,7 @@ int main(int argc, char** argv, char** envp)
 
 ---
 
-# 4. `_start`
+## 4. `_start`
 
 `_start` — реальная стартовая точка обычной C-программы.
 
@@ -201,7 +201,7 @@ int main(int argc, char** argv, char** envp)
 Именно поэтому мы линковали так:
 
 ```bash
-gcc -m32 main.o -o main
+gcc -m32 -no-pie main.o -o main
 ```
 
 а не пытались вручную сразу сделать всё через `ld`.
@@ -212,7 +212,7 @@ gcc -m32 main.o -o main
 
 ---
 
-# 5. `__libc_start_main`
+## 5. `__libc_start_main`
 
 `__libc_start_main` — функция libc, которая помогает запустить C-программу правильно.
 
@@ -234,7 +234,7 @@ _start -> __libc_start_main -> main -> exit
 
 ---
 
-# 6. `.init_array` и `.fini_array`
+## 6. `.init_array` и `.fini_array`
 
 В C++ до `main` могут выполняться конструкторы глобальных объектов.
 
@@ -273,7 +273,7 @@ int main() {
 
 ---
 
-# 7. Что показывает `objdump`
+## 7. Что показывает `objdump`
 
 Команды:
 
@@ -304,7 +304,7 @@ objdump -s -j .fini_array main
 
 ---
 
-# 8. Почему в `objdump` много “лишнего”
+## 8. Почему в `objdump` много “лишнего”
 
 Когда ты дизассемблируешь программу:
 
@@ -339,7 +339,7 @@ objdump -d -M intel main
 
 ---
 
-# 9. Почему `global main` работает
+## 9. Почему `global main` работает
 
 В NASM:
 
@@ -363,7 +363,7 @@ undefined reference to main
 
 ---
 
-# 10. Что если написать `_start` самому
+## 10. Что если написать `_start` самому
 
 Можно сделать программу без libc:
 
@@ -380,7 +380,7 @@ _start:
 Но в этом курсе основной путь другой:
 
 ```text
-global main + gcc -m32 + libc
+global main + gcc -m32 -no-pie + libc
 ```
 
 Почему?
@@ -389,9 +389,9 @@ global main + gcc -m32 + libc
 
 ---
 
-# 11. Мини-челленджи
+## 11. Мини-челленджи
 
-### 1. Найди `_start`
+#### 1. Найди `_start`
 
 Собери программу и выполни:
 
@@ -408,7 +408,7 @@ objdump -d -M intel main | less
 
 </details>
 
-### 2. Найди `main`
+#### 2. Найди `main`
 
 Найди `<main>` в том же дизассемблировании.
 
@@ -419,7 +419,7 @@ objdump -d -M intel main | less
 
 </details>
 
-### 3. Почему `main` не первая инструкция?
+#### 3. Почему `main` не первая инструкция?
 
 <details>
 <summary>Ответ</summary>
@@ -428,7 +428,7 @@ objdump -d -M intel main | less
 
 </details>
 
-### 4. Что такое `.init_array`?
+#### 4. Что такое `.init_array`?
 
 <details>
 <summary>Ответ</summary>
@@ -437,7 +437,7 @@ objdump -d -M intel main | less
 
 </details>
 
-### 5. Почему мы используем `gcc -m32` для линковки?
+#### 5. Почему мы используем `gcc -m32 -no-pie` для линковки?
 
 <details>
 <summary>Ответ</summary>
@@ -448,7 +448,7 @@ objdump -d -M intel main | less
 
 ---
 
-# 12. Типовые ошибки
+## 12. Типовые ошибки
 
 | Ошибка | Почему плохо |
 |---|---|
@@ -461,7 +461,7 @@ objdump -d -M intel main | less
 
 ---
 
-# 13. Что должно остаться в голове
+## 13. Что должно остаться в голове
 
 После этого дня ты должен уметь:
 

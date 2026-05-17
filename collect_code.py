@@ -25,8 +25,12 @@ CODE_EXTENSIONS = {
     ".sh", ".bash", ".zsh", ".ps1", ".bat", ".cmd", ".py", ".rb", ".pl",
 
     # Other common code
-    ".cpp", ".hpp", ".c", ".h", ".rs", ".go", ".java", ".kt", ".kts",
+    ".cpp", ".hpp", ".c", ".h", ".asm", ".nasm", ".s", ".S",
+    ".rs", ".go", ".java", ".kt", ".kts",
     ".swift", ".php", ".sql", ".dockerfile",
+
+    # Docs
+    ".md", ".txt"
 }
 
 IMPORTANT_DOC_NAMES = {
@@ -234,6 +238,10 @@ def detect_language(path: Path) -> str:
         ".go": "go",
         ".java": "java",
         ".cpp": "cpp",
+        ".asm": "asm",
+        ".nasm": "asm",
+        ".s": "asm",
+        ".S": "asm",
         ".c": "c",
         ".h": "c",
         ".hpp": "cpp",

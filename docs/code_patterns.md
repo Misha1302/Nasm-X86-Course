@@ -721,11 +721,11 @@ answer = (x ^ mask) - mask;
 mov eax, [a]
 and eax, [c]
 
-mov ebx, [c]
-not ebx
-and ebx, [b]
+mov ecx, [c]
+not ecx
+and ecx, [b]
 
-or eax, ebx
+or eax, ecx
 ```
 
 Формула:
@@ -742,20 +742,20 @@ answer = (a & c) | (b & ~c);
 mov eax, [a]
 and eax, 255
 
-mov ebx, [b]
-and ebx, 255
-shl ebx, 8
-or eax, ebx
+mov ecx, [b]
+and ecx, 255
+shl ecx, 8
+or eax, ecx
 
-mov ebx, [c]
-and ebx, 255
-shl ebx, 16
-or eax, ebx
+mov ecx, [c]
+and ecx, 255
+shl ecx, 16
+or eax, ecx
 
-mov ebx, [d]
-and ebx, 255
-shl ebx, 24
-or eax, ebx
+mov ecx, [d]
+and ecx, 255
+shl ecx, 24
+or eax, ecx
 ```
 
 Формула:

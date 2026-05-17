@@ -31,7 +31,7 @@ main.asm
    v
 main.o
    |
-   | gcc -m32
+   | gcc -m32 -no-pie
    v
 main
    |
@@ -79,7 +79,7 @@ main:
 
 ```bash
 nasm -f elf32 main.asm -o main.o
-gcc -m32 main.o -o main
+gcc -m32 -no-pie main.o -o main
 ./main
 echo $?
 ```
@@ -96,7 +96,7 @@ main.asm  ->  main.o
 
 `-f elf32` значит: создать 32-битный ELF object file. Это важно, потому что мы работаем с IA-32.
 
-### `gcc -m32 main.o -o main`
+### `gcc -m32 -no-pie main.o -o main`
 
 `gcc` здесь используется как удобный linker driver.
 
@@ -108,6 +108,30 @@ main.asm  ->  main.o
 - делает итоговый executable.
 
 `-m32` говорит: линковать как 32-битную программу.
+
+## Важное уточнение: `-no-pie`
+
+Почему не просто `gcc -m32 main.o -o main`?
+
+Многие современные Linux-дистрибутивы по умолчанию собирают PIE-executable: position-independent executable.
+
+А первые NASM-программы курса используют простые абсолютные адреса меток:
+
+```asm
+push fmtOut
+mov eax, [x]
+jmp [.table + 4*eax]
+```
+
+Для такого учебного IA-32 кода проще и честнее собирать без PIE:
+
+```bash
+gcc -m32 -no-pie main.o -o main
+```
+
+PIE, GOT, PLT и position-independent code — отдельная тема. Мы её упомянем позже, но не будем мешать в первые задачи.
+
+---
 
 ### `./main`
 
@@ -156,7 +180,7 @@ Object file часто содержит:
 Можно линковать напрямую через `ld`, но для начала это лишняя боль. Когда в программе есть `main`, `printf`, `scanf`, стартовый код и libc, проще использовать:
 
 ```bash
-gcc -m32 main.o -o main
+gcc -m32 -no-pie main.o -o main
 ```
 
 `gcc` сам правильно подставит нужные системные куски.
@@ -268,7 +292,7 @@ main:
 
 ```bash
 nasm -f elf32 main.asm -o main.o
-gcc -m32 main.o -o main
+gcc -m32 -no-pie main.o -o main
 ./main
 echo $?
 ```
