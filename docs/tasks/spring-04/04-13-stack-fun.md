@@ -1,39 +1,48 @@
 # 04-13. Веселье со стеком
 
-## Коротко
+## Условие
 
-Это advanced ABI-задача. Нужно реализовать `apply`: function pointer, varargs, динамическая раскладка аргументов на стеке и 16-byte alignment.
-
-<details open>
-<summary>Подробное решение</summary>
-
-Сигнатура по смыслу:
+Нужно реализовать функцию:
 
 ```c
-void apply(int* array, size_t length, void (*fn)(...), int n, ...);
+apply(int* array, size_t length, void (*fn)(...), int n, ...);
 ```
 
-Для каждого `array[i]` нужно вызвать:
+Она должна пройти по массиву и для каждого элемента вызвать `fn`.
 
-```text
-fn(vararg0, vararg1, ..., varargN-1, array[i])
-```
-
-В конкретной задаче:
+В этой задаче нужно использовать её примерно так:
 
 ```c
 apply(array, length, fprintf, 2, stdout, "%d\n");
 ```
 
-Значит каждый внутренний вызов должен быть:
+То есть для каждого `array[i]` должен получиться вызов:
 
 ```c
 fprintf(stdout, "%d\n", array[i]);
 ```
 
-### 1. Где лежат параметры `apply`
+Запрещён `io.inc`. Перед libc calls нужен 16-byte alignment.
 
-В cdecl-фрейме:
+## Ввод
+
+```text
+N a1 a2 ... aN
+```
+
+## Вывод
+
+Каждое число в исходном порядке, по одному на строку.
+
+## Ограничения
+
+- числа signed 32-bit;
+- нужно сохранить входной массив в памяти;
+- главное требование — корректно реализовать `apply`.
+
+## Layout аргументов `apply`
+
+Внутри `apply`:
 
 ```text
 [ebp+8]   array
@@ -45,166 +54,102 @@ fprintf(stdout, "%d\n", array[i]);
 ...
 ```
 
-### 2. Что нужно сделать в цикле
-
-Для каждого элемента массива:
+Для нужного вызова:
 
 ```text
-1. взять array[i]
-2. положить на стек array[i]
-3. положить varargs в обратном порядке
-4. вызвать fn
-5. очистить стек
-6. перейти к следующему i
+n = 2
+vararg 0 = stdout
+vararg 1 = "%d\n"
 ```
 
-Почему обратный порядок?
+## Что должен делать `apply`
 
-cdecl кладёт аргументы справа налево.
+Для каждого элемента `array[i]` собрать на стеке аргументы для `fn`:
 
-Для:
-
-```c
-fprintf(stdout, "%d\n", x);
+```text
+arg1 = stdout
+arg2 = "%d\n"
+arg3 = array[i]
 ```
 
-push-порядок:
+Так как `cdecl` кладёт аргументы справа налево, push-порядок:
 
-```asm
-push x
-push fmt
+```text
+push array[i]
+push "%d\n"
 push stdout
-call fprintf
+call fn
 add esp, 12
 ```
 
-### 3. Общий push-loop для varargs
-
-Если `n` varargs начинаются с `[ebp+24]`, последний vararg лежит по адресу:
+В общем случае для `n` varargs:
 
 ```text
-ebp + 24 + 4*(n-1)
-```
-
-Псевдо-NASM:
-
-```asm
-; сначала последний аргумент fn: array[i]
-push dword [currentValue]
-
-; потом varargs справа налево
-mov ecx, [ebp+20]        ; n
-.vararg_loop:
-    test ecx, ecx
-    jz .args_ready
-
-    dec ecx
-    push dword [ebp + 24 + ecx * 4]
-    jmp .vararg_loop
-
-.args_ready:
-    call dword [ebp+16]
-```
-
-После вызова нужно очистить:
-
-```text
-4 * (n + 1) байт
-```
-
-### 4. Не храни важное в `eax/ecx/edx` через вызов `fn`
-
-`fn` — обычная cdecl-функция. Она может испортить:
-
-```text
-eax, ecx, edx
-```
-
-Поэтому состояние цикла лучше держать:
-
-- в локальных переменных;
-- или в `ebx/esi/edi`, но тогда `apply` обязана сохранить и восстановить их.
-
-Минимальный каркас:
-
-```asm
-apply:
-    push ebp
-    mov ebp, esp
-    push ebx
-    push esi
-    push edi
-    sub esp, 16       ; locals
-
-    ; esi = array
-    ; edi = i
-    ; ebx = length
-
-.done:
-    add esp, 16
-    pop edi
-    pop esi
-    pop ebx
-    mov esp, ebp
-    pop ebp
-    ret
-```
-
-### 5. 16-byte alignment
-
-В Spring-04 требуется выравнивать стек при библиотечных вызовах.
-
-Если перед `call fn` нужно, чтобы `esp % 16 == 0`, то перед push-аргументами можно вычислить padding.
-
-Идея:
-
-```text
-argBytes = 4 * (n + 1)
-pad = (esp - argBytes) & 15
-sub esp, pad
-push args
+push array[i]
+for k = n-1 downto 0:
+    push vararg[k]
 call fn
-add esp, argBytes
-add esp, pad
+add esp, 4 * (n + 1)
 ```
 
-NASM-shape:
+## Алгоритм apply
+
+```text
+for i = 0..length-1:
+    elem = array[i]
+
+    push elem
+    for k = n-1 downto 0:
+        push vararg[k]
+
+    call fn
+    clean stack
+```
+
+## NASM-shape
+
+Вызов function pointer:
 
 ```asm
-mov eax, [n]
-inc eax
-shl eax, 2           ; eax = argBytes
-mov [argBytes], eax
-
-mov edx, esp
-sub edx, eax
-and edx, 15          ; edx = pad
-mov [pad], edx
-sub esp, edx
-
-; push array[i]
-; push varargs
-; call fn
-
-add esp, [argBytes]
-add esp, [pad]
+mov eax, [ebp+16]    ; fn
+call eax
 ```
 
-Это сложная часть задачи. Её лучше вынести в аккуратный helper/шаблон и не смешивать с логикой чтения массива.
+Адрес `vararg[k]`:
 
-</details>
+```text
+[ebp + 24 + 4*k]
+```
 
-## Где может сломаться
+Адрес `array[i]`:
 
-- вызвать `fn` с аргументами в прямом порядке;
-- очистить только varargs, забыв `array[i]`;
-- хранить индекс в `ecx` и потерять его после `fprintf`;
-- не сохранить `ebx/esi/edi` внутри `apply`;
-- забыть 16-byte alignment;
-- перепутать `n` и `n+1`: `fn` получает `n` старых аргументов плюс текущий элемент.
+```text
+[array + 4*i]
+```
+
+## Alignment
+
+Так как `fn` может быть `fprintf`, перед `call fn` нужно соблюсти 16-byte alignment.
+
+Практический путь для учебного решения:
+
+1. перед dynamic call посчитать, сколько байт будет pushed;
+2. добавить padding, чтобы `esp` перед `call` был выровнен;
+3. после вызова убрать и аргументы, и padding.
+
+## Ошибки
+
+| Ошибка | Почему плохо |
+|---|---|
+| push varargs в прямом порядке | `cdecl` требует справа налево |
+| вызвать `fn` как метку | `fn` лежит в аргументе, нужен indirect call |
+| потерять `i`, `array`, `n` после вызова | `eax/ecx/edx` caller-saved |
+| очистить только `array[i]` | надо убрать `4*(n+1)` байт плюс padding |
+| забыть alignment | условие явно требует выравнивание для libc calls |
 
 ## Где в курсе
 
-- День 17: CDECL;
-- [libc и alignment](/patterns/libc_alignment);
-- [Advanced stack](/patterns/advanced_stack).
+- [День 17 — CDECL](/day_17)
+- [libc и alignment](/patterns/libc_alignment)
+- [Advanced stack](/patterns/advanced_stack)
+- [Сложные задачи](/tasks/hard)

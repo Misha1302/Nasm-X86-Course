@@ -1,176 +1,138 @@
 # 03-18. Знаковое произведение
 
-## Коротко
+## Условие
 
-Произведение трёх signed 32-bit чисел в общем случае не помещается в 64 бита. Нужна многоразрядная арифметика: минимум 96 бит.
+Даны три signed 32-bit числа `a`, `b`, `c`.
 
-<details open>
-<summary>Подробное решение</summary>
+Нужно вывести их произведение в десятичной системе без лидирующих нулей.
 
-Вход:
-
-```text
-a, b, c: signed int32
-```
-
-Худший порядок величины:
+## Ввод
 
 ```text
-2^31 * 2^31 * 2^31 = 2^93
+a b c
 ```
 
-Значит, одного `edx:eax` мало. Храним модуль результата в трёх `dword`:
+## Вывод
+
+Одно десятичное число.
+
+## Ограничения
+
+- `-2^31 <= a,b,c <= 2^31-1`;
+- произведение трёх 32-bit чисел может не поместиться в 64 бита;
+- нужен многоразрядный результат.
+
+## Решение
+
+Храним модуль результата как unsigned 96-bit число:
 
 ```text
-hi:mid:lo    ; 96-bit unsigned
+hi:mid:lo
 ```
 
-### 1. Определить знак
-
-Знак результата отрицательный, если отрицательных множителей нечётное число.
-
-C-shape:
-
-```cpp
-neg = (a < 0) ^ (b < 0) ^ (c < 0);
-```
-
-В NASM можно проверять каждый множитель через `cmp`/`jge` или через sign bit.
-
-### 2. Взять модули множителей
-
-Для каждого signed 32-bit числа получить unsigned-модуль.
-
-Branchless abs-shape:
-
-```asm
-; eax = signed value
-mov edx, eax
-sar edx, 31
-xor eax, edx
-sub eax, edx
-; eax = abs(value) as unsigned bits
-```
-
-Это корректно даже для `INT_MIN`: получится `0x80000000`, то есть unsigned-модуль `2147483648`.
-
-### 3. Умножить первые два числа
-
-Unsigned `mul` даёт 64-bit результат:
-
-```asm
-mov eax, [absA]
-mul dword [absB]
-; edx:eax = absA * absB
-```
-
-Сохраняем:
+Знак считаем отдельно:
 
 ```text
-pLo = eax
-pHi = edx
+negative = sign(a) xor sign(b) xor sign(c)
 ```
 
-### 4. Умножить 64-bit число на третий 32-bit множитель
+Дальше работаем с модулями `abs(a)`, `abs(b)`, `abs(c)`.
 
-Нужно:
+## Умножение
+
+Сначала:
 
 ```text
-(pHi:pLo) * absC
+abs(a) * abs(b) -> 64-bit abHi:abLo
 ```
 
-Раскладываем:
+Потом умножаем 64-bit число на 32-bit:
 
 ```text
-pLo * absC -> low part + carry
-pHi * absC -> middle/high part
+(abHi * 2^32 + abLo) * c
+= abLo*c + (abHi*c << 32)
 ```
 
-NASM-shape:
-
-```asm
-; pLo, pHi, absC лежат в памяти
-
-mov eax, [pLo]
-mul dword [absC]
-mov [res0], eax      ; lo
-mov [carry0], edx
-
-mov eax, [pHi]
-mul dword [absC]
-; edx:eax = pHi * absC
-
-add eax, [carry0]
-adc edx, 0
-
-mov [res1], eax      ; mid
-mov [res2], edx      ; hi
-```
-
-Теперь:
+Схема:
 
 ```text
-res2:res1:res0 = abs(a*b*c)
+p0 = abLo * c     ; 64-bit
+p1 = abHi * c     ; 64-bit
+
+lo  = low32(p0)
+mid = high32(p0) + low32(p1)
+hi  = high32(p1) + carry
 ```
 
-### 5. Напечатать 96-bit число в decimal
+## Печать decimal
 
-Повторяем деление большого числа на `10`.
+Чтобы вывести 96-bit число, делим его на 10 многоразрядно.
 
-Делим по словам сверху вниз:
+Один шаг деления:
 
 ```text
 remainder = 0
-(q2, remainder) = div(remainder:res2, 10)
-(q1, remainder) = div(remainder:res1, 10)
-(q0, remainder) = div(remainder:res0, 10)
+for word in [hi, mid, lo]:
+    cur = remainder:word
+    quotientWord = cur / 10
+    remainder = cur % 10
 ```
 
-NASM-shape одного шага:
+Полученный `remainder` — следующая десятичная цифра с конца.
 
-```asm
-mov ecx, 10
-xor edx, edx
+Повторяем, пока `hi:mid:lo != 0`.
 
-mov eax, [res2]
-div ecx
-mov [res2], eax      ; q2, edx = rem
-
-mov eax, [res1]
-div ecx
-mov [res1], eax      ; q1, edx = rem
-
-mov eax, [res0]
-div ecx
-mov [res0], eax      ; q0, edx = digit
-```
-
-`edx` после последнего `div` — очередная десятичная цифра от конца.
-
-Сохраняем цифры в буфер, потом печатаем в обратном порядке.
-
-### 6. Ноль
-
-Если результат равен нулю, печатаем просто:
+## Алгоритм
 
 ```text
-0
+read a,b,c
+if any value is zero:
+    print 0
+
+sign = xor of signs
+A = abs(a), B = abs(b), C = abs(c)
+P = A * B * C as 96-bit
+
+while P != 0:
+    digit = P % 10
+    push/store digit
+    P = P / 10
+
+if sign:
+    print '-'
+print digits in reverse order
 ```
 
-Минус печатаем только если результат не ноль и `neg = 1`.
+## NASM-shape
 
-</details>
+Unsigned `mul`:
 
-## Где может сломаться
+```asm
+mov eax, [A]
+mul dword [B]
+; edx:eax = A * B
+```
 
-- использовать только 64-bit результат;
-- сломать `INT_MIN` при обычном `neg`;
-- забыть перенос `adc edx, 0` при умножении `pHi * absC`;
-- печатать `hi:mid:lo` как hex, а нужен decimal;
-- при делении 96-bit на 10 идти снизу вверх, а надо сверху вниз.
+96-bit value in memory:
+
+```asm
+result_lo  resd 1
+result_mid resd 1
+result_hi  resd 1
+```
+
+## Ошибки
+
+| Ошибка | Почему плохо |
+|---|---|
+| хранить результат только в `edx:eax` | тройное произведение может быть больше 64 бит |
+| печатать через `%lld` | может не хватить 64 бит |
+| брать `abs(INT_MIN)` как signed positive | `2^31` не помещается в signed 32-bit, работай как unsigned magnitude |
+| забыть особый случай нуля | нельзя печатать пустую строку цифр |
+| неверно переносить carry при 64x32 | middle overflow должен уйти в high |
 
 ## Где в курсе
 
-- День 09: `mul`, `div`;
-- День 10: branchless abs;
-- [Big integer](/patterns/bigint).
+- [День 09 — деление](/day_09)
+- [Big integer](/patterns/bigint)
+- [Сложные задачи](/tasks/hard)

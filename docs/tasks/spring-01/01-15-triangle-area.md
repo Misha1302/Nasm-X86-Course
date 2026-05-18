@@ -1,68 +1,66 @@
 # 01-15. Площадь треугольника
 
-## Коротко
+## Условие
 
-Float не нужен. Считай удвоенную площадь, потом печатай `.0` или `.5`.
+Даны координаты трёх вершин треугольника. Нужно вывести площадь с точностью до одного знака после запятой.
 
-<details open>
-<summary>Подробное решение</summary>
+Запрещены условные передачи и условное управление.
 
-Даны три точки:
+## Ввод
 
 ```text
-(x1, y1), (x2, y2), (x3, y3)
+x1 y1
+x2 y2
+x3 y3
 ```
 
-Удвоенная ориентированная площадь:
+## Вывод
+
+Площадь в формате:
+
+```text
+целая_часть.дробная_часть
+```
+
+Например:
+
+```text
+0.5
+```
+
+## Ограничения
+
+- все координаты целые;
+- `|coordinate| <= 10000`;
+- determinant помещается в signed 32-bit.
+
+## Решение
+
+Площадь треугольника:
+
+```text
+S = abs(det) / 2
+```
+
+где:
 
 ```text
 det = (x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1)
 ```
 
-Настоящая площадь:
+Так как координаты целые, `abs(det) / 2` всегда имеет дробную часть только `.0` или `.5`.
+
+Значит floating point не нужен.
 
 ```text
-area = abs(det) / 2
+whole = abs(det) / 2
+frac  = (abs(det) % 2) * 5
 ```
 
-### 1. Считаем determinant
-
-C++-shape:
-
-```cpp
-int dx21 = x2 - x1;
-int dy31 = y3 - y1;
-int dx31 = x3 - x1;
-int dy21 = y2 - y1;
-
-int det = dx21 * dy31 - dx31 * dy21;
-```
-
-NASM-shape:
+## Branchless abs
 
 ```asm
-mov eax, [x2]
-sub eax, [x1]
-
-mov ecx, [y3]
-sub ecx, [y1]
-imul eax, ecx        ; part1
-
-mov edx, [x3]
-sub edx, [x1]
-
-mov ecx, [y2]
-sub ecx, [y1]
-imul edx, ecx        ; part2
-
-sub eax, edx         ; det
-```
-
-Координаты до `10000`, произведения безопасны для 32-bit.
-
-### 2. Берём `abs(det)` без переходов
-
-```asm
+; eax = det
 mov edx, eax
 sar edx, 31
 xor eax, edx
@@ -70,53 +68,55 @@ sub eax, edx
 ; eax = abs(det)
 ```
 
-### 3. Делим на 2
+## NASM-shape
 
 ```asm
-xor edx, edx
-mov ecx, 2
-div ecx
-; eax = integer part
-; edx = remainder: 0 или 1
+; part1 = (x2 - x1) * (y3 - y1)
+mov eax, [x2]
+sub eax, [x1]
+mov ecx, [y3]
+sub ecx, [y1]
+imul eax, ecx
+mov esi, eax
+
+; part2 = (x3 - x1) * (y2 - y1)
+mov eax, [x3]
+sub eax, [x1]
+mov ecx, [y2]
+sub ecx, [y1]
+imul eax, ecx
+
+; det = part1 - part2
+mov ecx, esi
+sub ecx, eax
 ```
 
-Дробная часть:
+Потом берём `abs(ecx)` и делим на 2.
 
-```text
-remainder = 0 -> .0
-remainder = 1 -> .5
+## Вывод
+
+```asm
+; whole = absDet / 2
+; frac = (absDet & 1) * 5
 ```
 
-Можно напечатать двумя числами:
+Формат:
 
-```c
-printf("%u.%u\n", integerPart, remainder * 5);
+```asm
+fmtOut db "%d.%d", 10, 0
 ```
 
-</details>
+## Ошибки
 
-## Ручной тест
-
-Точки:
-
-```text
-(1,1), (0,1), (1,0)
-```
-
-```text
-det = (0-1)*(0-1) - (1-1)*(1-1) = 1
-area = 1/2 = 0.5
-```
-
-## Где может сломаться
-
-- забыть `abs(det)`;
-- пытаться использовать x87, хотя задача проще через целые числа;
-- вывести `0.1` вместо `0.5`, если печатать остаток напрямую;
-- использовать `%d` для `integerPart`, хотя после `abs` удобнее unsigned.
+| Ошибка | Почему плохо |
+|---|---|
+| использовать `if (det < 0)` | переходы запрещены |
+| печатать через `%f` | floating point не нужен |
+| забыть `abs(det)` | площадь не может быть отрицательной |
+| округлять вещественное число | точный ответ всегда `.0` или `.5` |
 
 ## Где в курсе
 
-- День 07: арифметика;
-- День 09: деление;
-- День 10: branchless `abs`.
+- [День 07 — арифметика](/day_07)
+- [День 10 — branchless-домашка](/day_10)
+- [Branchless-маски](/patterns/branchless)
