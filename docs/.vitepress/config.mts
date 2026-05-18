@@ -11,6 +11,7 @@ export default defineConfig({
             { text: "Как решать", link: "/how_to_solve_tasks" },
             { text: "Паттерны", link: "/patterns/" },
             { text: "Идеи задач", link: "/tasks/" },
+            { text: "Сложные", link: "/tasks/hard" },
             { text: "Ошибки", link: "/debug_cards" },
             { text: "C ABI", link: "/c_abi" },
             { text: "Финал", link: "/day_25" }
@@ -38,12 +39,12 @@ export default defineConfig({
                 ]
             },
             {
-                text: "Домашки 01-7…01-10",
+                text: "Домашки Spring-01",
                 items: [
                     { text: "День 07 — арифметика", link: "/day_07" },
                     { text: "День 08 — расширение знака", link: "/day_08" },
                     { text: "День 09 — деление", link: "/day_09" },
-                    { text: "День 10 — биты и маски", link: "/day_10" }
+                    { text: "День 10 — Spring-01 branchless", link: "/day_10" }
                 ]
             },
             {
@@ -77,9 +78,16 @@ export default defineConfig({
                 ]
             },
             {
+                text: "Подробные разборы",
+                items: [
+                    { text: "Сложные задачи", link: "/tasks/hard" }
+                ]
+            },
+            {
                 text: "Идеи задач — Spring 01",
                 items: [
                     { text: "Обзор задач", link: "/tasks/" },
+                    { text: "Сложные задачи", link: "/tasks/hard" },
                     { text: "01-4 Книжки", link: "/tasks/spring-01/01-04-books" },
                     { text: "01-8 Masked merge", link: "/tasks/spring-01/01-08-masked-merge" },
                     { text: "01-14 Огород", link: "/tasks/spring-01/01-14-garden" },
