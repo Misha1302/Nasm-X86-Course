@@ -127,6 +127,7 @@ export default defineConfig({
                     { text: "День 21 — memory safety", link: "/day_21" },
                     { text: "День 22 — floating point", link: "/day_22" },
                     { text: "День 23 — x87", link: "/day_23" },
+                    { text: "Практика — double через FPU", link: "/fpu_double" },
                     { text: "День 24 — C++ object model", link: "/day_24" },
                     { text: "День 25 — mock exam", link: "/day_25" }
                 ]
