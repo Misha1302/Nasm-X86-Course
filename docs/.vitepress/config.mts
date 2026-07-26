@@ -28,12 +28,13 @@ export default defineConfig({
                     { text: "Контрольные точки", link: "/checkpoints" },
                     { text: "Ключи checkpoints", link: "/checkpoint_keys" },
                     { text: "AI-наставник", link: "/ai_tutor_prompts" },
+                    { text: "Проверка AI-наставника", link: "/ai_tutor_eval" },
                     { text: "Пять занятий Дня 10", link: "/day_10_learning_path" },
                     { text: "Как решать задачи", link: "/how_to_solve_tasks" },
                     { text: "Карточки ошибок", link: "/debug_cards" },
                     { text: "Отладка в GDB", link: "/debugging_with_gdb" },
                     { text: "Поддерживаемые среды", link: "/support_matrix" },
-                    { text: "Статус структуры", link: "/course_migration" },
+                    { text: "Статус самостоятельности", link: "/course_migration" },
                     { text: "Стиль глав курса", link: "/course_style" }
                 ]
             },
@@ -130,7 +131,7 @@ export default defineConfig({
                     { text: "Справочник инструкций", link: "/instruction_reference" },
                     { text: "Популярные инструкции", link: "/popular_instructions" },
                     { text: "Шаблоны кода", link: "/code_patterns" },
-                    { text: "Полный учебник", link: "/textbook" }
+                    { text: "Полный самостоятельный учебник", link: "/textbook" }
                 ]
             }
         ],
