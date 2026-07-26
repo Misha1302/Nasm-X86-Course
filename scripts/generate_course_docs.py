@@ -19,7 +19,7 @@ for path in DAYS:
     parts.extend(["---", "", path.read_text(encoding="utf-8").strip(), ""])
 (DOCS / "textbook.md").write_text("\n".join(parts).rstrip() + "\n", encoding="utf-8")
 
-required = {"## За 30 секунд", "## Минимум после главы", "## Практика", "## Чеклист"}
+required = {"## Входные знания", "## За 30 секунд", "## Минимум после главы", "## Практика", "## Чеклист"}
 rows = []
 for path in DAYS:
     text = path.read_text(encoding="utf-8")
@@ -30,14 +30,14 @@ for path in DAYS:
         status = "transitional"
     else:
         status = "legacy"
-    rows.append(f"| [{path.stem.replace('_', ' ').title()}](/{path.stem}) | {status} | {len(present)}/4 |")
+    rows.append(f"| [{path.stem.replace('_', ' ').title()}](/{path.stem}) | {status} | {len(present)}/5 |")
 
 migration = [
     "# Статус миграции глав",
     "",
     "> Страница сгенерирована автоматически. Канонические источники — `day_01.md` … `day_25.md`.",
     "",
-    "Новые и существенно переработанные главы обязаны следовать `course_style.md`. Старые главы остаются валидными, но их переход к единому формату виден явно и не скрывается.",
+    "Новые и существенно переработанные главы обязаны следовать `course_style.md`. Все 25 дней должны следовать единому учебному каркасу; страница показывает регрессию, если обязательный блок исчез.",
     "",
     "| Глава | Статус | Блоки нового шаблона |",
     "|---|---|---:|",
