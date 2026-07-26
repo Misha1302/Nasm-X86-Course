@@ -1,9 +1,7 @@
-/home/runner/work/Nasm-X86-Course/Nasm-X86-Course/scripts/apply_course_repairs.py:105: SyntaxWarning: invalid escape sequence '\s'
-  '''#!/usr/bin/env python3
 
-up to date in 7s
+up to date in 9s
 
-added 127 packages in 3s
+added 127 packages in 2s
 
 > nasm-x86-course@0.1.0 docs:build
 > npm run docs:generate && npm run course:validate && vitepress build docs
@@ -16,10 +14,8 @@ added 127 packages in 3s
 > nasm-x86-course@0.1.0 course:validate
 > python3 scripts/validate_course.py
 
-  File "/home/runner/work/Nasm-X86-Course/Nasm-X86-Course/scripts/validate_course.py", line 56
-    raise SystemExit("Course validation failed:
-                     ^
-SyntaxError: unterminated string literal (detected at line 56)
+Course validation failed:
+- missing technical boundary 'может переполниться' in docs/day_10.md
 Traceback (most recent call last):
   File "/home/runner/work/Nasm-X86-Course/Nasm-X86-Course/scripts/apply_course_repairs.py", line 536, in <module>
     run("npm", "run", "docs:build")
