@@ -50,6 +50,11 @@ jobs:
               r'''re.findall(r'link:\\s*"(/[^"]+)"', config)''',
               1,
           )
+          text = text.replace(
+              'Формула `(a + b - 1) / b` корректна только когда промежуточное `a + b - 1` помещается в 32 бита.',
+              'Промежуточное `a + b - 1` может переполниться. Формула `(a + b - 1) / b` корректна только когда этот результат помещается в 32 бита.',
+              1,
+          )
           path.write_text(text, encoding='utf-8')
           Path('repair-failure.log').unlink(missing_ok=True)
           PY
