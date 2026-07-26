@@ -21,14 +21,23 @@ jobs:
           fetch-depth: 0
 
       - name: Apply chapter contracts and regenerate artifacts
+        id: apply_contracts
         run: |
-          set -euo pipefail
-          python3 scripts/apply_self_study_contracts.py
-          python3 scripts/generate_course_docs.py
-          python3 scripts/validate_course.py
-          git diff --check
+          set -o pipefail
+          python3 scripts/apply_self_study_contracts.py 2>&1 | tee /tmp/remediation.log
+          python3 scripts/generate_course_docs.py 2>&1 | tee -a /tmp/remediation.log
+          python3 scripts/validate_course.py 2>&1 | tee -a /tmp/remediation.log
+          git diff --check 2>&1 | tee -a /tmp/remediation.log
+
+      - name: Upload remediation diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-study-remediation-log
+          path: /tmp/remediation.log
 
       - name: Commit generated remediation and remove transport files
+        if: steps.apply_contracts.outcome == 'success'
         run: |
           set -euo pipefail
           rm scripts/apply_self_study_contracts.py
