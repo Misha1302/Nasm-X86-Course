@@ -55,6 +55,12 @@ jobs:
               'Промежуточное `a + b - 1` может переполниться. Формула `(a + b - 1) / b` корректна только когда этот результат помещается в 32 бита.',
               1,
           )
+          text = text.replace(
+              'for stem, output in expected.items():\n    write(f"examples/expected/{stem}.txt", output)',
+              'for stem, output in expected.items():\n    target = ROOT / "examples" / "expected" / f"{stem}.txt"\n    target.parent.mkdir(parents=True, exist_ok=True)\n    target.write_text(output, encoding="utf-8")',
+              1,
+          )
+          text = text.replace('```gdb', '```text')
           path.write_text(text, encoding='utf-8')
           Path('repair-failure.log').unlink(missing_ok=True)
           PY
