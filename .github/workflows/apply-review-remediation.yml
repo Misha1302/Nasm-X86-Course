@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - compilationlab/remediate-self-study-review-2026-07-27
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
