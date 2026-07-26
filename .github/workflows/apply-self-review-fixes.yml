@@ -28,7 +28,32 @@ jobs:
           cache: npm
 
       - name: Apply self-review corrections
-        run: python3 scripts/apply_self_review_fixes.py
+        shell: bash
+        run: |
+          set +e
+          python3 scripts/apply_self_review_fixes.py > /tmp/self-review.log 2>&1
+          status=$?
+          echo "$status" > /tmp/self-review.status
+          cat /tmp/self-review.log
+          exit 0
+
+      - name: Upload self-review diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-review-diagnostics
+          path: |
+            /tmp/self-review.log
+            /tmp/self-review.status
+          if-no-files-found: error
+
+      - name: Stop on self-review transformation failure
+        run: |
+          status="$(cat /tmp/self-review.status)"
+          if [ "$status" -ne 0 ]; then
+            cat /tmp/self-review.log
+            exit "$status"
+          fi
 
       - name: Generate and validate
         run: |
