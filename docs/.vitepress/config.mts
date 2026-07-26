@@ -14,6 +14,7 @@ export default defineConfig({
             { text: "Сложные", link: "/tasks/hard" },
             { text: "Ошибки", link: "/debug_cards" },
             { text: "GDB", link: "/debugging_with_gdb" },
+            { text: "Checkpoints", link: "/checkpoints" },
             { text: "C ABI", link: "/c_abi" },
             { text: "Финал", link: "/day_25" }
         ],
@@ -26,6 +27,8 @@ export default defineConfig({
                     { text: "Как решать задачи", link: "/how_to_solve_tasks" },
                     { text: "Карточки ошибок", link: "/debug_cards" },
                     { text: "Отладка в GDB", link: "/debugging_with_gdb" },
+                    { text: "Контрольные точки", link: "/checkpoints" },
+                    { text: "Справочник инструкций", link: "/instruction_reference" },
                     { text: "Поддерживаемые среды", link: "/support_matrix" },
                     { text: "Статус миграции", link: "/course_migration" },
                     { text: "Стиль глав курса", link: "/course_style" }

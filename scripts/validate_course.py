@@ -11,6 +11,28 @@ for i in range(1, 26):
     if not path.is_file():
         errors.append(f"missing {path.relative_to(ROOT)}")
 
+required_day_headings = ("## Входные знания", "## За 30 секунд", "## Минимум после главы", "## Практика", "## Чеклист")
+for i in range(1, 26):
+    path = DOCS / f"day_{i:02d}.md"
+    if not path.is_file():
+        continue
+    text = path.read_text(encoding="utf-8")
+    positions = []
+    for heading in required_day_headings:
+        pos = text.find(heading)
+        if pos < 0:
+            errors.append(f"missing pedagogical heading {heading!r}: {path.relative_to(ROOT)}")
+        positions.append(pos)
+    if all(pos >= 0 for pos in positions) and positions != sorted(positions):
+        errors.append(f"pedagogical headings are out of order: {path.relative_to(ROOT)}")
+    checklist = text[text.find("## Чеклист"):] if "## Чеклист" in text else ""
+    if "- [ ]" not in checklist:
+        errors.append(f"checklist has no observable actions: {path.relative_to(ROOT)}")
+
+for rel in ("docs/checkpoints.md", "docs/instruction_reference.md"):
+    if not (ROOT / rel).is_file():
+        errors.append(f"missing learning support page: {rel}")
+
 for generated in (DOCS / "textbook.md", DOCS / "course_migration.md"):
     if not generated.is_file() or "сгенерирован" not in generated.read_text(encoding="utf-8").lower():
         errors.append(f"generated document is absent or lacks marker: {generated.relative_to(ROOT)}")
