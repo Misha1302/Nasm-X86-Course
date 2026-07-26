@@ -32,18 +32,30 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat \
-            .course-pedagogy/part-00 \
-            .course-pedagogy/seg-00 \
-            .course-pedagogy/seg-01 \
-            .course-pedagogy/seg-02 \
-            .course-pedagogy/seg-03a \
-            .course-pedagogy/seg-03b \
-            .course-pedagogy/seg-03c \
-            .course-pedagogy/seg-04 \
-            .course-pedagogy/seg-05 \
-            | tr -d '\r\n' > /tmp/course-pedagogy.patch.xz.b64
-          echo "encoded payload bytes: $(wc -c < /tmp/course-pedagogy.patch.xz.b64)"
+          python3 - <<'PY'
+          from pathlib import Path
+
+          paths = [
+              '.course-pedagogy/part-00',
+              '.course-pedagogy/seg-00',
+              '.course-pedagogy/seg-01',
+              '.course-pedagogy/seg-02',
+              '.course-pedagogy/seg-03a',
+              '.course-pedagogy/seg-03b',
+              '.course-pedagogy/seg-03c',
+              '.course-pedagogy/seg-04',
+              '.course-pedagogy/seg-05',
+          ]
+          parts = []
+          for raw_path in paths:
+              path = Path(raw_path)
+              text = path.read_text(encoding='ascii').replace('\r', '').replace('\n', '')
+              print(f'{raw_path}: {len(text)} bytes')
+              parts.append(text)
+          payload = ''.join(parts)
+          Path('/tmp/course-pedagogy.patch.xz.b64').write_text(payload, encoding='ascii')
+          print(f'encoded payload bytes: {len(payload)}')
+          PY
 
       - name: Verify compressed payload
         shell: bash
