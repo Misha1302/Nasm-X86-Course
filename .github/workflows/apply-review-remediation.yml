@@ -96,15 +96,40 @@ jobs:
           sudo apt-get install -y nasm gcc-multilib libc6-dev-i386
 
       - name: Build and execute examples
+        shell: bash
         run: |
-          set -euo pipefail
+          set +e
+          status=0
+          : > /tmp/examples.log
           for file in examples/*.asm; do
             name="$(basename "$file" .asm)"
-            nasm -f elf32 -g -F dwarf "$file" -o "/tmp/$name.o"
-            gcc -m32 -g -no-pie -Wl,-z,noexecstack "/tmp/$name.o" -o "/tmp/$name"
-            "/tmp/$name" > "/tmp/$name.out"
-            diff -u "examples/expected/$name.txt" "/tmp/$name.out"
+            echo "=== $name" >> /tmp/examples.log
+            nasm -f elf32 -g -F dwarf "$file" -o "/tmp/$name.o" >> /tmp/examples.log 2>&1 || { status=$?; break; }
+            gcc -m32 -g -no-pie -Wl,-z,noexecstack "/tmp/$name.o" -o "/tmp/$name" >> /tmp/examples.log 2>&1 || { status=$?; break; }
+            "/tmp/$name" > "/tmp/$name.out" 2>> /tmp/examples.log || { status=$?; break; }
+            diff -u "examples/expected/$name.txt" "/tmp/$name.out" >> /tmp/examples.log 2>&1 || { status=$?; break; }
           done
+          echo "$status" > /tmp/examples.status
+          cat /tmp/examples.log
+          exit 0
+
+      - name: Upload IA-32 diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ia32-example-diagnostics
+          path: |
+            /tmp/examples.log
+            /tmp/examples.status
+          if-no-files-found: error
+
+      - name: Stop on IA-32 example failure
+        run: |
+          status="$(cat /tmp/examples.status)"
+          if [ "$status" -ne 0 ]; then
+            cat /tmp/examples.log
+            exit "$status"
+          fi
 
       - name: Commit only final repository changes
         run: |
