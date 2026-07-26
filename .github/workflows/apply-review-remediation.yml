@@ -33,8 +33,12 @@ jobs:
         shell: bash
         run: |
           set +e
-          python3 scripts/apply_review_remediation.py > /tmp/remediation.log 2>&1
+          python3 scripts/prepare_review_remediation.py > /tmp/remediation.log 2>&1
           status=$?
+          if [ "$status" -eq 0 ]; then
+            python3 scripts/apply_review_remediation.py >> /tmp/remediation.log 2>&1
+            status=$?
+          fi
           echo "$status" > /tmp/remediation.status
           cat /tmp/remediation.log
           exit 0
@@ -89,7 +93,7 @@ jobs:
       - name: Commit only final repository changes
         run: |
           set -euo pipefail
-          rm -f scripts/apply_review_remediation.py .github/workflows/apply-review-remediation.yml
+          rm -f scripts/apply_review_remediation.py scripts/prepare_review_remediation.py .github/workflows/apply-review-remediation.yml
           git add -A
           git diff --cached --check
           if git diff --cached --quiet; then
