@@ -3,6 +3,9 @@ name: One-shot course repair
 on:
   push:
     branches: [fix/course-quality-20260726-impl]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 permissions:
