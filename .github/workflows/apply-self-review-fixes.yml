@@ -1,0 +1,73 @@
+name: Apply self-review fixes
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  self-review-fixes:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Checkout remediation branch
+        uses: actions/checkout@v4
+        with:
+          ref: compilationlab/remediate-self-study-review-2026-07-27
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Apply self-review corrections
+        run: python3 scripts/apply_self_review_fixes.py
+
+      - name: Generate and validate
+        run: |
+          set -euo pipefail
+          python3 scripts/generate_course_docs.py
+          python3 -m py_compile scripts/course_manifest.py scripts/generate_course_docs.py scripts/validate_course.py
+          find scripts -type d -name __pycache__ -prune -exec rm -rf {} +
+          python3 scripts/validate_course.py
+          git diff --check
+
+      - name: Build VitePress
+        run: |
+          npm ci --no-audit --no-fund
+          npm run docs:build
+
+      - name: Install IA-32 toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nasm gcc-multilib libc6-dev-i386
+
+      - name: Build and execute every example
+        run: |
+          set -euo pipefail
+          for file in examples/*.asm; do
+            name="$(basename "$file" .asm)"
+            nasm -f elf32 -g -F dwarf "$file" -o "/tmp/$name.o"
+            gcc -m32 -g -no-pie -Wl,-z,noexecstack "/tmp/$name.o" -o "/tmp/$name"
+            "/tmp/$name" > "/tmp/$name.out"
+            diff -u "examples/expected/$name.txt" "/tmp/$name.out"
+          done
+
+      - name: Commit verified self-review corrections
+        run: |
+          set -euo pipefail
+          rm -f scripts/apply_self_review_fixes.py .github/workflows/apply-self-review-fixes.yml
+          find scripts -type d -name __pycache__ -prune -exec rm -rf {} +
+          git add -A
+          git diff --cached --check
+          git config user.name "CompilationLab Self Review"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Fix self-review findings in ABI examples"
+          git push origin HEAD:compilationlab/remediate-self-study-review-2026-07-27
