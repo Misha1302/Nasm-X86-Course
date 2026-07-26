@@ -21,12 +21,7 @@ jobs:
       - name: Install dependencies from lock file
         run: npm ci --no-audit --no-fund
 
-      - name: Generate and validate course documents
-        run: |
-          npm run docs:generate
-          npm run course:validate
-
-      - name: Build VitePress site
+      - name: Generate, validate and build VitePress site
         run: npm run docs:build
 
   asm-examples:
