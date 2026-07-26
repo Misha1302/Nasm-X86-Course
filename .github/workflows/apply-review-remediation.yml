@@ -29,7 +29,6 @@ jobs:
           cache: npm
 
       - name: Apply deterministic remediation
-        id: remediation
         shell: bash
         run: |
           set +e
@@ -43,16 +42,6 @@ jobs:
           cat /tmp/remediation.log
           exit 0
 
-      - name: Upload remediation diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: remediation-diagnostics
-          path: |
-            /tmp/remediation.log
-            /tmp/remediation.status
-          if-no-files-found: error
-
       - name: Stop on remediation failure
         run: |
           status="$(cat /tmp/remediation.status)"
@@ -62,12 +51,39 @@ jobs:
           fi
 
       - name: Generate and validate course
+        shell: bash
         run: |
-          set -euo pipefail
-          python3 scripts/generate_course_docs.py
-          python3 -m py_compile scripts/*.py
-          python3 scripts/validate_course.py
-          git diff --check
+          set +e
+          {
+            python3 scripts/generate_course_docs.py &&
+            python3 -m py_compile scripts/*.py &&
+            python3 scripts/validate_course.py &&
+            git diff --check
+          } > /tmp/verification.log 2>&1
+          status=$?
+          echo "$status" > /tmp/verification.status
+          cat /tmp/verification.log
+          exit 0
+
+      - name: Upload transformation diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: remediation-diagnostics
+          path: |
+            /tmp/remediation.log
+            /tmp/remediation.status
+            /tmp/verification.log
+            /tmp/verification.status
+          if-no-files-found: error
+
+      - name: Stop on generation or validation failure
+        run: |
+          status="$(cat /tmp/verification.status)"
+          if [ "$status" -ne 0 ]; then
+            cat /tmp/verification.log
+            exit "$status"
+          fi
 
       - name: Build documentation
         run: |
