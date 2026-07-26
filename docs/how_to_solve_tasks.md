@@ -1,5 +1,7 @@
 # Как решать задачи на NASM
 
+> **ABI-условие для libc.** Перед первым полным фрагментом с `printf`/`scanf` тело функции должно получить `esp % 16 == 0`, например через `push ebp; mov ebp, esp; and esp, -16`. Padding и аргументы вместе занимают кратное 16 число байт; полный вывод находится в [C ABI / CDECL](/c_abi) и [паттерне выравнивания](/patterns/libc_alignment).
+
 Эта страница — алгоритм решения. Её нужно открыть, когда условие уже есть, а в голове пока хаос.
 
 ## Алгоритм
@@ -103,19 +105,21 @@ eax = eax + c
 Шаблон чтения одного `int`:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push x
 push fmtIn
 call scanf
-add esp, 8
+add esp, 16
 ```
 
 Шаблон печати результата из `eax`:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push eax
 push fmtOut
 call printf
-add esp, 8
+add esp, 16
 ```
 
 Главная ловушка:
@@ -185,29 +189,33 @@ section .text
     global main
 
 main:
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push a
     push fmtIn
     call scanf
-    add esp, 8
+    add esp, 16
 
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push b
     push fmtIn
     call scanf
-    add esp, 8
+    add esp, 16
 
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push c
     push fmtIn
     call scanf
-    add esp, 8
+    add esp, 16
 
     mov eax, [a]
     imul eax, [b]
     add eax, [c]
 
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push eax
     push fmtOut
     call printf
-    add esp, 8
+    add esp, 16
 
     xor eax, eax
     ret

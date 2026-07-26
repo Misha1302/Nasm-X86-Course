@@ -112,16 +112,17 @@ idiv ecx
 <a id="cp2-scanf"></a>
 ### CP2-SCANF — Пропуски: `scanf`
 
-Восстанови `scanf("%d", &x)`:
+Восстанови `scanf("%d", &x)` в body, где `esp % 16 == 0`:
 
 ```asm
+sub esp, ___
 push ___
 push ___
 call scanf
 add esp, ___
 ```
 
-Объясни, почему передаётся адрес, а не `[x]`.
+Объясни, почему передаётся адрес, а не `[x]`, и докажи `esp % 16 == 0` непосредственно перед `call`.
 
 <a id="cp2-mask"></a>
 ### CP2-MASK — Напиши masked merge

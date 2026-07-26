@@ -9,7 +9,7 @@
     "docs:dev": "npm run docs:generate && vitepress dev docs --host 0.0.0.0",
     "docs:build": "npm run docs:generate && npm run course:validate && vitepress build docs",
     "docs:preview": "vitepress preview docs --host 0.0.0.0",
-    "docs:clean": "rm -rf docs/.vitepress/cache docs/.vitepress/dist docs/textbook.md docs/course_migration.md"
+    "docs:clean": "rm -rf docs/.vitepress/cache docs/.vitepress/dist docs/textbook.md docs/course_migration.md docs/closed_book_workbook.md"
   },
   "devDependencies": {
     "vitepress": "1.6.4"

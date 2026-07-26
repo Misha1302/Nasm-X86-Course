@@ -1,5 +1,7 @@
 # Популярные шаблоны кода NASM x86
 
+> **ABI-условие для libc.** Перед первым полным фрагментом с `printf`/`scanf` тело функции должно получить `esp % 16 == 0`, например через `push ebp; mov ebp, esp; and esp, -16`. Padding и аргументы вместе занимают кратное 16 число байт; полный вывод находится в [C ABI / CDECL](/c_abi) и [паттерне выравнивания](/patterns/libc_alignment).
+
 ## Зачем эта страница
 
 Ассемблер проще учить не как набор отдельных инструкций, а как набор стандартных форм.
@@ -57,15 +59,17 @@ section .text
     global main
 
 main:
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push x
     push fmtIn
     call scanf
-    add esp, 8
+    add esp, 16
 
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push dword [x]
     push fmtOut
     call printf
-    add esp, 8
+    add esp, 16
 
     xor eax, eax
     ret
@@ -818,11 +822,11 @@ fld dword [x]
 fld dword [y]
 faddp
 
-sub esp, 8
+sub esp, 12      ; 4 bytes padding + 8-byte double
 fstp qword [esp]
 push fmtFloat
 call printf
-add esp, 12
+add esp, 16
 ```
 
 Важно:

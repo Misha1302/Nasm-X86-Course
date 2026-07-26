@@ -64,6 +64,7 @@
 | [AI-наставник](docs/ai_tutor_prompts.md) | guided learning, exam, recovery и review |
 | [Проверка AI-наставника](docs/ai_tutor_eval.md) | provider-backed eval contract |
 | Generated route `/textbook` | полный самостоятельный учебник; создаётся перед VitePress build |
+| [Closed-book workbook](docs/closed_book_workbook.md) | практика без встроенных ответов; generated перед build |
 | [Как решать задачи](docs/how_to_solve_tasks.md) | рабочий алгоритм решения |
 | [Карточки ошибок](docs/debug_cards.md) | типовые дефекты |
 | [Отладка в GDB](docs/debugging_with_gdb.md) | проверка состояния |

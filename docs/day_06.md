@@ -1,5 +1,7 @@
 # День 06. `scanf`, `printf` и первая настоящая программа
 
+> **ABI-условие для libc.** Перед первым полным фрагментом с `printf`/`scanf` тело функции должно получить `esp % 16 == 0`, например через `push ebp; mov ebp, esp; and esp, -16`. Padding и аргументы вместе занимают кратное 16 число байт; полный вывод находится в [C ABI / CDECL](/c_abi) и [паттерне выравнивания](/patterns/libc_alignment).
+
 ## Опора на материалы ВШЭ
 
 `Slides2026-04.pdf`, `Slides2026-07.pdf`: базовая NASM-программа, секции, вызовы функций, стековые аргументы.
@@ -15,6 +17,21 @@
 Если один из пунктов не получается объяснить или показать на маленьком примере, вернись к [Дню 05](/day_05).
 
 ---
+
+## ABI-инвариант: выравнивание перед `call`
+
+В современной GNU/Linux i386-среде одного порядка `push` и cleanup недостаточно. В полном `main` сначала создаём выровненное тело:
+
+```asm
+main:
+    push ebp
+    mov ebp, esp
+    and esp, -16
+```
+
+После этого перед каждым внешним `call` padding и аргументы вместе должны занимать кратное 16 число байт. Для двух 32-bit аргументов: `sub esp,8`, два `push`, `call`, `add esp,16`. Для трёх: `sub esp,4`, три `push`, cleanup 16. Эпилог: `mov esp,ebp; pop ebp; ret`.
+
+Короткий шаблон без этого frame считается только схемой порядка аргументов, а не полной ABI-корректной программой.
 
 ## За 30 секунд
 
@@ -90,15 +107,17 @@ section .text
     global main
 
 main:
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push x
     push fmtIn
     call scanf
-    add esp, 8
+    add esp, 16
 
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push dword [x]
     push fmtOut
     call printf
-    add esp, 8
+    add esp, 16
 
     xor eax, eax
     ret
@@ -124,10 +143,11 @@ printf("%d\n", x);
 CDECL кладёт их справа налево:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push dword [x]      ; second argument
 push fmtOut         ; first argument
 call printf
-add esp, 8
+add esp, 16
 ```
 
 Перед `call` стек выглядит так:
@@ -183,23 +203,26 @@ section .text
     global main
 
 main:
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push a
     push fmtIn
     call scanf
-    add esp, 8
+    add esp, 16
 
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push b
     push fmtIn
     call scanf
-    add esp, 8
+    add esp, 16
 
     mov eax, [a]
     add eax, [b]
 
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push eax
     push fmtOut
     call printf
-    add esp, 8
+    add esp, 16
 
     xor eax, eax
     ret
@@ -233,11 +256,12 @@ NASM:
 ```asm
 fmt2 db "%d%d", 0
 
+sub esp, 4       ; padding: 4 + 12 argument bytes = 16
 push b
 push a
 push fmt2
 call scanf
-add esp, 12
+add esp, 16
 ```
 
 Почему `push b`, потом `push a`, потом `push fmt2`?
@@ -251,10 +275,11 @@ add esp, 12
 Если ответ уже в `eax`, не надо сохранять его в память:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push eax
 push fmtOut
 call printf
-add esp, 8
+add esp, 16
 ```
 
 Но после `printf` нельзя считать, что `eax` всё ещё содержит ответ. `printf` имеет право испортить `eax`.
@@ -279,26 +304,29 @@ section .text
 
 main:
     ; read a
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push a
     push fmtIn
     call scanf
-    add esp, 8
+    add esp, 16
 
     ; read b
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push b
     push fmtIn
     call scanf
-    add esp, 8
+    add esp, 16
 
     ; compute answer in eax
     mov eax, [a]
     add eax, [b]
 
     ; print eax
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push eax
     push fmtOut
     call printf
-    add esp, 8
+    add esp, 16
 
     xor eax, eax
     ret
@@ -352,10 +380,11 @@ add esp, ___
 <summary>Ответ</summary>
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push dword [x]
 push fmtOut
 call printf
-add esp, 8
+add esp, 16
 ```
 
 </details>
@@ -372,10 +401,11 @@ mov eax, [a]
 imul eax, [b]
 add eax, 10
 
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push eax
 push fmtOut
 call printf
-add esp, 8
+add esp, 16
 ```
 
 </details>
@@ -385,10 +415,11 @@ add esp, 8
 ```asm
 mov eax, [answer]
 
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push eax
 push fmtOut
 call printf
-add esp, 8
+add esp, 16
 
 add eax, 1
 ```

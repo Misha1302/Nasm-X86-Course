@@ -1,5 +1,7 @@
 # День 17. Фрейм функции и CDECL
 
+> **ABI-условие для libc.** Перед первым полным фрагментом с `printf`/`scanf` тело функции должно получить `esp % 16 == 0`, например через `push ebp; mov ebp, esp; and esp, -16`. Padding и аргументы вместе занимают кратное 16 число байт; полный вывод находится в [C ABI / CDECL](/c_abi) и [паттерне выравнивания](/patterns/libc_alignment).
+
 ## Опора на материалы ВШЭ
 
 `Slides2026-07.pdf`, `Slides2026-08.pdf`: фреймы функций, `ebp`, CDECL, порядок аргументов, сохранение регистров, возвращаемое значение и рекурсия.
@@ -37,6 +39,10 @@
 - другие calling conventions.
 
 ---
+
+## Дополнение к CDECL: alignment — часть контракта
+
+CDECL определяет не только порядок параметров и владельца cleanup. Для современной i386 toolchain caller также сохраняет 16-byte call-site alignment. В выровненном body padding вычисляется по `argument_bytes`, а эпилог обязан восстановить исходный frame state. См. [точный паттерн](/patterns/libc_alignment).
 
 ## Зачем этот день
 
@@ -433,10 +439,11 @@ call printf
 
 ```asm
 push eax
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push eax
 push fmtOut
 call printf
-add esp, 8
+add esp, 16
 pop eax
 ```
 

@@ -4,6 +4,7 @@
 
 <a id="key-tr-01"></a>
 ## TR-01
+<!-- task-sha256: f65ba5d95b557ef56d040696472107e7e3516c2271368c6005a7191e9067119b -->
 
 - **Обязательный результат:** source → assembler → object file → linker → executable → loader → process → CPU execution.
 - **Инвариант:** инструменты сборки создают артефакты; loader создаёт состояние процесса; CPU исполняет уже загруженные инструкции.
@@ -13,6 +14,7 @@
 
 <a id="key-tr-02"></a>
 ## TR-02
+<!-- task-sha256: ba647b38d864ee8c9349579994a951345dfcd340ea3e3d84f0e0d54f46e42676 -->
 
 - **Обязательный результат:** проверить `file main.o`, наличие `gcc -m32`, multilib/32-bit libc и сборку минимального 32-битного C `main`.
 - **Инвариант:** успешный NASM-этап доказывает синтаксическую сборку `.o`, но не совместимость linker/runtime-среды.
@@ -22,6 +24,7 @@
 
 <a id="key-tr-03"></a>
 ## TR-03
+<!-- task-sha256: 46f668c2a405360e4eb9cebb691319e482a317d6c58fc59934c1f735bb57714a -->
 
 - **Обязательный результат:** `eax=5`, `ebx=14`; destination у `sub` — `eax`, у последней `add` — `ebx`; актуальные `eflags` оставила последняя `add`.
 - **Инвариант:** флаги принадлежат последней флагоизменяющей инструкции, а не всей последовательности.
@@ -31,6 +34,7 @@
 
 <a id="key-tr-04"></a>
 ## TR-04
+<!-- task-sha256: 3c26c5688c4196a59538c2538c67da98dd44306fbec99a622e5c19e611092872 -->
 
 - **Обязательный результат:** `eax=0x81AB1080`, `ax=0x1080`, `ah=0x10`, `al=0x80`; `al` unsigned `128`, signed `-128`.
 - **Инвариант:** `ah/al` перекрывают младшие байты `eax`; signedness меняет смысл, не биты.
@@ -40,6 +44,7 @@
 
 <a id="key-tr-05"></a>
 ## TR-05
+<!-- task-sha256: 8df2eb079bec104794781043584daf8828087300156ce26ed798df0cfb11902c -->
 
 - **Обязательный результат:** `eax` и `ecx` получают адрес `x`; `ebx` получает `17`; `mov [x],ebx` записывает значение; `lea` вычисляет адрес и не читает данные по нему.
 - **Инвариант:** скобки в memory operand означают разыменование, но скобки внутри effective-address syntax `lea` описывают только вычисление адреса.
@@ -49,15 +54,17 @@
 
 <a id="key-tr-06"></a>
 ## TR-06
+<!-- task-sha256: 2283eab1ab05e46120829bee99cd7b70619083699627175f541c8ac8e08b567b -->
 
-- **Обязательный результат:** аргументы справа налево; для `scanf` передаются `b`, `a`, `fmt`, затем `add esp,12`; результат `a-b` передаётся `printf`, затем `add esp,8`.
-- **Инвариант:** `scanf` получает addresses; caller очищает аргументы; `eax/ecx/edx` caller-saved.
+- **Обязательный результат:** body начинает вызов с `esp % 16 == 0`; `scanf`: `sub esp,4`, затем `b`, `a`, `fmt`, `call`, `add esp,16`; `printf`: `sub esp,8`, затем значение и `fmt`, `call`, `add esp,16`.
+- **Инвариант:** `scanf` получает addresses; перед внешним `call` `esp % 16 == 0`; caller удаляет padding и аргументы; `eax/ecx/edx` caller-saved.
 - **Типовая ошибка:** сохранить результат в `eax`, вызвать `printf`, а затем ожидать прежний `eax`.
 - **Контрпример:** libc имеет право изменить caller-saved registers.
 - **Повторение:** [День 06](/day_06), [CDECL](/c_abi).
 
 <a id="key-tr-07"></a>
 ## TR-07
+<!-- task-sha256: 706216a7c2323f1a76415c5196948802edb427d5834be00b59771484d05d9f9d -->
 
 - **Обязательный результат:** `7Fh+02h=81h`: unsigned `129`, signed `-127`, `CF=0`, `OF=1`; `FFh+02h=01h`: unsigned result bits `1` с carry, signed `1`, `CF=1`, `OF=0`.
 - **Инвариант:** `CF` описывает unsigned carry, `OF` — signed overflow.
@@ -67,6 +74,7 @@
 
 <a id="key-tr-08"></a>
 ## TR-08
+<!-- task-sha256: e7ee37cc0385f5e8e9c7ea9de845d2d8f197cbf92f0597b043fc80abb9bb5831 -->
 
 - **Обязательный результат:** `movzx eax,byte [x]` даёт `160`; `movsx eax,byte [x]` даёт `-96`.
 - **Инвариант:** расширение обязано определить все 32 бита результата.
@@ -76,6 +84,7 @@
 
 <a id="key-tr-09"></a>
 ## TR-09
+<!-- task-sha256: 9232b7afe09301920ad8e730ca6890481ef24441adb08c93136fbb100b2b07b4 -->
 
 - **Обязательный результат:** signed: `mov eax,-20; cdq; idiv 6` через регистр даёт quotient `-3`, remainder `-2`. Unsigned `0xFFFFFFEC / 6` после `xor edx,edx; div` даёт quotient `715827879`, remainder `2`.
 - **Инвариант:** signed и unsigned division используют разные high-half preparation и интерпретацию тех же битов.
@@ -85,6 +94,7 @@
 
 <a id="key-tr-10"></a>
 ## TR-10
+<!-- task-sha256: ecf5ec6c440dbd9c49e3460c0acfaf02f6b253a0ddbf6fec9c8003d8319d65d2 -->
 
 - **Обязательный результат:** допустим shape `diff=a-b; mask=diff>>31 arithmetic; result=b+(diff&mask)` с явным предусловием, что signed `a-b` представима.
 - **Инвариант:** знак переполненной разности не доказывает отношение `a<b`.
@@ -94,6 +104,7 @@
 
 <a id="key-tr-11"></a>
 ## TR-11
+<!-- task-sha256: e535d16c4bf15358e46e06f7069d69c7e6f4ec4c67455056b3534da425c6ae0c -->
 
 - **Обязательный результат:** в первой последовательности владелец — `sub edx,edx`; `mov` не меняет flags, но `sub` перезаписывает `cmp`. Во второй владелец — `test eax,eax`, потому что `lea` flags не меняет.
 - **Инвариант:** consumer читает последнее актуальное состояние flags.
@@ -103,6 +114,7 @@
 
 <a id="key-tr-12"></a>
 ## TR-12
+<!-- task-sha256: 28bc9163811adf71ac5f4b57e9bd648d4cf1f011789c394322a7b0796a320253 -->
 
 - **Обязательный результат:** три последовательные проверки с выходом по ложному условию: `test x,x; je`, unsigned `cmp y,15; ja`, `test x,8; je`, затем запись `answer=1`.
 - **Инвариант:** каждый `jcc` должен непосредственно потреблять нужные flags; `y` сравнивается unsigned.
@@ -112,6 +124,7 @@
 
 <a id="key-tr-13"></a>
 ## TR-13
+<!-- task-sha256: 36505ee74698bcbededd9476134fe4f57a3cca304e860af865641d715d96a548 -->
 
 - **Обязательный результат:** отдельные `check`, `body`, `step`, `end`; отрицательный элемент ведёт в `step`, ноль — в `end`, обычный путь добавляет и идёт в `step`.
 - **Инвариант:** `continue` в `for` проходит через increment.
@@ -121,6 +134,7 @@
 
 <a id="key-tr-14"></a>
 ## TR-14
+<!-- task-sha256: 7f4fc9be0db945a1d736059b98036ee2e09aa4a114af0396c10bfe73f37ce763 -->
 
 - **Обязательный результат:** cases `5..11`; mapping: `5→A`, `6→B`, `7→B`, `8→D`, `9→default`, `10→F`, `11→A`; объединены `6/7` и `5/11`.
 - **Инвариант:** исходный case равен `normalized index + 5`.
@@ -130,6 +144,7 @@
 
 <a id="key-tr-15"></a>
 ## TR-15
+<!-- task-sha256: 78d49e847cb6ba41102253ae9609ba22b794e3023c3e550e8ba85e782850d502 -->
 
 - **Обязательный результат:** адрес `base + 2*(i*7+j)`; например `imul eax,eax,7; add eax,ecx; movsx eax,word [edx+2*eax]`.
 - **Инвариант:** row-major index умножается на число столбцов, затем на размер элемента.
@@ -139,6 +154,7 @@
 
 <a id="key-tr-16"></a>
 ## TR-16
+<!-- task-sha256: 72f35d0279eb18ddf5889d2302b8ec0d5441966cf4d5e22dd96fca105a93508d -->
 
 - **Обязательный результат:** `0x0FFC=10`, `0x0FF8=20`, после `call` `esp=0x0FF4` и `[esp]=return address`; после `ret` `esp=0x0FF8`; после `add esp,8` — `0x1000`.
 - **Инвариант:** stack grows downward; `call` pushes return address; caller removes arguments.
@@ -148,6 +164,7 @@
 
 <a id="key-tr-17"></a>
 ## TR-17
+<!-- task-sha256: 638be1e7e2261b4d469988c88af64980a99ac60f3da0e85f8936ebb6112a672d -->
 
 - **Обязательный результат:** frame, аргументы `[ebp+8/12/16]`, сохранение `ebx`, разыменование `out`, return в `eax`, симметричный эпилог.
 - **Инвариант:** callee-saved register и frame state восстанавливаются на всех путях.
@@ -157,6 +174,7 @@
 
 <a id="key-tr-18"></a>
 ## TR-18
+<!-- task-sha256: 3cedc1ee711c1009bea5d0ea4bcd4c25fa86a2b510b094c629f39f8492fdcf9c -->
 
 - **Обязательные факты:** первый argument используется как pointer; читается unsigned byte; второй 32-битный slot складывается с zero-extended byte; результат возвращается в `eax`.
 - **Две допустимые реконструкции:** `int f(const unsigned char* p,int x)` и `uint32_t g(const uint8_t* data,uint32_t addend)`. Имена условны; `add` не доказывает signedness второго argument/result.
@@ -167,6 +185,7 @@
 
 <a id="key-tr-19"></a>
 ## TR-19
+<!-- task-sha256: a580dd0062032823286c9697d60c3f7e92284d6e8b9b0631db86ff71b7f3ee81 -->
 
 - **Обязательный результат:** типичный layout `tag@0`, padding `1..3`, `value@4`, `flags@8`, padding `10..11`, `next@12`, `sizeof=16`; `mov eax,[p]; mov eax,[eax+12]`.
 - **Инвариант:** alignment создаёт padding; pointer IA-32 имеет 4 байта.
@@ -176,6 +195,7 @@
 
 <a id="key-tr-20"></a>
 ## TR-20
+<!-- task-sha256: 389daec75163ae724ca7ad6d0848ea294de1e76374c5d6204e9e4ac306e3618f -->
 
 - **Обязательный результат:** `global main` экспортирует symbol; entry point хранится в ELF header и обычно указывает на `_start`; проверить `readelf -h`; путь loader → `_start` → runtime → `main`.
 - **Инвариант:** symbol visibility и process entry — разные свойства.
@@ -185,6 +205,7 @@
 
 <a id="key-tr-21"></a>
 ## TR-21
+<!-- task-sha256: 179cba8ecffe1b04da06e5664d73b3ee223c90e3d7cc80a902c1d2a4b905dc19 -->
 
 - **Обязательный результат:** возможная, но не гарантированная схема frame; canary обнаруживает часть перезаписей перед return; NX запрещает исполнение data pages; UB остаётся UB; layout зависит от compiler/ABI/options.
 - **Инвариант:** защитный механизм обнаруживает или усложняет эксплуатацию, но не легализует invalid access.
@@ -194,6 +215,7 @@
 
 <a id="key-tr-22"></a>
 ## TR-22
+<!-- task-sha256: a93a5c4738247bd45abadf8850d68fc75a6ff3d160408f540d28407dde57cae2 -->
 
 - **Обязательный результат:** `6.625=110.101₂=1.10101₂·2²`; `0.125=1/8=0.001₂` конечна; `0.2=1/5` периодична в base 2; вычисленное приближение может не совпасть с литералом/другой последовательностью операций по точному равенству.
 - **Инвариант:** конечная binary fraction после сокращения имеет denominator степени 2.
@@ -203,6 +225,7 @@
 
 <a id="key-tr-23"></a>
 ## TR-23
+<!-- task-sha256: 4a7aa5c3cf20bd72eac8c8584132be2d89372b14882c5540c68292b306c024b5 -->
 
 - **Обязательный результат:** корректный порядок, например `fld a; fld b; fsubp st1,st0; fld c; fld d; faddp st1,st0; fdivp st1,st0`; затем `sub esp,8; fstp qword [esp]; push fmt; call printf; add esp,12`.
 - **Инвариант:** `fld` pushes; `...p` pops; `sub/div` зависят от порядка; `%f` получает double.
@@ -212,6 +235,7 @@
 
 <a id="key-tr-24"></a>
 ## TR-24
+<!-- task-sha256: 9a5d5eb08313612faf8f029c81363de7e5503545ce22b2af279c5529ca01904d -->
 
 - **Обязательные факты:** argument-like value загружается в `ecx`; есть чтения `[ecx]`, `[ecx+4]`; target call читается из `[eax+8]`.
 - **Инвариант:** indirect call shape является фактом; this/vptr/virtual interpretation остаётся ABI-гипотезой.
@@ -223,6 +247,7 @@
 
 <a id="key-tr-25"></a>
 ## TR-25
+<!-- task-sha256: a217f81e2deb4713f9c56c1179b5ac9f0133a71b6478d4cc0707297ccb2324f6 -->
 
 - **Обязательные результаты:** `scanf` получает address `x`; `-13/5` даёт quotient `-2`, remainder `-3`; signed `x>=y` — `jge` после `cmp x,y`; frame: return `[ebp+4]`, first arg `[ebp+8]`, local ниже `ebp`; `%f` — 8-байтовый double плюс 4-байтовый format pointer, очистка 12 байт.
 - **Инвариант:** смешанная задача проверяет независимые центральные модели, одна сильная тема не компенсирует ноль в другой.

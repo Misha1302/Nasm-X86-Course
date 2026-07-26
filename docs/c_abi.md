@@ -1,5 +1,7 @@
 # x86 C ABI / CDECL: как вызывать C-функции из NASM
 
+> **ABI-условие для libc.** Перед первым полным фрагментом с `printf`/`scanf` тело функции должно получить `esp % 16 == 0`, например через `push ebp; mov ebp, esp; and esp, -16`. Padding и аргументы вместе занимают кратное 16 число байт; полный вывод находится в [C ABI / CDECL](/c_abi) и [паттерне выравнивания](/patterns/libc_alignment).
+
 ## Зачем эта страница
 
 Да, без отдельной страницы про ABI курс получается неполным.
@@ -40,10 +42,11 @@ printf("%d\n", x);
 NASM:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push dword [x]      ; second argument: x
 push fmtOut         ; first argument: "%d\n"
 call printf
-add esp, 8          ; caller removes 2 arguments * 4 bytes
+add esp, 16          ; caller removes 2 arguments * 4 bytes
 ```
 
 ---
@@ -375,10 +378,11 @@ call printf
 ```asm
 mov eax, [answer]
 
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push eax
 push fmtOut
 call printf
-add esp, 8
+add esp, 16
 
 ; здесь eax уже может быть не answer
 add eax, 1
@@ -390,10 +394,11 @@ add eax, 1
 mov eax, [answer]
 push eax              ; save answer
 
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push eax
 push fmtOut
 call printf
-add esp, 8
+add esp, 16
 
 pop eax               ; restore answer
 add eax, 1
@@ -414,10 +419,11 @@ printf("%d\n", x);
 NASM:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push dword [x]
 push fmtOut
 call printf
-add esp, 8
+add esp, 16
 ```
 
 Почему `[x]`?
@@ -427,10 +433,11 @@ add esp, 8
 Если ответ уже в `eax`:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push eax
 push fmtOut
 call printf
-add esp, 8
+add esp, 16
 ```
 
 ---
@@ -446,10 +453,11 @@ scanf("%d", &x);
 NASM:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push x
 push fmtIn
 call scanf
-add esp, 8
+add esp, 16
 ```
 
 Почему `x`, а не `[x]`?
@@ -487,11 +495,12 @@ scanf("%d%d", &a, &b);
 Push справа налево:
 
 ```asm
+sub esp, 4       ; padding: 4 + 12 argument bytes = 16
 push b
 push a
 push fmt2
 call scanf
-add esp, 12
+add esp, 16
 ```
 
 Строка формата:
@@ -521,11 +530,12 @@ printf("%d %d\n", a, b);
 Push справа налево:
 
 ```asm
+sub esp, 4       ; padding: 4 + 12 argument bytes = 16
 push dword [b]
 push dword [a]
 push fmt2Out
 call printf
-add esp, 12
+add esp, 16
 ```
 
 Строка:
@@ -561,10 +571,11 @@ add esp, 4
 
 ```asm
 ; scanf ждёт адрес int, а передали значение int
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push dword [x]
 push fmtIn
 call scanf
-add esp, 8
+add esp, 16
 ```
 
 ```asm
@@ -589,11 +600,11 @@ printf("%f", value);
 NASM-идея с x87:
 
 ```asm
-sub esp, 8
+sub esp, 12      ; 4 bytes padding + 8-byte double
 fstp qword [esp]
 push fmtFloat
 call printf
-add esp, 12
+add esp, 16
 ```
 
 Почему `12`?
@@ -647,10 +658,11 @@ main:
     call sum
     add esp, 8
 
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push eax
     push fmtOut
     call printf
-    add esp, 8
+    add esp, 16
 
     xor eax, eax
     ret
@@ -685,20 +697,22 @@ section .text
     global main
 
 main:
+    sub esp, 4       ; padding: 4 + 12 argument bytes = 16
     push b
     push a
     push fmtIn
     call scanf
-    add esp, 12
+    add esp, 16
 
     mov eax, [a]
     imul eax, [b]
     add eax, 10
 
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push eax
     push fmtOut
     call printf
-    add esp, 8
+    add esp, 16
 
     xor eax, eax
     ret
@@ -797,10 +811,11 @@ add esp, 12
 Адрес `x`:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push x
 push fmtIn
 call scanf
-add esp, 8
+add esp, 16
 ```
 
 </details>
@@ -813,10 +828,11 @@ add esp, 8
 Значение `[x]`:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push dword [x]
 push fmtOut
 call printf
-add esp, 8
+add esp, 16
 ```
 
 </details>

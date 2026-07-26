@@ -29,6 +29,17 @@
 9. различие same-session retrieval и spaced repetition;
 10. запрос одного недостающего факта вместо выдумывания условия.
 
+## Воспроизводимая сборка case
+
+Каждый case обязан хранить:
+
+- точный `prompt_heading`, выбирающий один fenced prompt mode;
+- `chapter_files` в фиксированном порядке;
+- `input_contract.task` и `input_contract.answer`;
+- `must`/`must_not` как scoring contract.
+
+Harness собирает полный input только из этих полей и сохраняет его вместе с output. Пустой `chapter_files` допустим только для кейса, который проверяет реакцию на отсутствующее условие. Это делает provider-run повторяемым, но не превращает static fixture в доказательство поведения модели.
+
 ## Минимальный provider-run
 
 Для каждого provider/model:

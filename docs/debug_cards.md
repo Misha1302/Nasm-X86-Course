@@ -1,5 +1,7 @@
 # Карточки ошибок NASM
 
+> **ABI-условие для libc.** Перед первым полным фрагментом с `printf`/`scanf` тело функции должно получить `esp % 16 == 0`, например через `push ebp; mov ebp, esp; and esp, -16`. Padding и аргументы вместе занимают кратное 16 число байт; полный вывод находится в [C ABI / CDECL](/c_abi) и [паттерне выравнивания](/patterns/libc_alignment).
+
 Эта страница — не теория, а быстрый отладочный справочник. Открой её, когда программа собирается, но ведёт себя странно.
 
 ## `scanf` падает или пишет в странное место
@@ -13,10 +15,11 @@ Segmentation fault после scanf
 Плохой код:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push dword [x]
 push fmtIn
 call scanf
-add esp, 8
+add esp, 16
 ```
 
 Причина:
@@ -26,10 +29,11 @@ add esp, 8
 Правильно:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push x
 push fmtIn
 call scanf
-add esp, 8
+add esp, 16
 ```
 
 ---
@@ -39,10 +43,11 @@ add esp, 8
 Плохой код:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push x
 push fmtOut
 call printf
-add esp, 8
+add esp, 16
 ```
 
 Причина:
@@ -52,19 +57,21 @@ add esp, 8
 Правильно:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push dword [x]
 push fmtOut
 call printf
-add esp, 8
+add esp, 16
 ```
 
 Если ответ уже в `eax`:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push eax
 push fmtOut
 call printf
-add esp, 8
+add esp, 16
 ```
 
 ---
@@ -76,10 +83,11 @@ add esp, 8
 ```asm
 mov eax, [answer]
 
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push eax
 push fmtOut
 call printf
-add esp, 8
+add esp, 16
 
 add eax, 1       ; здесь eax уже может быть не answer
 ```
@@ -99,10 +107,11 @@ add eax, 1
 ```asm
 ; вариант 2: сохранить значение
 push eax
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push eax
 push fmtOut
 call printf
-add esp, 8
+add esp, 16
 pop eax
 ```
 
@@ -332,11 +341,11 @@ call printf
 Правильно для x87:
 
 ```asm
-sub esp, 8
+sub esp, 12      ; 4 bytes padding + 8-byte double
 fstp qword [esp]
 push fmtFloat
 call printf
-add esp, 12
+add esp, 16
 ```
 
 Почему `12`?

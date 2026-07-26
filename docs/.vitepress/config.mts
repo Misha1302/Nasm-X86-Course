@@ -131,7 +131,8 @@ export default defineConfig({
                     { text: "Справочник инструкций", link: "/instruction_reference" },
                     { text: "Популярные инструкции", link: "/popular_instructions" },
                     { text: "Шаблоны кода", link: "/code_patterns" },
-                    { text: "Полный самостоятельный учебник", link: "/textbook" }
+                    { text: "Полный самостоятельный учебник", link: "/textbook" },
+                    { text: "Closed-book workbook", link: "/closed_book_workbook" }
                 ]
             }
         ],

@@ -1,5 +1,7 @@
 # День 07. Почему для `add` нет `iadd`
 
+> **ABI-условие для libc.** Перед первым полным фрагментом с `printf`/`scanf` тело функции должно получить `esp % 16 == 0`, например через `push ebp; mov ebp, esp; and esp, -16`. Padding и аргументы вместе занимают кратное 16 число байт; полный вывод находится в [C ABI / CDECL](/c_abi) и [паттерне выравнивания](/patterns/libc_alignment).
+
 ## Опора на материалы ВШЭ
 
 `Slides2026-04.pdf`: арифметические команды, знаковая и беззнаковая интерпретация битовых векторов, флаги результата.
@@ -340,23 +342,26 @@ section .text
     global main
 
 main:
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push a
     push fmtIn
     call scanf
-    add esp, 8
+    add esp, 16
 
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push b
     push fmtIn
     call scanf
-    add esp, 8
+    add esp, 16
 
     mov eax, [a]
     sub eax, [b]
 
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push eax
     push fmtOut
     call printf
-    add esp, 8
+    add esp, 16
 
     xor eax, eax
     ret

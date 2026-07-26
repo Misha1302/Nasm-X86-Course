@@ -312,6 +312,34 @@ Inf - Inf
 
 ---
 
+## 9. Сравнения с NaN: unordered
+
+NaN не ведёт себя как обычная числовая константа. В IEEE-модели сравнение с NaN является **unordered**:
+
+```text
+NaN == NaN  -> false
+NaN <  x    -> false
+NaN >  x    -> false
+NaN != NaN  -> true
+```
+
+Поэтому такая проверка неверна:
+
+```cpp
+if (x == NAN) { ... }
+```
+
+Используют `std::isnan(x)` или низкоуровневую проверку unordered-состояния, когда изучены соответствующие floating-point flags.
+
+Минимальный counterexample:
+
+```cpp
+double x = std::numeric_limits<double>::quiet_NaN();
+assert(x != x);
+```
+
+Это специальное правило NaN, а не обычная потеря точности.
+
 ## 9. Округление
 
 Так как битов конечное число, результат операции часто приходится округлять.
@@ -426,6 +454,15 @@ Infinity: `+Inf` или `-Inf` в зависимости от sign.
 
 </details>
 
+#### 6. Почему `x == NaN` не проверяет NaN?
+
+<details>
+<summary>Ответ</summary>
+
+Потому что NaN unordered и не равен даже самому себе. Нужна `isnan` или проверка unordered-состояния.
+
+</details>
+
 ---
 
 ## 13. Типовые ошибки
@@ -449,6 +486,7 @@ Infinity: `+Inf` или `-Inf` в зависимости от sign.
 - [ ] нарисовать layout `float`: sign/exponent/fraction;
 - [ ] объяснить normalized/denormalized на уровне идеи;
 - [ ] объяснить `Inf` и `NaN`;
+- [ ] объяснить, почему `NaN == NaN` ложно и как проверять NaN;
 - [ ] объяснить, почему floating point сравнивают осторожно;
 - [ ] быть готовым к x87 как механизму вычислений над такими числами.
 

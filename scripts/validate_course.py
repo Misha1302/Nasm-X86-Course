@@ -5,6 +5,9 @@ from dataclasses import dataclass
 from pathlib import Path
 import json
 import re
+import hashlib
+
+from course_manifest import DAY_RELATIVE_PATHS, GENERATED_RELATIVE_PATHS, STANDALONE_RELATIVE_PATHS
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
@@ -329,7 +332,7 @@ else:
 
 
 # Generated documents.
-for generated in (DOCS / "textbook.md", DOCS / "course_migration.md"):
+for generated in (DOCS / "textbook.md", DOCS / "course_migration.md", DOCS / "closed_book_workbook.md"):
     if not generated.is_file() or "сгенерирован" not in generated.read_text(encoding="utf-8").lower():
         errors.append(f"generated document is absent or lacks marker: {generated.relative_to(ROOT)}")
 
@@ -354,7 +357,7 @@ if textbook.is_file():
 migration = DOCS / "course_migration.md"
 if migration.is_file():
     rows = [line for line in migration.read_text(encoding="utf-8").splitlines() if re.match(r"^\| \[Day \d{2}\]", line)]
-    if len(rows) != 25 or any("| standalone | 6/6 |" not in row for row in rows):
+    if len(rows) != 25 or any("| structural-6/6 | 6/6 |" not in row for row in rows):
         errors.append("generated standalone status must contain 25 standalone 6/6 rows")
 
 
@@ -439,7 +442,7 @@ else:
 
 # Validate root-relative Markdown links and anchors.
 for path in DOCS.rglob("*.md"):
-    if path.name in {"textbook.md", "course_migration.md"}:
+    if path.name in {"textbook.md", "course_migration.md", "closed_book_workbook.md"}:
         continue
     text = path.read_text(encoding="utf-8")
     for target in re.findall(r"\[[^\]]+\]\((/[^)]+)\)", text):
@@ -457,6 +460,7 @@ for required_link in (
     "/ai_tutor_prompts",
     "/ai_tutor_eval",
     "/day_10_learning_path",
+    "/closed_book_workbook",
 ):
     if f'link: "{required_link}"' not in config:
         errors.append(f"VitePress navigation lacks standalone-learning page {required_link}")
@@ -474,6 +478,179 @@ for marker in (
         errors.append(f"README lacks standalone-course marker {marker!r}")
 if "постепенно переводится" in readme:
     errors.append("README still describes chapter migration as ongoing")
+
+# Review-remediation semantic and generator invariants.
+
+def normalized_contract(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip()
+
+
+if textbook.is_file():
+    actual_sources = re.findall(r"<!-- source: ([^ ]+) -->", textbook.read_text(encoding="utf-8"))
+    if actual_sources != list(STANDALONE_RELATIVE_PATHS):
+        errors.append(f"generated textbook source manifest mismatch: {actual_sources}")
+closed_book = DOCS / "closed_book_workbook.md"
+if not closed_book.is_file():
+    errors.append("missing generated docs/closed_book_workbook.md")
+else:
+    closed_text = closed_book.read_text(encoding="utf-8")
+    practice_sources = re.findall(r"<!-- source-practice: ([^ ]+) -->", closed_text)
+    if practice_sources != list(DAY_RELATIVE_PATHS):
+        errors.append(f"closed-book practice manifest mismatch: {practice_sources}")
+    if "<summary>Ответ</summary>" in closed_text:
+        errors.append("closed-book workbook leaks inline answers")
+
+
+ai_prompt_text = (DOCS / "ai_tutor_prompts.md").read_text(encoding="utf-8")
+prompt_blocks = [
+    block for block in re.findall(r"```text\n(.*?)```", ai_prompt_text, flags=re.S)
+    if any(tag in block for tag in ("<task>", "<chapter>", "<answer>"))
+]
+if len(prompt_blocks) < 7:
+    errors.append(f"expected at least seven structured AI prompt blocks, found {len(prompt_blocks)}")
+for index, block in enumerate(prompt_blocks, start=1):
+    contract = re.search(
+        r"(?s)<task>\s*.*?</task>\s*<chapter>\s*.*?</chapter>\s*<answer>\s*.*?</answer>\s*$",
+        block,
+    )
+    if contract is None:
+        errors.append(f"AI prompt block {index} lacks a terminal task/chapter/answer contract")
+
+
+if cases_path.is_file():
+    cases_data = json.loads(cases_path.read_text(encoding="utf-8"))
+    prompt_headings = {h.title for h in headings_outside_fences(ai_prompt_text)}
+    for item in cases_data.get("cases", []):
+        case_id = item.get("id")
+        heading = item.get("prompt_heading")
+        chapters = item.get("chapter_files")
+        contract = item.get("input_contract")
+        if heading not in prompt_headings:
+            errors.append(f"AI case {case_id} references unknown prompt heading: {heading!r}")
+        if not isinstance(chapters, list):
+            errors.append(f"AI case {case_id} lacks chapter_files list")
+        else:
+            for rel in chapters:
+                if not (ROOT / rel).is_file():
+                    errors.append(f"AI case {case_id} references missing chapter fixture: {rel}")
+        if not isinstance(contract, dict) or set(contract) != {"task", "answer"}:
+            errors.append(f"AI case {case_id} lacks exact input_contract")
+        if case_id != "AI-10-insufficient-data" and not chapters:
+            errors.append(f"AI case {case_id} must provide at least one chapter fixture")
+
+
+def transfer_sections(text: str) -> dict[str, str]:
+    matches = list(re.finditer(r"(?m)^## (TR-\d{2})\b.*$", text))
+    result: dict[str, str] = {}
+    for index, match in enumerate(matches):
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        result[match.group(1)] = text[match.end():end].strip()
+    return result
+
+_task_sections = transfer_sections(workbook)
+_key_sections = transfer_sections(keys)
+for transfer_id in expected_transfer_ids:
+    digest = hashlib.sha256(normalized_contract(_task_sections[transfer_id]).encode("utf-8")).hexdigest()
+    if f"<!-- task-sha256: {digest} -->" not in _key_sections[transfer_id]:
+        errors.append(f"{transfer_id} key fingerprint does not match current task")
+
+
+def x87_program(section: str) -> list[str]:
+    fenced = re.search(r"```asm\n(.*?)```", section, flags=re.S)
+    source = fenced.group(1) if fenced else ""
+    if not source:
+        inline = next((value for value in re.findall(r"`([^`]+)`", section) if "fld" in value), "")
+        source = inline.replace(";", "\n")
+    return [re.sub(r"\s+", " ", line.strip().lower()) for line in source.splitlines() if line.strip()]
+
+
+def simulate_x87(lines: list[str], values: dict[str, float]) -> list[float]:
+    stack: list[float] = []
+    for line in lines:
+        load = re.match(r"fld(?: dword| qword)? \[?([a-z][a-z0-9_]*)\]?", line)
+        if load:
+            stack.insert(0, values[load.group(1)])
+            continue
+        if line.startswith("faddp"):
+            stack = [stack[1] + stack[0], *stack[2:]]
+        elif line.startswith("fsubp"):
+            stack = [stack[1] - stack[0], *stack[2:]]
+        elif line.startswith("fmulp"):
+            stack = [stack[1] * stack[0], *stack[2:]]
+        elif line.startswith("fdivp"):
+            stack = [stack[1] / stack[0], *stack[2:]]
+    return stack
+
+for label, section, values, expected in (
+    ("TR-23", _key_sections["TR-23"], {"a": 10.0, "b": 4.0, "c": 1.0, "d": 2.0}, 2.0),
+    (
+        "CP5-X87-TRANSFER",
+        section_text(checkpoint_keys, headings_outside_fences(checkpoint_keys), "CP5-X87-TRANSFER"),
+        {"a": 10.0, "b": 4.0, "c": 3.0},
+        2.0,
+    ),
+):
+    try:
+        stack = simulate_x87(x87_program(section), values)
+    except (IndexError, KeyError, ZeroDivisionError) as exc:
+        errors.append(f"{label} x87 semantic fixture failed to execute: {exc}")
+    else:
+        if len(stack) != 1 or abs(stack[0] - expected) > 1e-9:
+            errors.append(f"{label} x87 operand order/depth is wrong: stack={stack}, expected={expected}")
+
+
+def validate_example_stack_alignment(path: Path) -> None:
+    lines = path.read_text(encoding="utf-8").splitlines()
+    delta: int | None = None
+    saw_external = False
+    for number, raw in enumerate(lines, start=1):
+        line = raw.split(";", 1)[0].strip().lower()
+        if not line:
+            continue
+        if line == "and esp, -16":
+            delta = 0
+            continue
+        if delta is None:
+            continue
+        if line.startswith("push "):
+            delta -= 4
+        elif line.startswith("pop "):
+            delta += 4
+        else:
+            match = re.match(r"(add|sub) esp,\s*(\d+)$", line)
+            if match:
+                amount = int(match.group(2))
+                delta += amount if match.group(1) == "add" else -amount
+            elif line.startswith("mov esp, ebp"):
+                delta = None
+        if line in {"call printf", "call scanf"}:
+            saw_external = True
+            if delta % 16 != 0:
+                errors.append(f"misaligned external call in {path.relative_to(ROOT)}:{number}: esp delta {delta}")
+    if saw_external:
+        text_value = path.read_text(encoding="utf-8")
+        for marker in ("push ebp", "mov ebp, esp", "and esp, -16", "mov esp, ebp", "pop ebp"):
+            if marker not in text_value:
+                errors.append(f"{path.relative_to(ROOT)} lacks aligned-frame marker {marker!r}")
+
+for example in (ROOT / "examples").glob("*.asm"):
+    validate_example_stack_alignment(example)
+
+
+for path in [*(ROOT / "examples").glob("*.asm"), *DOCS.rglob("*.md")]:
+    source = path.read_text(encoding="utf-8")
+    if re.search(r"sub esp,\s*12.*?fstp qword \[esp \+ 4\].*?push .*?call printf", source, flags=re.S | re.I):
+        errors.append(f"x87 variadic padding splits arguments in {path.relative_to(ROOT)}")
+
+
+day22_text = (DOCS / "day_22.md").read_text(encoding="utf-8")
+for marker in ("unordered", "NaN == NaN", "isnan"):
+    if marker not in day22_text:
+        errors.append(f"Day 22 lacks prerequisite for CP5-NAN: {marker!r}")
+
+for marker in ("Операциональная граница", "Составные задания", "Граница 1/0"):
+    if marker not in checkpoint_keys:
+        errors.append(f"checkpoint scoring rubric lacks marker {marker!r}")
 
 if errors:
     raise SystemExit("Course validation failed:\n- " + "\n- ".join(errors))

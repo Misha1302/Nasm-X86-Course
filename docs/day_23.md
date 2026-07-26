@@ -1,5 +1,7 @@
 # День 23. x87: вещественные числа как стек
 
+> **ABI-условие для libc.** Перед первым полным фрагментом с `printf`/`scanf` тело функции должно получить `esp % 16 == 0`, например через `push ebp; mov ebp, esp; and esp, -16`. Padding и аргументы вместе занимают кратное 16 число байт; полный вывод находится в [C ABI / CDECL](/c_abi) и [паттерне выравнивания](/patterns/libc_alignment).
+
 ## Опора на материалы ВШЭ
 
 `Slides2026-0x10.pdf`: x87 FPU, `FINIT`, регистры `st0..st7`, control/status/tag word, `fld`, `fst`, `fstp`, `faddp`, `fsubp`, `fmulp`, `fdivp`, печать через `printf("%f")`, связь со стековой моделью и обратной польской записью.
@@ -371,11 +373,11 @@ main:
     fld dword [y]
     faddp
 
-    sub esp, 8
+    sub esp, 12      ; 4 bytes padding + 8-byte double
     fstp qword [esp]
     push fmt
     call printf
-    add esp, 12
+    add esp, 16
 
     xor eax, eax
     ret

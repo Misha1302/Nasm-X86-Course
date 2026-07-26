@@ -1,5 +1,7 @@
 # День 05. `x` и `[x]`: адрес против значения
 
+> **ABI-условие для libc.** Перед первым полным фрагментом с `printf`/`scanf` тело функции должно получить `esp % 16 == 0`, например через `push ebp; mov ebp, esp; and esp, -16`. Padding и аргументы вместе занимают кратное 16 число байт; полный вывод находится в [C ABI / CDECL](/c_abi) и [паттерне выравнивания](/patterns/libc_alignment).
+
 ## Опора на материалы ВШЭ
 
 `Slides2026-02.pdf`, `Slides2026-04.pdf`: память, little-endian, секции `.data`, `.bss`, `.text`, статические данные и обращение к памяти.
@@ -174,10 +176,11 @@ scanf("%d", &x);
 NASM:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push x
 push fmtIn
 call scanf
-add esp, 8
+add esp, 16
 ```
 
 Почему `x`?
@@ -205,10 +208,11 @@ printf("%d", x);
 NASM:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push dword [x]
 push fmtOut
 call printf
-add esp, 8
+add esp, 16
 ```
 
 Почему `[x]`?
@@ -259,10 +263,11 @@ section .text
     global main
 
 main:
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push dword [x]
     push fmtOut
     call printf
-    add esp, 8
+    add esp, 16
 
     xor eax, eax
     ret
@@ -334,10 +339,11 @@ add esp, ___
 <summary>Ответ</summary>
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push x
 push fmtIn
 call scanf
-add esp, 8
+add esp, 16
 ```
 
 </details>
@@ -356,10 +362,11 @@ x resd 1
 <summary>Ответ</summary>
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push dword [x]
 push fmtOut
 call printf
-add esp, 8
+add esp, 16
 ```
 
 </details>
@@ -367,10 +374,11 @@ add esp, 8
 ### D. Найди баг
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push dword [x]
 push fmtIn
 call scanf
-add esp, 8
+add esp, 16
 ```
 
 Что не так?
