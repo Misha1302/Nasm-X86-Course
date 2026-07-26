@@ -32,12 +32,11 @@ jobs:
       - name: Assemble encoded payload
         shell: bash
         run: |
-          set +e
-          {
-            echo '== directory =='
-            find .course-pedagogy -maxdepth 1 -type f -printf '%f %s bytes\n' | sort
-            echo '== assembler =='
-            python3 - <<'PY'
+          set -euo pipefail
+          work_dir="$RUNNER_TEMP/course-pedagogy"
+          mkdir -p "$work_dir"
+          WORK_DIR="$work_dir" python3 - <<'PY'
+          import os
           from pathlib import Path
 
           paths = [
@@ -53,53 +52,40 @@ jobs:
           ]
           parts = []
           for raw_path in paths:
-              path = Path(raw_path)
-              text = path.read_text(encoding='ascii').replace('\r', '').replace('\n', '')
+              text = Path(raw_path).read_text(encoding='ascii').replace('\r', '').replace('\n', '')
               print(f'{raw_path}: {len(text)} bytes')
               parts.append(text)
           payload = ''.join(parts)
-          Path('/tmp/course-pedagogy.patch.xz.b64').write_text(payload, encoding='ascii')
+          output = Path(os.environ['WORK_DIR']) / 'patch.xz.b64'
+          output.write_text(payload, encoding='ascii')
           print(f'encoded payload bytes: {len(payload)}')
           PY
-          } > /tmp/course-pedagogy-assembly.log 2>&1
-          status=$?
-          cat /tmp/course-pedagogy-assembly.log
-          exit "$status"
-
-      - name: Persist assembly diagnostics
-        if: failure()
-        shell: bash
-        run: |
-          set -euo pipefail
-          cp /tmp/course-pedagogy-assembly.log .course-pedagogy/diagnostic.txt
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add .course-pedagogy/diagnostic.txt
-          git commit -m 'chore: record pedagogy payload diagnostic'
-          git push origin HEAD:fix/course-pedagogy-20260726
 
       - name: Verify compressed payload
         shell: bash
         run: |
           set -euo pipefail
-          base64 --decode /tmp/course-pedagogy.patch.xz.b64 > /tmp/course-pedagogy.patch.xz
-          sha256sum /tmp/course-pedagogy.patch.xz
-          echo 'b296e0be0b99bff0ebc5f796681983a98c8d51e8922335603f5e8793c766d51c  /tmp/course-pedagogy.patch.xz' | sha256sum --check -
+          work_dir="$RUNNER_TEMP/course-pedagogy"
+          base64 --decode "$work_dir/patch.xz.b64" > "$work_dir/patch.xz"
+          sha256sum "$work_dir/patch.xz"
+          echo "b296e0be0b99bff0ebc5f796681983a98c8d51e8922335603f5e8793c766d51c  $work_dir/patch.xz" | sha256sum --check -
 
       - name: Verify decompressed patch
         shell: bash
         run: |
           set -euo pipefail
-          xz --decompress --stdout /tmp/course-pedagogy.patch.xz > /tmp/course-pedagogy.patch
-          sha256sum /tmp/course-pedagogy.patch
-          echo '7962939bcd8e9d69dd6a4dfb71127c1678cc5b6f3a4a2af3f90749067c5e0415  /tmp/course-pedagogy.patch' | sha256sum --check -
+          work_dir="$RUNNER_TEMP/course-pedagogy"
+          xz --decompress --stdout "$work_dir/patch.xz" > "$work_dir/patch"
+          sha256sum "$work_dir/patch"
+          echo "7962939bcd8e9d69dd6a4dfb71127c1678cc5b6f3a4a2af3f90749067c5e0415  $work_dir/patch" | sha256sum --check -
 
       - name: Check and apply patch
         shell: bash
         run: |
           set -euo pipefail
-          git apply --check /tmp/course-pedagogy.patch
-          git apply /tmp/course-pedagogy.patch
+          patch_file="$RUNNER_TEMP/course-pedagogy/patch"
+          git apply --check "$patch_file"
+          git apply "$patch_file"
 
       - name: Remove one-shot transport
         shell: bash
@@ -131,10 +117,10 @@ jobs:
           set -euo pipefail
           for file in examples/*.asm; do
             name="$(basename "$file" .asm)"
-            nasm -f elf32 -g -F dwarf "$file" -o "/tmp/$name.o"
-            gcc -m32 -g -no-pie -Wl,-z,noexecstack "/tmp/$name.o" -o "/tmp/$name"
-            "/tmp/$name" > "/tmp/$name.out"
-            diff -u "examples/expected/$name.txt" "/tmp/$name.out"
+            nasm -f elf32 -g -F dwarf "$file" -o "$RUNNER_TEMP/$name.o"
+            gcc -m32 -g -no-pie -Wl,-z,noexecstack "$RUNNER_TEMP/$name.o" -o "$RUNNER_TEMP/$name"
+            "$RUNNER_TEMP/$name" > "$RUNNER_TEMP/$name.out"
+            diff -u "examples/expected/$name.txt" "$RUNNER_TEMP/$name.out"
           done
 
       - name: Commit verified course revision
