@@ -1,0 +1,35 @@
+name: One-shot course repair
+
+on:
+  push:
+    branches: [fix/course-quality-20260726-impl]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repair branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/course-quality-20260726-impl
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install NASM and 32-bit toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nasm gcc-multilib libc6-dev-i386
+
+      - name: Apply, validate and commit repairs
+        env:
+          GITHUB_REF_NAME: fix/course-quality-20260726-impl
+        run: python3 scripts/apply_course_repairs.py
