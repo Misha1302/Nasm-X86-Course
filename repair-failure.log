@@ -1,5 +1,5 @@
 
-up to date in 9s
+up to date in 7s
 
 added 127 packages in 2s
 
@@ -14,13 +14,39 @@ added 127 packages in 2s
 > nasm-x86-course@0.1.0 course:validate
 > python3 scripts/validate_course.py
 
-Course validation failed:
-- missing technical boundary 'может переполниться' in docs/day_10.md
+Course validation passed
+
+  [32m[1mvitepress[22m v1.6.4[39m
+
+- building client + server bundles...
+[33m
+The language 'gdb' is not loaded, falling back to 'txt' for syntax highlighting.[39m
+[33m
+The language 'gdb' is not loaded, falling back to 'txt' for syntax highlighting.[39m
+[33m
+The language 'gdb' is not loaded, falling back to 'txt' for syntax highlighting.[39m
+[33m
+The language 'gdb' is not loaded, falling back to 'txt' for syntax highlighting.[39m
+[33m
+The language 'gdb' is not loaded, falling back to 'txt' for syntax highlighting.[39m
+[33m
+The language 'gdb' is not loaded, falling back to 'txt' for syntax highlighting.[39m
+[33m
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[33m
+The language 'gdb' is not loaded, falling back to 'txt' for syntax highlighting.[39m
+[33m
+The language 'gdb' is not loaded, falling back to 'txt' for syntax highlighting.[39m
+[33m
+The language 'gdb' is not loaded, falling back to 'txt' for syntax highlighting.[39m
+[32m✓[0m building client + server bundles...
+- rendering pages...
+[32m✓[0m rendering pages...
+build complete in 15.08s.
 Traceback (most recent call last):
-  File "/home/runner/work/Nasm-X86-Course/Nasm-X86-Course/scripts/apply_course_repairs.py", line 536, in <module>
-    run("npm", "run", "docs:build")
-  File "/home/runner/work/Nasm-X86-Course/Nasm-X86-Course/scripts/apply_course_repairs.py", line 15, in run
-    subprocess.run(args, cwd=ROOT, check=True)
-  File "/usr/lib/python3.12/subprocess.py", line 571, in run
-    raise CalledProcessError(retcode, process.args,
-subprocess.CalledProcessError: Command '('npm', 'run', 'docs:build')' returned non-zero exit status 1.
+  File "/home/runner/work/Nasm-X86-Course/Nasm-X86-Course/scripts/apply_course_repairs.py", line 548, in <module>
+    raise RuntimeError(f"Unexpected output for {stem}")
+RuntimeError: Unexpected output for 01_minimal
