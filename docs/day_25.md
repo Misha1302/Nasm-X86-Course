@@ -653,3 +653,12 @@ memory -> register -> operation -> flags / memory / stack
 | function pointers/varargs | [Advanced stack](/patterns/advanced_stack) |
 | большой результат | [Big integer](/patterns/bigint) |
 | идеи загруженных задач | [Идеи решений задач](/tasks/) |
+
+---
+
+## Следующий шаг
+
+1. Реши [TR-25 в рабочей тетради](/transfer_workbook#tr-25) без просмотра ответа.
+2. После законченной попытки открой [диагностический ключ TR-25](/transfer_keys#key-tr-25).
+3. Запиши нарушенный инвариант и минимальный контрпример в журнал ошибок.
+4. Если модель верна — переходи дальше; если нет — вернись к указанному prerequisite и затем реши новый вариант.
