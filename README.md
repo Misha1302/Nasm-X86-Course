@@ -64,6 +64,9 @@ gcc -m32 -no-pie main.o -o main
 |---|---|
 | [`docs/how_to_solve_tasks.md`](docs/how_to_solve_tasks.md) | алгоритм решения NASM-задач |
 | [`docs/debug_cards.md`](docs/debug_cards.md) | быстрый справочник типовых ошибок |
+| [`docs/debugging_with_gdb.md`](docs/debugging_with_gdb.md) | пошаговая отладка регистров, памяти и стека |
+| [`docs/support_matrix.md`](docs/support_matrix.md) | проверяемая матрица учебных сред |
+| [`docs/modern_x86_64_next.md`](docs/modern_x86_64_next.md) | следующий трек после экзаменационного IA-32 |
 | [`docs/course_style.md`](docs/course_style.md) | стандарт структуры глав |
 
 | [`docs/patterns/index.md`](docs/patterns/index.md) | экзаменационные паттерны: branchless, recursion, strings/files, bigint |

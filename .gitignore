@@ -11,3 +11,5 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 project_code_bundle.md
+docs/textbook.md
+docs/course_migration.md

@@ -16,16 +16,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
-      - name: Install dependencies
-        run: |
-          rm -f package-lock.json
-          npm install --no-audit --no-fund --registry=https://registry.npmjs.org/
+      - name: Install dependencies from lock file
+        run: npm ci --no-audit --no-fund
 
-      - name: Build VitePress site
+      - name: Generate, validate and build VitePress site
         run: npm run docs:build
 
-  asm-smoke:
+  asm-examples:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -36,12 +35,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y nasm gcc-multilib libc6-dev-i386
 
-      - name: Build examples
+      - name: Build and verify examples
         run: |
-          set -eux
+          set -euo pipefail
           for file in examples/*.asm; do
             name="$(basename "$file" .asm)"
-            nasm -f elf32 "$file" -o "/tmp/$name.o"
-            gcc -m32 -no-pie "/tmp/$name.o" -o "/tmp/$name"
-            "/tmp/$name" >/tmp/$name.out
+            nasm -f elf32 -g -F dwarf "$file" -o "/tmp/$name.o"
+            gcc -m32 -g -no-pie -Wl,-z,noexecstack "/tmp/$name.o" -o "/tmp/$name"
+            "/tmp/$name" > "/tmp/$name.out"
+            diff -u "examples/expected/$name.txt" "/tmp/$name.out"
           done
