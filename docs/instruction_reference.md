@@ -206,11 +206,15 @@ x87 — отдельная стековая машина для floating point. 
 Главная ловушка:
 
 ```asm
-; printf("%f") ждёт double, то есть qword
-fstp qword [esp+4]
+; printf("%f", value): выделяем 8 байт под double
+sub esp, 8
+fstp qword [esp]
+push fmt
+call printf
+add esp, 12
 ```
 
-Если передать `dword`, можно получить мусор.
+Если передать `dword` или не выделить место под восемь байт, `printf` прочитает неверный аргумент.
 
 ### 7. Очень короткая шпаргалка “что учить первым”
 
