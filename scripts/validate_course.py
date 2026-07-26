@@ -61,7 +61,18 @@ def resolve_doc_link(target: str) -> bool:
     return (DOCS / f"{relative}.md").is_file() or (DOCS / relative / "index.md").is_file()
 
 
-# Core day files and real Markdown structure.
+def require_markers(rel: str, markers: tuple[str, ...]) -> None:
+    path = ROOT / rel
+    if not path.is_file():
+        errors.append(f"missing required file: {rel}")
+        return
+    text = path.read_text(encoding="utf-8")
+    for marker in markers:
+        if marker not in text:
+            errors.append(f"missing marker {marker!r} in {rel}")
+
+
+# Core day files and chapter structure.
 required_day_headings = (
     "Входные знания",
     "За 30 секунд",
@@ -97,32 +108,127 @@ for day in range(1, 26):
         errors.append(f"prerequisite section lacks a concrete clickable return route: {path.relative_to(ROOT)}")
 
     practice = section_text(text, headings, "Практика")
-    practice_subheadings = [
-        heading for heading in headings
-        if heading.line > next((h.line for h in headings if h.title == "Практика"), 10**9)
-        and heading.level >= 3
-    ]
-    # Restrict to the practice section boundary.
     if practice:
         practice_headings = headings_outside_fences(practice)
         if len([h for h in practice_headings if h.level >= 3]) < 2:
             errors.append(f"practice must contain at least two observable tasks: {path.relative_to(ROOT)}")
 
     checklist = section_text(text, headings, "Чеклист")
-    checklist_items = re.findall(r"(?m)^\s*- \[ \] ", checklist)
-    if len(checklist_items) < 3:
+    if len(re.findall(r"(?m)^\s*- \[ \] ", checklist)) < 3:
         errors.append(f"checklist has fewer than three observable actions: {path.relative_to(ROOT)}")
 
     error_heading_markers = ("Типовые ошибки", "Частые ошибки", "Что может пойти не так", "типовых провалов")
     if not any(any(marker.lower() in heading.title.lower() for marker in error_heading_markers) for heading in headings):
         errors.append(f"missing a real typical-errors section: {path.relative_to(ROOT)}")
-
     if "```" not in text:
         errors.append(f"chapter has no executable/diagram example: {path.relative_to(ROOT)}")
 
 
-# Learning-support pages and generated documents.
-for rel in ("docs/checkpoints.md", "docs/instruction_reference.md", "docs/popular_instructions.md"):
+# Standalone-learning surface.
+standalone_pages = {
+    "docs/self_study.md": (
+        "Цикл одной главы",
+        "Интервальное повторение",
+        "Журнал ошибок",
+        "](/transfer_workbook)",
+        "](/checkpoint_keys)",
+        "](/ai_tutor_prompts)",
+    ),
+    "docs/transfer_workbook.md": tuple(f"## День {day:02d}" for day in range(1, 26)),
+    "docs/transfer_keys.md": tuple(f"## День {day:02d}" for day in range(1, 26)),
+    "docs/checkpoint_keys.md": tuple(f"## Checkpoint {number}" for number in range(1, 7)),
+    "docs/ai_tutor_prompts.md": (
+        "Универсальный наставник по главе",
+        "Совместное изучение новой темы",
+        "Режим строгого зачёта",
+        "Диагностика непонимания",
+        "Разбор моего решения",
+        "Устный тренажёр",
+        "DeepSeek",
+    ),
+    "docs/day_10_learning_path.md": tuple(f"Сессия 10{letter}" for letter in "ABCDE"),
+    "docs/checkpoints.md": tuple(f"Checkpoint {number}" for number in range(1, 7)),
+}
+for rel, markers in standalone_pages.items():
+    require_markers(rel, markers)
+
+self_study = (DOCS / "self_study.md").read_text(encoding="utf-8")
+for phrase in ("не является результатом", "Центральные инварианты", "На следующий день", "Через 7 дней"):
+    if phrase not in self_study:
+        errors.append(f"self-study contract lacks {phrase!r}")
+
+workbook = (DOCS / "transfer_workbook.md").read_text(encoding="utf-8")
+keys = (DOCS / "transfer_keys.md").read_text(encoding="utf-8")
+if len(re.findall(r"(?m)^## День \d{2}", workbook)) != 25:
+    errors.append("transfer workbook must contain exactly 25 day tasks")
+if len(re.findall(r"(?m)^## День \d{2}", keys)) != 25:
+    errors.append("transfer keys must contain exactly 25 day keys")
+if "](/transfer_keys)" not in workbook:
+    errors.append("transfer workbook must link to separate keys")
+
+prompts = (DOCS / "ai_tutor_prompts.md").read_text(encoding="utf-8")
+for invariant in (
+    "не показывай решение",
+    "по одному",
+    "IA-32",
+    "не смешивай IA-32 и x86-64",
+    "нарушенный инвариант",
+):
+    if invariant.lower() not in prompts.lower():
+        errors.append(f"AI tutor pack lacks safety/teaching invariant {invariant!r}")
+
+
+# Checkpoints: six gates, separate skills, transfer, and corrected Day-04 boundary.
+checkpoints = (DOCS / "checkpoints.md").read_text(encoding="utf-8")
+checkpoint_headings = [
+    h for h in headings_outside_fences(checkpoints)
+    if h.level == 2 and h.title.startswith("Checkpoint ")
+]
+if len(checkpoint_headings) != 6:
+    errors.append(f"expected six checkpoints, found {len(checkpoint_headings)}")
+for number in range(1, 7):
+    heading = next((h for h in checkpoint_headings if h.title.startswith(f"Checkpoint {number} ")), None)
+    if heading is None:
+        continue
+    section = section_text(checkpoints, headings_outside_fences(checkpoints), heading.title)
+    for mode in ("Trace", "Пропуски", "Напиши", "Найди баг", "Transfer"):
+        if mode not in section:
+            errors.append(f"checkpoint {number} lacks mode {mode!r}")
+    if "Критические навыки" not in section:
+        errors.append(f"checkpoint {number} lacks critical-skill declaration")
+
+checkpoint1 = section_text(checkpoints, headings_outside_fences(checkpoints), checkpoint_headings[0].title)
+for forbidden in ("mov [a], [b]", "push x", "printf", "scanf"):
+    if forbidden in checkpoint1:
+        errors.append(f"checkpoint 1 leaks post-Day-04 material: {forbidden!r}")
+for required in ("signed", "unsigned", "размер", "ah", "al"):
+    if required.lower() not in checkpoint1.lower():
+        errors.append(f"checkpoint 1 lacks Day-04 skill {required!r}")
+
+coverage_markers = {
+    2: ("edx:eax", "маск", "округление"),
+    3: ("jump table", "флаг", "адрес"),
+    4: ("return address", "Node", "callee-saved"),
+    5: ("0.1", "x87", "qword", "startup", "NaN"),
+    6: ("hidden `this`", "vptr", "indirect"),
+}
+for number, markers in coverage_markers.items():
+    title = next(h.title for h in checkpoint_headings if h.title.startswith(f"Checkpoint {number} "))
+    section = section_text(checkpoints, headings_outside_fences(checkpoints), title)
+    for marker in markers:
+        if marker.lower() not in section.lower():
+            errors.append(f"checkpoint {number} claims coverage but lacks marker {marker!r}")
+
+
+# Existing support pages and generated documents.
+for rel in (
+    "docs/instruction_reference.md",
+    "docs/popular_instructions.md",
+    "docs/how_to_solve_tasks.md",
+    "docs/debug_cards.md",
+    "docs/debugging_with_gdb.md",
+    "docs/support_matrix.md",
+):
     if not (ROOT / rel).is_file():
         errors.append(f"missing learning support page: {rel}")
 
@@ -145,7 +251,7 @@ if popular.is_file():
     if "](/instruction_reference)" not in popular_text:
         errors.append("popular_instructions.md must delegate to the canonical instruction reference")
     if len(popular_text.splitlines()) > 30 or "```" in popular_text:
-        errors.append("popular_instructions.md must remain a short compatibility index, not a second reference owner")
+        errors.append("popular_instructions.md must remain a short compatibility index")
 
 
 # Reproducibility and executable examples.
@@ -157,24 +263,20 @@ asm_stems = {path.stem for path in (ROOT / "examples").glob("*.asm")}
 expected_stems = {path.stem for path in (ROOT / "examples" / "expected").glob("*.txt")}
 if asm_stems != expected_stems:
     errors.append(f"example/expected mismatch: asm={sorted(asm_stems)}, expected={sorted(expected_stems)}")
-
 for path in (ROOT / "examples").glob("*.asm"):
     if ".note.GNU-stack" not in path.read_text(encoding="utf-8"):
         errors.append(f"missing non-executable-stack marker: {path.relative_to(ROOT)}")
 
 
-# Decision-critical technical boundaries and semantic regressions.
+# Decision-critical technical boundaries.
 required_markers = {
-    "docs/day_25.md": ["uint32_t mask = 0u - (ux >> 31);", "INT32_MIN", "**100**", "**90 мин**"],
-    "docs/day_10.md": ["может переполниться", "INT32_MIN"],
-    "docs/patterns/branchless.md": ["INT32_MIN"],
-    "docs/tasks/spring-01/01-14-garden.md": ["может переполниться"],
+    "docs/day_25.md": ("uint32_t mask = 0u - (ux >> 31);", "INT32_MIN", "**100**", "**90 мин**"),
+    "docs/day_10.md": ("может переполниться", "INT32_MIN"),
+    "docs/patterns/branchless.md": ("INT32_MIN",),
+    "docs/tasks/spring-01/01-14-garden.md": ("может переполниться",),
 }
 for rel, markers in required_markers.items():
-    text = (ROOT / rel).read_text(encoding="utf-8")
-    for marker in markers:
-        if marker not in text:
-            errors.append(f"missing technical boundary {marker!r} in {rel}")
+    require_markers(rel, markers)
 
 for path in DOCS.rglob("*.md"):
     text = path.read_text(encoding="utf-8")
@@ -186,33 +288,6 @@ startup_text = (DOCS / "day_20.md").read_text(encoding="utf-8")
 if re.search(r"`?main`?\s+вызывает\s+runtime", startup_text, flags=re.I):
     errors.append("day_20.md reverses the startup direction: runtime calls main")
 
-checkpoints = (DOCS / "checkpoints.md").read_text(encoding="utf-8")
-checkpoint_headings = [h for h in headings_outside_fences(checkpoints) if h.level == 2 and h.title.startswith("Checkpoint ")]
-if len(checkpoint_headings) != 5:
-    errors.append(f"expected five checkpoints, found {len(checkpoint_headings)}")
-for number in range(1, 6):
-    heading = next((h for h in checkpoint_headings if h.title.startswith(f"Checkpoint {number} ")), None)
-    if heading is None:
-        continue
-    section = section_text(checkpoints, headings_outside_fences(checkpoints), heading.title)
-    for label in ("**Trace.", "**Пропуски.", "**Напиши.", "**Найди баг."):
-        if label not in section:
-            errors.append(f"checkpoint {number} lacks mode {label}")
-    if "___" not in section:
-        errors.append(f"checkpoint {number} has no literal fill-in-the-blank markers")
-
-coverage_markers = {
-    3: ("jump table", ".table"),
-    4: ("struct Node", "reverse"),
-    5: ("0.1", "NaN", "return address"),
-}
-checkpoint_sections = headings_outside_fences(checkpoints)
-for number, markers in coverage_markers.items():
-    title = next(h.title for h in checkpoint_sections if h.level == 2 and h.title.startswith(f"Checkpoint {number} "))
-    section = section_text(checkpoints, checkpoint_sections, title)
-    for marker in markers:
-        if marker.lower() not in section.lower():
-            errors.append(f"checkpoint {number} claims coverage but lacks marker {marker!r}")
 
 day25 = (DOCS / "day_25.md").read_text(encoding="utf-8")
 reverse_section_match = re.search(r"### Часть D\. Reverse engineering(.*?)---\n\n### Часть E", day25, flags=re.S)
@@ -222,7 +297,6 @@ else:
     reverse_section = reverse_section_match.group(1)
     if reverse_section.count("push ebp") != 3 or reverse_section.count("pop ebp") != 3:
         errors.append("all three reverse-engineering listings must contain consistent full frames")
-
 score_rows = re.findall(
     r"^\| [A-E]\. .*?\| .*?\| (\d+) \| (\d+) \| (\d+) мин \|$",
     day25,
@@ -239,7 +313,7 @@ else:
         errors.append(f"day_25.md block times sum to {total_minutes}, expected 90")
 
 
-# Validate all root-relative Markdown links, not only VitePress navigation.
+# Validate root-relative Markdown links and VitePress navigation.
 for path in DOCS.rglob("*.md"):
     if path.name in {"textbook.md", "course_migration.md"}:
         continue
@@ -252,12 +326,30 @@ config = (DOCS / ".vitepress" / "config.mts").read_text(encoding="utf-8")
 for link in re.findall(r'link:\s*"(/[^"]+)"', config):
     if not resolve_doc_link(link):
         errors.append(f"broken sidebar/nav link: {link}")
-if 'text: "Checkpoints"' in config:
-    errors.append("Russian navigation must use 'Контрольные точки', not 'Checkpoints'")
+for required_link in (
+    "/self_study",
+    "/transfer_workbook",
+    "/transfer_keys",
+    "/checkpoints",
+    "/checkpoint_keys",
+    "/ai_tutor_prompts",
+    "/day_10_learning_path",
+):
+    if f'link: "{required_link}"' not in config:
+        errors.append(f"VitePress navigation lacks standalone-learning page {required_link}")
 
 readme = (ROOT / "README.md").read_text(encoding="utf-8")
+for marker in (
+    "Самостоятельный учебник",
+    "docs/self_study.md",
+    "docs/transfer_workbook.md",
+    "docs/ai_tutor_prompts.md",
+    "шесть",
+):
+    if marker not in readme:
+        errors.append(f"README lacks standalone-course marker {marker!r}")
 if "постепенно переводится" in readme:
-    errors.append("README still describes the completed chapter migration as ongoing")
+    errors.append("README still describes chapter migration as ongoing")
 
 if errors:
     raise SystemExit("Course validation failed:\n- " + "\n- ".join(errors))

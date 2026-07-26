@@ -3,19 +3,17 @@ import { defineConfig } from "vitepress";
 export default defineConfig({
     base: "/Nasm-X86-Course/",
     title: "NASM x86 для олимпиадников",
-    description: "C++ → IA-32: NASM, память, стек, флаги, CDECL и учебные задачи",
+    description: "Самостоятельный курс NASM IA-32: главы, transfer-практика, checkpoints и AI-наставник",
 
     themeConfig: {
         nav: [
-            { text: "Старт", link: "/" },
-            { text: "Как решать", link: "/how_to_solve_tasks" },
+            { text: "Самостоятельно", link: "/self_study" },
+            { text: "Курс", link: "/day_01" },
+            { text: "Тетрадь", link: "/transfer_workbook" },
+            { text: "Контроль", link: "/checkpoints" },
+            { text: "AI-наставник", link: "/ai_tutor_prompts" },
             { text: "Паттерны", link: "/patterns/" },
-            { text: "Идеи задач", link: "/tasks/" },
-            { text: "Сложные", link: "/tasks/hard" },
-            { text: "Ошибки", link: "/debug_cards" },
-            { text: "GDB", link: "/debugging_with_gdb" },
-            { text: "Контрольные точки", link: "/checkpoints" },
-            { text: "C ABI", link: "/c_abi" },
+            { text: "Задачи", link: "/tasks/" },
             { text: "Финал", link: "/day_25" }
         ],
 
@@ -24,11 +22,16 @@ export default defineConfig({
                 text: "Как учиться",
                 items: [
                     { text: "Старт", link: "/" },
+                    { text: "Самостоятельный маршрут", link: "/self_study" },
+                    { text: "Рабочая тетрадь", link: "/transfer_workbook" },
+                    { text: "Ключи тетради", link: "/transfer_keys" },
+                    { text: "Контрольные точки", link: "/checkpoints" },
+                    { text: "Ключи checkpoints", link: "/checkpoint_keys" },
+                    { text: "AI-наставник", link: "/ai_tutor_prompts" },
+                    { text: "Пять занятий Дня 10", link: "/day_10_learning_path" },
                     { text: "Как решать задачи", link: "/how_to_solve_tasks" },
                     { text: "Карточки ошибок", link: "/debug_cards" },
                     { text: "Отладка в GDB", link: "/debugging_with_gdb" },
-                    { text: "Контрольные точки", link: "/checkpoints" },
-                    { text: "Справочник инструкций", link: "/instruction_reference" },
                     { text: "Поддерживаемые среды", link: "/support_matrix" },
                     { text: "Статус структуры", link: "/course_migration" },
                     { text: "Стиль глав курса", link: "/course_style" }
@@ -41,34 +44,58 @@ export default defineConfig({
                     { text: "День 02 — сборка", link: "/day_02" },
                     { text: "День 03 — CPU и инструкции", link: "/day_03" },
                     { text: "День 04 — регистры", link: "/day_04" },
+                    { text: "Checkpoint 1", link: "/checkpoints#checkpoint-1-после-дня-04" },
                     { text: "День 05 — память", link: "/day_05" },
                     { text: "День 06 — ввод/вывод", link: "/day_06" }
                 ]
             },
             {
-                text: "Домашки Spring-01",
+                text: "Spring-01 и арифметика",
                 items: [
                     { text: "День 07 — арифметика", link: "/day_07" },
-                    { text: "День 08 — расширение знака", link: "/day_08" },
+                    { text: "День 08 — расширение", link: "/day_08" },
                     { text: "День 09 — деление", link: "/day_09" },
-                    { text: "День 10 — Spring-01 branchless", link: "/day_10" }
+                    { text: "День 10 — branchless", link: "/day_10" },
+                    { text: "Маршрут Дня 10", link: "/day_10_learning_path" },
+                    { text: "Checkpoint 2", link: "/checkpoints#checkpoint-2-после-дня-10" }
                 ]
             },
             {
-                text: "Экзаменационное ядро",
+                text: "Control flow и адресация",
                 items: [
                     { text: "День 11 — EFLAGS", link: "/day_11" },
                     { text: "День 12 — cmp/test/jcc", link: "/day_12" },
                     { text: "День 13 — if и циклы", link: "/day_13" },
                     { text: "День 14 — switch", link: "/day_14" },
                     { text: "День 15 — адресация", link: "/day_15" },
+                    { text: "Checkpoint 3", link: "/checkpoints#checkpoint-3-после-дня-15" }
+                ]
+            },
+            {
+                text: "Стек, ABI и данные",
+                items: [
                     { text: "День 16 — стек", link: "/day_16" },
                     { text: "День 17 — CDECL", link: "/day_17" },
                     { text: "День 18 — reverse", link: "/day_18" },
-                    { text: "День 19 — структуры", link: "/day_19" }
+                    { text: "День 19 — структуры", link: "/day_19" },
+                    { text: "Checkpoint 4", link: "/checkpoints#checkpoint-4-после-дня-19" }
                 ]
             },
-
+            {
+                text: "Runtime, safety и FPU",
+                items: [
+                    { text: "День 20 — до main", link: "/day_20" },
+                    { text: "День 21 — memory safety", link: "/day_21" },
+                    { text: "День 22 — floating point", link: "/day_22" },
+                    { text: "День 23 — x87", link: "/day_23" },
+                    { text: "Практика — double", link: "/fpu_double" },
+                    { text: "Checkpoint 5", link: "/checkpoints#checkpoint-5-после-дня-23" },
+                    { text: "День 24 — C++ object model", link: "/day_24" },
+                    { text: "Checkpoint 6", link: "/checkpoints#checkpoint-6-после-дня-24" },
+                    { text: "День 25 — mock exam", link: "/day_25" },
+                    { text: "После IA-32: x86-64", link: "/modern_x86_64_next" }
+                ]
+            },
             {
                 text: "Экзаменационные паттерны",
                 items: [
@@ -85,13 +112,7 @@ export default defineConfig({
                 ]
             },
             {
-                text: "Подробные разборы",
-                items: [
-                    { text: "Сложные задачи", link: "/tasks/hard" }
-                ]
-            },
-            {
-                text: "Идеи задач — Spring 01",
+                text: "Задачи Spring-01",
                 items: [
                     { text: "Обзор задач", link: "/tasks/" },
                     { text: "Сложные задачи", link: "/tasks/hard" },
@@ -103,47 +124,10 @@ export default defineConfig({
                 ]
             },
             {
-                text: "Идеи задач — Spring 02",
-                items: [
-                    { text: "02-3 Экстремумы", link: "/tasks/spring-02/02-03-local-extrema" },
-                    { text: "02-6 K битов", link: "/tasks/spring-02/02-06-max-bit-window" },
-                    { text: "02-9 Прямоугольник", link: "/tasks/spring-02/02-09-rectangle" },
-                    { text: "02-12 Нули лайт", link: "/tasks/spring-02/02-12-binary-zeros-lite" },
-                    { text: "02-14 Нули", link: "/tasks/spring-02/02-14-binary-zeros" }
-                ]
-            },
-            {
-                text: "Идеи задач — Spring 03/04",
-                items: [
-                    { text: "03-4 Разворот", link: "/tasks/spring-03/03-04-half-reverse" },
-                    { text: "03-5 Палиндромы", link: "/tasks/spring-03/03-05-palindromes" },
-                    { text: "03-9 Недостаточные", link: "/tasks/spring-03/03-09-deficient" },
-                    { text: "03-10 Дроби", link: "/tasks/spring-03/03-10-fractions" },
-                    { text: "03-18 Произведение", link: "/tasks/spring-03/03-18-signed-product" },
-                    { text: "04-2 Подстрока", link: "/tasks/spring-04/04-02-substring" },
-                    { text: "04-4 Count file", link: "/tasks/spring-04/04-04-count-in-file" },
-                    { text: "04-7 Разные строки", link: "/tasks/spring-04/04-07-distinct-strings" },
-                    { text: "04-11 Перемешивание", link: "/tasks/spring-04/04-11-two-shuffle" },
-                    { text: "04-13 Стек", link: "/tasks/spring-04/04-13-stack-fun" }
-                ]
-            },
-            {
-                text: "Финиш",
-                items: [
-                    { text: "День 20 — до main", link: "/day_20" },
-                    { text: "День 21 — memory safety", link: "/day_21" },
-                    { text: "День 22 — floating point", link: "/day_22" },
-                    { text: "День 23 — x87", link: "/day_23" },
-                    { text: "Практика — double через FPU", link: "/fpu_double" },
-                    { text: "День 24 — C++ object model", link: "/day_24" },
-                    { text: "День 25 — mock exam", link: "/day_25" },
-                    { text: "После IA-32: x86-64", link: "/modern_x86_64_next" }
-                ]
-            },
-            {
                 text: "Шпаргалки",
                 items: [
                     { text: "C ABI / CDECL", link: "/c_abi" },
+                    { text: "Справочник инструкций", link: "/instruction_reference" },
                     { text: "Популярные инструкции", link: "/popular_instructions" },
                     { text: "Шаблоны кода", link: "/code_patterns" },
                     { text: "Полный учебник", link: "/textbook" }
