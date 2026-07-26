@@ -13,6 +13,7 @@ export default defineConfig({
             { text: "Идеи задач", link: "/tasks/" },
             { text: "Сложные", link: "/tasks/hard" },
             { text: "Ошибки", link: "/debug_cards" },
+            { text: "GDB", link: "/debugging_with_gdb" },
             { text: "C ABI", link: "/c_abi" },
             { text: "Финал", link: "/day_25" }
         ],
@@ -24,6 +25,9 @@ export default defineConfig({
                     { text: "Старт", link: "/" },
                     { text: "Как решать задачи", link: "/how_to_solve_tasks" },
                     { text: "Карточки ошибок", link: "/debug_cards" },
+                    { text: "Отладка в GDB", link: "/debugging_with_gdb" },
+                    { text: "Поддерживаемые среды", link: "/support_matrix" },
+                    { text: "Статус миграции", link: "/course_migration" },
                     { text: "Стиль глав курса", link: "/course_style" }
                 ]
             },
@@ -129,7 +133,8 @@ export default defineConfig({
                     { text: "День 23 — x87", link: "/day_23" },
                     { text: "Практика — double через FPU", link: "/fpu_double" },
                     { text: "День 24 — C++ object model", link: "/day_24" },
-                    { text: "День 25 — mock exam", link: "/day_25" }
+                    { text: "День 25 — mock exam", link: "/day_25" },
+                    { text: "После IA-32: x86-64", link: "/modern_x86_64_next" }
                 ]
             },
             {
