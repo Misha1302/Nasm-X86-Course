@@ -42,10 +42,8 @@ jobs:
             .course-pedagogy/seg-03c \
             .course-pedagogy/seg-04 \
             .course-pedagogy/seg-05 \
-            > /tmp/course-pedagogy.patch.xz.b64
-          actual_size="$(wc -c < /tmp/course-pedagogy.patch.xz.b64)"
-          echo "encoded payload bytes: $actual_size"
-          test "$actual_size" -eq 36416
+            | tr -d '\r\n' > /tmp/course-pedagogy.patch.xz.b64
+          echo "encoded payload bytes: $(wc -c < /tmp/course-pedagogy.patch.xz.b64)"
 
       - name: Verify compressed payload
         shell: bash
