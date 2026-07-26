@@ -214,6 +214,7 @@
 ## TR-24
 
 - **Обязательные факты:** argument-like value загружается в `ecx`; есть чтения `[ecx]`, `[ecx+4]`; target call читается из `[eax+8]`.
+- **Инвариант:** indirect call shape является фактом; this/vptr/virtual interpretation остаётся ABI-гипотезой.
 - **Гипотеза:** `ecx=this`, `[ecx]=vptr`, `[ecx+4]=field`, `[eax+8]=virtual slot`.
 - **ABI-зависимое:** место hidden `this`, layout, наличие vptr, numbering slots.
 - **Типовая ошибка:** назвать virtual call доказанным.
