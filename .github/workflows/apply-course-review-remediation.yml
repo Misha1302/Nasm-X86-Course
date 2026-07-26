@@ -1,0 +1,106 @@
+name: Apply course review remediation
+
+on:
+  push:
+    branches:
+      - fix/course-review-remediation-20260726
+
+permissions:
+  contents: write
+
+jobs:
+  remediate-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct and apply verified patch
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor 9afec6bc8a1f2d28c4a0ba150e48b6f7cfbd9f85 HEAD
+          cat .github/remediation/nasm-review-remediation.part00 \
+              .github/remediation/nasm-review-remediation.part01 \
+              .github/remediation/nasm-review-remediation.part02 \
+            | tr -d '\r\n' \
+            | base64 -d > /tmp/nasm-review-remediation.patch.xz
+          echo '5376cd691694529e3edee8e40f2b90a10f8a1d7c9c124a7d6098fe0fe80ce326  /tmp/nasm-review-remediation.patch.xz' | sha256sum -c -
+          xz -dc /tmp/nasm-review-remediation.patch.xz > /tmp/nasm-review-remediation.patch
+          echo '3e998bd00acf20ef8673317c3d67e4d0d6d9713b0e214d9322428e6557ed5b50  /tmp/nasm-review-remediation.patch' | sha256sum -c -
+          git apply --check /tmp/nasm-review-remediation.patch
+          git apply /tmp/nasm-review-remediation.patch
+          rm -rf .github/remediation
+          rm -f .github/workflows/apply-course-review-remediation.yml
+
+      - name: Generate and validate course
+        run: |
+          set -euo pipefail
+          python3 scripts/generate_course_docs.py
+          python3 scripts/validate_course.py
+          git diff --check
+
+      - name: Adversarial validator checks
+        run: |
+          set -euo pipefail
+          run_negative() {
+            name="$1"
+            mutation="$2"
+            dir="$(mktemp -d)"
+            cp -a . "$dir/repo"
+            python3 -c "$mutation" "$dir/repo"
+            if (
+              cd "$dir/repo"
+              python3 scripts/generate_course_docs.py >/dev/null
+              python3 scripts/validate_course.py >"/tmp/$name.log" 2>&1
+            ); then
+              echo "negative test unexpectedly passed: $name"
+              cat "/tmp/$name.log"
+              exit 1
+            fi
+            echo "negative test rejected as expected: $name"
+            rm -rf "$dir"
+          }
+          run_negative immediate_idiv 'from pathlib import Path; import sys; p=Path(sys.argv[1])/"docs/checkpoints.md"; t=p.read_text(); p.write_text(t.replace("idiv ecx", "idiv 3", 1))'
+          run_negative reversed_startup 'from pathlib import Path; import sys; p=Path(sys.argv[1])/"docs/day_20.md"; t=p.read_text(); p.write_text(t.replace("runtime вызывает `main`", "`main` вызывает runtime", 1))'
+          run_negative broken_score 'from pathlib import Path; import sys; p=Path(sys.argv[1])/"docs/day_25.md"; t=p.read_text(); p.write_text(t.replace("| C. Стек и функции | C1–C3 | 8 | 24 | 25 мин |", "| C. Стек и функции | C1–C3 | 8 | 23 | 25 мин |", 1))'
+          run_negative fake_heading 'from pathlib import Path; import sys; p=Path(sys.argv[1])/"docs/day_03.md"; t=p.read_text(); t=t.replace("## Входные знания", "### Входные знания", 1); t=t.replace("```cpp", "```text\n## Входные знания\n```\n\n```cpp", 1); p.write_text(t)'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install docs dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build VitePress site
+        run: npm run docs:build
+
+      - name: Install IA-32 toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nasm gcc-multilib libc6-dev-i386
+
+      - name: Build and verify all examples
+        run: |
+          set -euo pipefail
+          for file in examples/*.asm; do
+            name="$(basename "$file" .asm)"
+            nasm -f elf32 -g -F dwarf "$file" -o "/tmp/$name.o"
+            gcc -m32 -g -no-pie -Wl,-z,noexecstack "/tmp/$name.o" -o "/tmp/$name"
+            "/tmp/$name" > "/tmp/$name.out"
+            diff -u "examples/expected/$name.txt" "/tmp/$name.out"
+          done
+
+      - name: Commit verified remediation
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'Fix course review findings and strengthen validation'
+          git push origin HEAD
