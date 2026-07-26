@@ -20,16 +20,21 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: fix/course-pedagogy-20260726
-          fetch-depth: 0
+          fetch-depth: 1
           show-progress: false
 
-      - name: Assemble encoded payload
+      - name: Prepare payload workspace
         shell: bash
         run: |
           set -euo pipefail
-          work_dir="$PWD/.work-course-pedagogy"
-          mkdir -p "$work_dir"
-          cat \
+          rm -rf .work-course-pedagogy
+          mkdir .work-course-pedagogy
+
+      - name: Verify staged payload files
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in \
             .course-pedagogy/part-00 \
             .course-pedagogy/seg-00 \
             .course-pedagogy/seg-01 \
@@ -38,33 +43,53 @@ jobs:
             .course-pedagogy/seg-03b \
             .course-pedagogy/seg-03c \
             .course-pedagogy/seg-04 \
-            .course-pedagogy/seg-05 \
-            | tr -d '\r\n' > "$work_dir/patch.xz.b64"
-          wc -c "$work_dir/patch.xz.b64"
+            .course-pedagogy/seg-05
+          do
+            test -f "$file"
+            printf '%s %s bytes\n' "$file" "$(wc -c < "$file")"
+          done
+
+      - name: Assemble encoded payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          output=.work-course-pedagogy/patch.xz.b64
+          : > "$output"
+          for file in \
+            .course-pedagogy/part-00 \
+            .course-pedagogy/seg-00 \
+            .course-pedagogy/seg-01 \
+            .course-pedagogy/seg-02 \
+            .course-pedagogy/seg-03a \
+            .course-pedagogy/seg-03b \
+            .course-pedagogy/seg-03c \
+            .course-pedagogy/seg-04 \
+            .course-pedagogy/seg-05
+          do
+            tr -d '\r\n' < "$file" >> "$output"
+          done
+          wc -c "$output"
 
       - name: Verify compressed payload
         shell: bash
         run: |
           set -euo pipefail
-          work_dir="$PWD/.work-course-pedagogy"
-          base64 --decode "$work_dir/patch.xz.b64" > "$work_dir/patch.xz"
-          echo "b296e0be0b99bff0ebc5f796681983a98c8d51e8922335603f5e8793c766d51c  $work_dir/patch.xz" | sha256sum --check -
+          base64 --decode .work-course-pedagogy/patch.xz.b64 > .work-course-pedagogy/patch.xz
+          echo 'b296e0be0b99bff0ebc5f796681983a98c8d51e8922335603f5e8793c766d51c  .work-course-pedagogy/patch.xz' | sha256sum --check -
 
       - name: Verify decompressed patch
         shell: bash
         run: |
           set -euo pipefail
-          work_dir="$PWD/.work-course-pedagogy"
-          xz --decompress --stdout "$work_dir/patch.xz" > "$work_dir/patch"
-          echo "7962939bcd8e9d69dd6a4dfb71127c1678cc5b6f3a4a2af3f90749067c5e0415  $work_dir/patch" | sha256sum --check -
+          xz --decompress --stdout .work-course-pedagogy/patch.xz > .work-course-pedagogy/patch
+          echo '7962939bcd8e9d69dd6a4dfb71127c1678cc5b6f3a4a2af3f90749067c5e0415  .work-course-pedagogy/patch' | sha256sum --check -
 
       - name: Check and apply patch
         shell: bash
         run: |
           set -euo pipefail
-          patch_file="$PWD/.work-course-pedagogy/patch"
-          git apply --check "$patch_file"
-          git apply "$patch_file"
+          git apply --check .work-course-pedagogy/patch
+          git apply .work-course-pedagogy/patch
 
       - name: Set up Node
         uses: actions/setup-node@v4
