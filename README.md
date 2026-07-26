@@ -63,12 +63,14 @@
 | [Ключи checkpoints](docs/checkpoint_keys.md) | scoring, диагностика и варианты |
 | [AI-наставник](docs/ai_tutor_prompts.md) | guided learning, exam, recovery и review |
 | [Проверка AI-наставника](docs/ai_tutor_eval.md) | provider-backed eval contract |
-| [Полный самостоятельный учебник](docs/textbook.md) | все учебные слои одним файлом |
+| Generated route `/textbook` | полный самостоятельный учебник; создаётся перед VitePress build |
 | [Как решать задачи](docs/how_to_solve_tasks.md) | рабочий алгоритм решения |
 | [Карточки ошибок](docs/debug_cards.md) | типовые дефекты |
 | [Отладка в GDB](docs/debugging_with_gdb.md) | проверка состояния |
 | [Справочник инструкций](docs/instruction_reference.md) | канонический справочник |
 | [C ABI / CDECL](docs/c_abi.md) | соглашение вызова |
+
+`docs/textbook.md` и `docs/course_migration.md` — generated artifacts. Они намеренно игнорируются Git и создаются командой `python3 scripts/generate_course_docs.py` либо автоматически перед сборкой сайта.
 
 ## Проверяемые примеры
 
