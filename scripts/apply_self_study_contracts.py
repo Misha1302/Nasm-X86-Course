@@ -74,9 +74,11 @@ if old_anchor not in day10:
 day10_path.write_text(day10.replace(old_anchor, new_anchor), encoding="utf-8")
 
 
-def insert_invariants(path: Path, mapping: dict[str, str]) -> None:
+def insert_invariants(path: Path, mapping: dict[str, str], heading_level: int) -> None:
     text = path.read_text(encoding="utf-8")
-    headings = list(re.finditer(r"(?m)^### ([A-Z0-9-]+)\s*$", text))
+    heading_token = "#" * heading_level
+    heading_pattern = re.compile(rf"(?m)^{re.escape(heading_token)} ([A-Z0-9-]+)\s*$")
+    headings = list(heading_pattern.finditer(text))
     for identifier, invariant in mapping.items():
         heading = next((match for match in headings if match.group(1) == identifier), None)
         if heading is None:
@@ -92,7 +94,7 @@ def insert_invariants(path: Path, mapping: dict[str, str]) -> None:
         insertion = first_bullet.end()
         section = section[:insertion] + f"\n- **Инвариант:** {invariant}" + section[insertion:]
         text = text[:heading.start()] + section + text[end:]
-        headings = list(re.finditer(r"(?m)^### ([A-Z0-9-]+)\s*$", text))
+        headings = list(heading_pattern.finditer(text))
     path.write_text(text, encoding="utf-8")
 
 
@@ -110,12 +112,14 @@ insert_invariants(
         "CP6-OBJECT": "object data, dispatch metadata и method code принадлежат разным слоям модели.",
         "CP6-CALLS": "directness определяется местом хранения target address, а virtual semantics требует дополнительного ABI evidence.",
     },
+    heading_level=3,
 )
 insert_invariants(
     DOCS / "transfer_keys.md",
     {
         "TR-24": "indirect call shape является фактом; this/vptr/virtual interpretation остаётся ABI-гипотезой.",
     },
+    heading_level=2,
 )
 
 print(
