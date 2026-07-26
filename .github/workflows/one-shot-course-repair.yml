@@ -21,6 +21,7 @@ jobs:
         with:
           ref: fix/course-quality-20260726-impl
           fetch-depth: 0
+          show-progress: false
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -29,10 +30,24 @@ jobs:
 
       - name: Install NASM and 32-bit toolchain
         run: |
-          sudo apt-get update
-          sudo apt-get install -y nasm gcc-multilib libc6-dev-i386
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq nasm gcc-multilib libc6-dev-i386 >/dev/null
 
       - name: Apply, validate and commit repairs
         env:
           GITHUB_REF_NAME: fix/course-quality-20260726-impl
-        run: python3 scripts/apply_course_repairs.py
+        run: |
+          set +e
+          python3 scripts/apply_course_repairs.py > /tmp/course-repair.log 2>&1
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            cp /tmp/course-repair.log repair-failure.log
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add repair-failure.log
+            git commit -m 'chore: capture course repair failure' || true
+            git push origin HEAD:fix/course-quality-20260726-impl
+            tail -n 120 /tmp/course-repair.log
+            exit "$status"
+          fi
