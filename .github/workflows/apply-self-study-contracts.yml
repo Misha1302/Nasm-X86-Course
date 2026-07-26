@@ -1,16 +1,17 @@
 name: Apply self-study contracts
 
 on:
-  push:
+  pull_request:
     branches:
-      - fix/self-study-contracts-20260727
+      - main
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   apply:
-    if: github.actor != 'github-actions[bot]'
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'fix/self-study-contracts-20260727'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout remediation branch
