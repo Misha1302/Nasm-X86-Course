@@ -26,73 +26,43 @@ jobs:
       - name: Assemble encoded payload
         shell: bash
         run: |
-          set +e
-          work_dir="$RUNNER_TEMP/course-pedagogy"
-          mkdir -p "$work_dir"
-          WORK_DIR="$work_dir" python3 - <<'PY' > "$work_dir/assembly.log" 2>&1
-          import os
-          from pathlib import Path
-
-          paths = [
-              '.course-pedagogy/part-00',
-              '.course-pedagogy/seg-00',
-              '.course-pedagogy/seg-01',
-              '.course-pedagogy/seg-02',
-              '.course-pedagogy/seg-03a',
-              '.course-pedagogy/seg-03b',
-              '.course-pedagogy/seg-03c',
-              '.course-pedagogy/seg-04',
-              '.course-pedagogy/seg-05',
-          ]
-          parts = []
-          for raw_path in paths:
-              text = Path(raw_path).read_text(encoding='ascii').replace('\r', '').replace('\n', '')
-              print(f'{raw_path}: {len(text)} bytes')
-              parts.append(text)
-          payload = ''.join(parts)
-          output = Path(os.environ['WORK_DIR']) / 'patch.xz.b64'
-          output.write_text(payload, encoding='ascii')
-          print(f'encoded payload bytes: {len(payload)}')
-          PY
-          status=$?
-          cat "$work_dir/assembly.log"
-          exit "$status"
-
-      - name: Persist assembly diagnostics
-        if: failure()
-        shell: bash
-        run: |
           set -euo pipefail
-          cp "$RUNNER_TEMP/course-pedagogy/assembly.log" .course-pedagogy/diagnostic.txt
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add .course-pedagogy/diagnostic.txt
-          git commit -m 'chore: record pedagogy payload diagnostic'
-          git push origin HEAD:fix/course-pedagogy-20260726
+          work_dir="$PWD/.work-course-pedagogy"
+          mkdir -p "$work_dir"
+          cat \
+            .course-pedagogy/part-00 \
+            .course-pedagogy/seg-00 \
+            .course-pedagogy/seg-01 \
+            .course-pedagogy/seg-02 \
+            .course-pedagogy/seg-03a \
+            .course-pedagogy/seg-03b \
+            .course-pedagogy/seg-03c \
+            .course-pedagogy/seg-04 \
+            .course-pedagogy/seg-05 \
+            | tr -d '\r\n' > "$work_dir/patch.xz.b64"
+          wc -c "$work_dir/patch.xz.b64"
 
       - name: Verify compressed payload
         shell: bash
         run: |
           set -euo pipefail
-          work_dir="$RUNNER_TEMP/course-pedagogy"
+          work_dir="$PWD/.work-course-pedagogy"
           base64 --decode "$work_dir/patch.xz.b64" > "$work_dir/patch.xz"
-          sha256sum "$work_dir/patch.xz"
           echo "b296e0be0b99bff0ebc5f796681983a98c8d51e8922335603f5e8793c766d51c  $work_dir/patch.xz" | sha256sum --check -
 
       - name: Verify decompressed patch
         shell: bash
         run: |
           set -euo pipefail
-          work_dir="$RUNNER_TEMP/course-pedagogy"
+          work_dir="$PWD/.work-course-pedagogy"
           xz --decompress --stdout "$work_dir/patch.xz" > "$work_dir/patch"
-          sha256sum "$work_dir/patch"
           echo "7962939bcd8e9d69dd6a4dfb71127c1678cc5b6f3a4a2af3f90749067c5e0415  $work_dir/patch" | sha256sum --check -
 
       - name: Check and apply patch
         shell: bash
         run: |
           set -euo pipefail
-          patch_file="$RUNNER_TEMP/course-pedagogy/patch"
+          patch_file="$PWD/.work-course-pedagogy/patch"
           git apply --check "$patch_file"
           git apply "$patch_file"
 
@@ -119,16 +89,17 @@ jobs:
           set -euo pipefail
           for file in examples/*.asm; do
             name="$(basename "$file" .asm)"
-            nasm -f elf32 -g -F dwarf "$file" -o "$RUNNER_TEMP/$name.o"
-            gcc -m32 -g -no-pie -Wl,-z,noexecstack "$RUNNER_TEMP/$name.o" -o "$RUNNER_TEMP/$name"
-            "$RUNNER_TEMP/$name" > "$RUNNER_TEMP/$name.out"
-            diff -u "examples/expected/$name.txt" "$RUNNER_TEMP/$name.out"
+            nasm -f elf32 -g -F dwarf "$file" -o ".work-course-pedagogy/$name.o"
+            gcc -m32 -g -no-pie -Wl,-z,noexecstack ".work-course-pedagogy/$name.o" -o ".work-course-pedagogy/$name"
+            ".work-course-pedagogy/$name" > ".work-course-pedagogy/$name.out"
+            diff -u "examples/expected/$name.txt" ".work-course-pedagogy/$name.out"
           done
 
       - name: Commit verified course revision
         shell: bash
         run: |
           set -euo pipefail
+          rm -rf .work-course-pedagogy
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add README.md docs scripts
