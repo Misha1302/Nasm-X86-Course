@@ -29,7 +29,33 @@ jobs:
           cache: npm
 
       - name: Apply deterministic remediation
-        run: python3 scripts/apply_review_remediation.py
+        id: remediation
+        shell: bash
+        run: |
+          set +e
+          python3 scripts/apply_review_remediation.py > /tmp/remediation.log 2>&1
+          status=$?
+          echo "$status" > /tmp/remediation.status
+          cat /tmp/remediation.log
+          exit 0
+
+      - name: Upload remediation diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: remediation-diagnostics
+          path: |
+            /tmp/remediation.log
+            /tmp/remediation.status
+          if-no-files-found: error
+
+      - name: Stop on remediation failure
+        run: |
+          status="$(cat /tmp/remediation.status)"
+          if [ "$status" -ne 0 ]; then
+            cat /tmp/remediation.log
+            exit "$status"
+          fi
 
       - name: Generate and validate course
         run: |
