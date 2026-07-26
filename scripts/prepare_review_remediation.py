@@ -37,6 +37,16 @@ for old, new, label in replacements:
         raise SystemExit(f"{label}: expected one occurrence, found {count}")
     text = text.replace(old, new, 1)
 
+x87_old = "fstp qword [esp + 4]"
+x87_count = text.count(x87_old)
+if x87_count < 2:
+    raise SystemExit(f"x87 argument placement: expected at least two occurrences, found {x87_count}")
+text = text.replace(x87_old, "fstp qword [esp]")
+text = text.replace(
+    '`[esp+4..esp+11]` содержит 8-byte `double`, а `push fmtFloat` кладёт первый аргумент перед ним.',
+    '`[esp..esp+7]` содержит `double` до `push`; после `push fmtFloat` он непрерывно лежит по `[esp+4..esp+11]`, а padding остаётся выше всех аргументов.',
+)
+
 needle = '''    text = text.replace(
         'for generated in (DOCS / "textbook.md", DOCS / "course_migration.md"):',
 '''
@@ -49,5 +59,18 @@ count = text.count(needle)
 if count != 1:
     raise SystemExit(f"standalone smoke-check injection: expected one occurrence, found {count}")
 text = text.replace(needle, injected, 1)
+
+validator_marker = 'day22_text = (DOCS / "day_22.md").read_text(encoding="utf-8")'
+validator_injection = '''for path in [*(ROOT / "examples").glob("*.asm"), *DOCS.rglob("*.md")]:
+    source = path.read_text(encoding="utf-8")
+    if re.search(r"sub esp,\\s*12.*?fstp qword \\[esp \\+ 4\\].*?push .*?call printf", source, flags=re.S | re.I):
+        errors.append(f"x87 variadic padding splits arguments in {path.relative_to(ROOT)}")
+
+
+''' + validator_marker
+count = text.count(validator_marker)
+if count != 1:
+    raise SystemExit(f"x87 validator injection: expected one occurrence, found {count}")
+text = text.replace(validator_marker, validator_injection, 1)
 
 path.write_text(text, encoding="utf-8")
