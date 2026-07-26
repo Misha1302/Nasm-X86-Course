@@ -28,7 +28,7 @@ jobs:
           ref: fix/course-pedagogy-20260726
           fetch-depth: 0
 
-      - name: Reconstruct and verify patch
+      - name: Assemble encoded payload
         shell: bash
         run: |
           set -euo pipefail
@@ -43,11 +43,30 @@ jobs:
             .course-pedagogy/seg-04 \
             .course-pedagogy/seg-05 \
             > /tmp/course-pedagogy.patch.xz.b64
-          test "$(wc -c < /tmp/course-pedagogy.patch.xz.b64)" -eq 36416
+          actual_size="$(wc -c < /tmp/course-pedagogy.patch.xz.b64)"
+          echo "encoded payload bytes: $actual_size"
+          test "$actual_size" -eq 36416
+
+      - name: Verify compressed payload
+        shell: bash
+        run: |
+          set -euo pipefail
           base64 --decode /tmp/course-pedagogy.patch.xz.b64 > /tmp/course-pedagogy.patch.xz
+          sha256sum /tmp/course-pedagogy.patch.xz
           echo 'b296e0be0b99bff0ebc5f796681983a98c8d51e8922335603f5e8793c766d51c  /tmp/course-pedagogy.patch.xz' | sha256sum --check -
+
+      - name: Verify decompressed patch
+        shell: bash
+        run: |
+          set -euo pipefail
           xz --decompress --stdout /tmp/course-pedagogy.patch.xz > /tmp/course-pedagogy.patch
+          sha256sum /tmp/course-pedagogy.patch
           echo '7962939bcd8e9d69dd6a4dfb71127c1678cc5b6f3a4a2af3f90749067c5e0415  /tmp/course-pedagogy.patch' | sha256sum --check -
+
+      - name: Check and apply patch
+        shell: bash
+        run: |
+          set -euo pipefail
           git apply --check /tmp/course-pedagogy.patch
           git apply /tmp/course-pedagogy.patch
 
