@@ -64,8 +64,63 @@ if added_next_steps != 25:
 if replaced_checklist_items == 0:
     raise SystemExit("expected at least one non-observable checklist item to normalize")
 
+# Replace the stale pre-ID workbook anchor.
+day10_path = DOCS / "day_10_learning_path.md"
+day10 = day10_path.read_text(encoding="utf-8")
+old_anchor = "](/transfer_workbook#день-10-биты-и-branchless)"
+new_anchor = "](/transfer_workbook#tr-10)"
+if old_anchor not in day10:
+    raise SystemExit("expected stale Day 10 workbook anchor was not found")
+day10_path.write_text(day10.replace(old_anchor, new_anchor), encoding="utf-8")
+
+
+def insert_invariants(path: Path, mapping: dict[str, str]) -> None:
+    text = path.read_text(encoding="utf-8")
+    headings = list(re.finditer(r"(?m)^### ([A-Z0-9-]+)\s*$", text))
+    for identifier, invariant in mapping.items():
+        heading = next((match for match in headings if match.group(1) == identifier), None)
+        if heading is None:
+            raise SystemExit(f"missing key section {identifier} in {path}")
+        next_heading = next((match for match in headings if match.start() > heading.start()), None)
+        end = next_heading.start() if next_heading else len(text)
+        section = text[heading.start():end]
+        if "**Инвариант:**" in section:
+            continue
+        first_bullet = re.search(r"(?m)^- \*\*[^\n]+$", section)
+        if first_bullet is None:
+            raise SystemExit(f"no insertion point for {identifier} in {path}")
+        insertion = first_bullet.end()
+        section = section[:insertion] + f"\n- **Инвариант:** {invariant}" + section[insertion:]
+        text = text[:heading.start()] + section + text[end:]
+        headings = list(re.finditer(r"(?m)^### ([A-Z0-9-]+)\s*$", text))
+    path.write_text(text, encoding="utf-8")
+
+
+insert_invariants(
+    DOCS / "checkpoint_keys.md",
+    {
+        "CP1-SIZE-R": "размер destination определяет, какая часть регистра изменяется; инструкция не обязана определять старшие биты.",
+        "CP1-SIZE-W": "ширина memory write является частью семантики и границы соседних объектов.",
+        "CP5-FP-BINARY": "веса дробных binary-позиций равны степеням 1/2.",
+        "CP5-FP-REPR": "конечная binary fraction после сокращения имеет denominator степени 2.",
+        "CP5-STARTUP": "ELF entry point и exported symbol main являются разными контрактами.",
+        "CP5-SAFETY": "undefined behavior не обещает ни crash, ни продолжение; наблюдаемое отсутствие падения не доказывает корректность.",
+        "CP5-NAN": "NaN создаёт unordered comparison и не ведёт себя как обычная константа.",
+        "CP6-THIS": "machine offsets доказывают обращения к памяти, но не high-level names или тип base pointer.",
+        "CP6-OBJECT": "object data, dispatch metadata и method code принадлежат разным слоям модели.",
+        "CP6-CALLS": "directness определяется местом хранения target address, а virtual semantics требует дополнительного ABI evidence.",
+    },
+)
+insert_invariants(
+    DOCS / "transfer_keys.md",
+    {
+        "TR-24": "indirect call shape является фактом; this/vptr/virtual interpretation остаётся ABI-гипотезой.",
+    },
+)
+
 print(
     f"Updated {changed_files} day files; "
     f"normalized {replaced_checklist_items} checklist items; "
-    f"added {added_next_steps} next-step sections"
+    f"added {added_next_steps} next-step sections; "
+    "fixed key invariants and Day 10 anchor"
 )
