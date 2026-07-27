@@ -368,6 +368,9 @@ section .text
     global main
 
 main:
+    push ebp
+    mov ebp, esp
+    and esp, -16
     finit
     fld dword [x]
     fld dword [y]
@@ -379,6 +382,8 @@ main:
     call printf
     add esp, 16
 
+    mov esp, ebp
+    pop ebp
     xor eax, eax
     ret
 ```

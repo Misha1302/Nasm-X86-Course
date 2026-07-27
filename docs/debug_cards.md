@@ -107,11 +107,11 @@ add eax, 1
 ```asm
 ; вариант 2: сохранить значение
 push eax
-sub esp, 8       ; padding: 8 + 8 argument bytes = 16
+sub esp, 4       ; saved dword + 4 padding + 8 argument bytes = 16
 push eax
 push fmtOut
 call printf
-add esp, 16
+add esp, 12
 pop eax
 ```
 

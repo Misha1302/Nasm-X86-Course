@@ -227,7 +227,7 @@
 ## TR-23
 <!-- task-sha256: 4a7aa5c3cf20bd72eac8c8584132be2d89372b14882c5540c68292b306c024b5 -->
 
-- **Обязательный результат:** корректный порядок, например `fld a; fld b; fsubp st1,st0; fld c; fld d; faddp st1,st0; fdivp st1,st0`; затем `sub esp,8; fstp qword [esp]; push fmt; call printf; add esp,12`.
+- **Обязательный результат:** корректный порядок, например `fld a; fld b; fsubp st1,st0; fld c; fld d; faddp st1,st0; fdivp st1,st0`; затем при aligned body `sub esp,12; fstp qword [esp]; push fmt; call printf; add esp,16`.
 - **Инвариант:** `fld` pushes; `...p` pops; `sub/div` зависят от порядка; `%f` получает double.
 - **Типовая ошибка:** получить `(c+d)/(a-b)` или оставить лишние x87 values.
 - **Контрпример:** числа `a=10,b=4,c=1,d=2` различают порядок.
@@ -249,7 +249,7 @@
 ## TR-25
 <!-- task-sha256: a217f81e2deb4713f9c56c1179b5ac9f0133a71b6478d4cc0707297ccb2324f6 -->
 
-- **Обязательные результаты:** `scanf` получает address `x`; `-13/5` даёт quotient `-2`, remainder `-3`; signed `x>=y` — `jge` после `cmp x,y`; frame: return `[ebp+4]`, first arg `[ebp+8]`, local ниже `ebp`; `%f` — 8-байтовый double плюс 4-байтовый format pointer, очистка 12 байт.
+- **Обязательные результаты:** `scanf` получает address `x`; `-13/5` даёт quotient `-2`, remainder `-3`; signed `x>=y` — `jge` после `cmp x,y`; frame: return `[ebp+4]`, first arg `[ebp+8]`, local ниже `ebp`; `%f` — 8-байтовый double плюс 4-байтовый format pointer; при aligned body добавляются 4 байта padding и cleanup равен 16.
 - **Инвариант:** смешанная задача проверяет независимые центральные модели, одна сильная тема не компенсирует ноль в другой.
 - **Типовая ошибка:** оценить только число правильных ответов и не выбрать слабый инвариант.
 - **Контрпример:** идеальные integer-ответы не исправляют broken stack balance.

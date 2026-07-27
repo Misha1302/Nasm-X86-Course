@@ -189,6 +189,9 @@ section .text
     global main
 
 main:
+    push ebp
+    mov ebp, esp
+    and esp, -16
     sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push a
     push fmtIn
@@ -217,6 +220,8 @@ main:
     call printf
     add esp, 16
 
+    mov esp, ebp
+    pop ebp
     xor eax, eax
     ret
 ```

@@ -394,11 +394,11 @@ add eax, 1
 mov eax, [answer]
 push eax              ; save answer
 
-sub esp, 8       ; padding: 8 + 8 argument bytes = 16
+sub esp, 4       ; saved dword + 4 padding + 8 argument bytes = 16
 push eax
 push fmtOut
 call printf
-add esp, 16
+add esp, 12
 
 pop eax               ; restore answer
 add eax, 1
@@ -607,28 +607,23 @@ call printf
 add esp, 16
 ```
 
-Почему `12`?
+Почему `sub esp,12`?
 
 ```text
-8 bytes double + 4 bytes format pointer = 12 bytes
+8 bytes double + 4 bytes padding = 12 bytes reserved
+после push format: 4 + 8 + 4 = 16 bytes total call area
 ```
 
 ---
 
-## 17. Stack alignment: коротко и честно
+## 17. Stack alignment: часть ABI, а не необязательная оптимизация
 
-В простых учебных IA-32 задачах обычно достаточно держать стек **сбалансированным**: сколько положил через `push`, столько убрал через `add esp, ...` или `pop`.
+В поддерживаемой GNU/Linux i386-среде перед каждым ABI-вызовом доказываем два независимых условия:
 
-Но в реальных ABI и с современными компиляторами может быть дополнительное требование к выравниванию стека, особенно вокруг SSE и библиотечных вызовов.
+1. параметры лежат непрерывно и в правильном порядке;
+2. непосредственно перед `call` выполняется `esp % 16 == 0`.
 
-Практическое правило для курса:
-
-1. Не порти `esp` без причины.
-2. После каждого CDECL-вызова убирай аргументы.
-3. Перед вызовом libc не оставляй стек в случайном состоянии.
-4. Если пишешь сложную функцию с локальными данными и вызовами, следи за выравниванием отдельно.
-
-Для наших базовых задач главная ошибка почти всегда не “идеальное 16-byte alignment”, а забытый `add esp, ...` или неправильный аргумент.
+Баланс после возврата также обязателен: caller удаляет **padding + argument bytes**. Успешный случайный запуск misaligned-кода не доказывает корректность. Полная формула и wrapper-стратегия находятся в [паттерне libc alignment](/patterns/libc_alignment).
 
 ---
 
@@ -653,10 +648,14 @@ sum:
     ret
 
 main:
+    push ebp
+    mov ebp, esp
+    and esp, -16
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push 7
     push 5
     call sum
-    add esp, 8
+    add esp, 16
 
     sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push eax
@@ -664,6 +663,8 @@ main:
     call printf
     add esp, 16
 
+    mov esp, ebp
+    pop ebp
     xor eax, eax
     ret
 ```
@@ -697,6 +698,9 @@ section .text
     global main
 
 main:
+    push ebp
+    mov ebp, esp
+    and esp, -16
     sub esp, 4       ; padding: 4 + 12 argument bytes = 16
     push b
     push a
@@ -714,6 +718,8 @@ main:
     call printf
     add esp, 16
 
+    mov esp, ebp
+    pop ebp
     xor eax, eax
     ret
 ```

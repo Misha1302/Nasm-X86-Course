@@ -38,7 +38,7 @@ main:
 - `scanf` получает адрес, потому что записывает значение.
 - `printf` получает значение, потому что печатает его.
 - В IA-32 CDECL аргументы кладутся через `push` справа налево.
-- После вызова caller чистит стек: `add esp, argument_count * 4`.
+- Caller удаляет весь call area: `padding + argument bytes`.
 - Ответ часто удобно держать в `eax` и сразу печатать.
 - Не рассчитывай на сохранность `eax`, `ecx`, `edx` после `printf` / `scanf`.
 
@@ -50,14 +50,13 @@ main:
 - прочитать два-три числа;
 - напечатать значение переменной;
 - напечатать результат из `eax`;
-- посчитать, сколько байт убрать из стека;
+- посчитать padding, argument bytes и полный cleanup;
 - найти ошибки `push [x]` для `scanf` и `push x` для `printf`.
 
 Можно пока не заучивать:
 
 - все детали CDECL;
 - frame layout через `[ebp+8]`;
-- stack alignment.
 
 Подробный CDECL будет в [дне 17](/day_17) и на странице [C ABI / CDECL](/c_abi).
 
@@ -77,7 +76,7 @@ call кладёт адрес возврата и передаёт управле
 caller убирает ранее положенные аргументы
 ```
 
-Отсюда следует `add esp, 8` после двух аргументов. В [дне 16](/day_16) мы разберём точную механику `push/call/ret`, а в [дне 17](/day_17) построим полный frame layout и объясним ответственность caller/callee.
+Если выровненный body начинает с `esp % 16 == 0`, два 32-bit аргумента требуют `sub esp,8`, двух `push` и `add esp,16`. В [дне 16](/day_16) мы разберём `push/call/ret`, а в [дне 17](/day_17) построим полный frame и ответственность caller/callee.
 
 ---
 
@@ -107,6 +106,9 @@ section .text
     global main
 
 main:
+    push ebp
+    mov ebp, esp
+    and esp, -16
     sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push x
     push fmtIn
@@ -119,6 +121,8 @@ main:
     call printf
     add esp, 16
 
+    mov esp, ebp
+    pop ebp
     xor eax, eax
     ret
 ```
@@ -203,6 +207,9 @@ section .text
     global main
 
 main:
+    push ebp
+    mov ebp, esp
+    and esp, -16
     sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push a
     push fmtIn
@@ -224,6 +231,8 @@ main:
     call printf
     add esp, 16
 
+    mov esp, ebp
+    pop ebp
     xor eax, eax
     ret
 ```
@@ -303,6 +312,9 @@ section .text
     global main
 
 main:
+    push ebp
+    mov ebp, esp
+    and esp, -16
     ; read a
     sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push a
@@ -328,6 +340,8 @@ main:
     call printf
     add esp, 16
 
+    mov esp, ebp
+    pop ebp
     xor eax, eax
     ret
 ```

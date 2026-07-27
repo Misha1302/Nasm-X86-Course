@@ -643,6 +643,42 @@ for path in [*(ROOT / "examples").glob("*.asm"), *DOCS.rglob("*.md")]:
         errors.append(f"x87 variadic padding splits arguments in {path.relative_to(ROOT)}")
 
 
+
+
+def validate_complete_markdown_mains(path: Path) -> None:
+    source = path.read_text(encoding="utf-8")
+    for block_index, block in enumerate(re.findall(r"```asm\n(.*?)```", source, flags=re.S), start=1):
+        if "global main" not in block or "main:" not in block or not re.search(r"(?m)^\s*call\s+", block):
+            continue
+        main_tail = block.split("main:", 1)[1]
+        for required in ("push ebp", "mov ebp, esp", "and esp, -16", "mov esp, ebp", "pop ebp"):
+            if required not in main_tail:
+                errors.append(
+                    f"complete Markdown main lacks aligned frame {required!r}: "
+                    f"{path.relative_to(ROOT)} block {block_index}"
+                )
+
+for markdown in DOCS.rglob("*.md"):
+    if markdown.name not in {"textbook.md", "course_migration.md", "closed_book_workbook.md"}:
+        validate_complete_markdown_mains(markdown)
+
+for rel in ("docs/transfer_keys.md", "docs/checkpoint_keys.md"):
+    assessment = (ROOT / rel).read_text(encoding="utf-8")
+    if "fstp qword [esp]; push fmt; call printf; add esp,12" in assessment:
+        errors.append(f"stale x87 variadic cleanup remains in {rel}")
+
+if re.search(r"(?m)^## 9\. .+\n(?:.|\n)*?^## 9\. ", (DOCS / "day_22.md").read_text(encoding="utf-8")):
+    errors.append("Day 22 contains duplicate numbered section 9")
+
+for rel in ("docs/c_abi.md", "docs/day_17.md", "docs/debug_cards.md"):
+    source = (ROOT / rel).read_text(encoding="utf-8")
+    if re.search(
+        r"push (eax|ecx|edx).*?sub esp, 8.*?call printf.*?add esp, 16.*?pop \\1",
+        source,
+        flags=re.S,
+    ):
+        errors.append(f"saved dword was omitted from call-site padding calculation: {rel}")
+
 day22_text = (DOCS / "day_22.md").read_text(encoding="utf-8")
 for marker in ("unordered", "NaN == NaN", "isnan"):
     if marker not in day22_text:

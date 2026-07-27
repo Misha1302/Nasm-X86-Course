@@ -321,6 +321,8 @@ faddp st1, st0
 <a id="cp5-varargs"></a>
 ### CP5-VARARGS — Пропуски: `%f`
 
+Body начинает с `esp % 16 == 0`. Восстанови непрерывный layout аргументов:
+
 ```asm
 sub esp, ___
 fstp ___ [esp]
