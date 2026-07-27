@@ -31,8 +31,12 @@ jobs:
         shell: bash
         run: |
           set +e
-          python3 scripts/apply_self_review_fixes.py > /tmp/self-review.log 2>&1
+          python3 scripts/prepare_self_review_fixes.py > /tmp/self-review.log 2>&1
           status=$?
+          if [ "$status" -eq 0 ]; then
+            python3 scripts/apply_self_review_fixes.py >> /tmp/self-review.log 2>&1
+            status=$?
+          fi
           echo "$status" > /tmp/self-review.status
           cat /tmp/self-review.log
           exit 0
@@ -88,7 +92,7 @@ jobs:
       - name: Commit verified self-review corrections
         run: |
           set -euo pipefail
-          rm -f scripts/apply_self_review_fixes.py .github/workflows/apply-self-review-fixes.yml
+          rm -f scripts/apply_self_review_fixes.py scripts/prepare_self_review_fixes.py .github/workflows/apply-self-review-fixes.yml
           find scripts -type d -name __pycache__ -prune -exec rm -rf {} +
           git add -A
           git diff --cached --check
