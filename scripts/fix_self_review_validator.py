@@ -4,14 +4,12 @@ from pathlib import Path
 path = Path(__file__).with_name("validate_course.py")
 text = path.read_text(encoding="utf-8")
 
-old_block = '''for rel in ("docs/c_abi.md", "docs/day_17.md", "docs/debug_cards.md"):
-    source = (ROOT / rel).read_text(encoding="utf-8")
-    if re.search(
-        r"push (eax|ecx|edx).*?sub esp, 8.*?call printf.*?add esp, 16.*?pop \\1",
-        source,
-        flags=re.S,
-    ):
-        errors.append(f"saved dword was omitted from call-site padding calculation: {rel}")'''
+start_marker = 'for rel in ("docs/c_abi.md", "docs/day_17.md", "docs/debug_cards.md"):\n'
+end_marker = '\nday22_text = (DOCS / "day_22.md").read_text(encoding="utf-8")'
+start = text.find(start_marker)
+end = text.find(end_marker, start + 1)
+if start < 0 or end < 0:
+    raise SystemExit(f"saved-register validator boundaries not found: start={start}, end={end}")
 
 new_block = '''def has_saved_dword_alignment_bug(source: str) -> bool:
     lines = source.splitlines()
@@ -37,9 +35,7 @@ new_block = '''def has_saved_dword_alignment_bug(source: str) -> bool:
 for rel in ("docs/c_abi.md", "docs/day_17.md", "docs/debug_cards.md"):
     source = (ROOT / rel).read_text(encoding="utf-8")
     if has_saved_dword_alignment_bug(source):
-        errors.append(f"saved dword was omitted from call-site padding calculation: {rel}")'''
+        errors.append(f"saved dword was omitted from call-site padding calculation: {rel}")
+'''
 
-count = text.count(old_block)
-if count != 1:
-    raise SystemExit(f"expected one broad saved-register validator block, found {count}")
-path.write_text(text.replace(old_block, new_block, 1), encoding="utf-8")
+path.write_text(text[:start] + new_block + text[end:], encoding="utf-8")
