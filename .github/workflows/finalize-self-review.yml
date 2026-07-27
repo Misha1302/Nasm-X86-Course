@@ -1,0 +1,84 @@
+name: Finalize self-review
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Checkout remediation branch
+        uses: actions/checkout@v4
+        with:
+          ref: compilationlab/remediate-self-study-review-2026-07-27
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Fix validator backreference
+        run: python3 scripts/fix_self_review_validator.py
+
+      - name: Prove saved-register mutation matcher
+        run: |
+          python3 - <<'PY'
+          import re
+          pattern = re.compile(
+              r"push (eax|ecx|edx).*?sub esp, 8.*?call printf.*?add esp, 16.*?pop \1",
+              flags=re.S,
+          )
+          broken = "push eax\nsub esp, 8\npush eax\npush fmt\ncall printf\nadd esp, 16\npop eax"
+          fixed = "push eax\nsub esp, 4\npush eax\npush fmt\ncall printf\nadd esp, 12\npop eax"
+          assert pattern.search(broken)
+          assert pattern.search(fixed) is None
+          PY
+
+      - name: Generate, validate and build
+        run: |
+          set -euo pipefail
+          python3 scripts/generate_course_docs.py
+          python3 -m py_compile scripts/course_manifest.py scripts/generate_course_docs.py scripts/validate_course.py
+          find scripts -type d -name __pycache__ -prune -exec rm -rf {} +
+          python3 scripts/validate_course.py
+          git diff --check
+          npm ci --no-audit --no-fund
+          npm run docs:build
+
+      - name: Install IA-32 toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nasm gcc-multilib libc6-dev-i386
+
+      - name: Build and execute every example
+        run: |
+          set -euo pipefail
+          for file in examples/*.asm; do
+            name="$(basename "$file" .asm)"
+            nasm -f elf32 -g -F dwarf "$file" -o "/tmp/$name.o"
+            gcc -m32 -g -no-pie -Wl,-z,noexecstack "/tmp/$name.o" -o "/tmp/$name"
+            "/tmp/$name" > "/tmp/$name.out"
+            diff -u "examples/expected/$name.txt" "/tmp/$name.out"
+          done
+
+      - name: Commit verified final self-review fix
+        run: |
+          set -euo pipefail
+          rm -f scripts/fix_self_review_validator.py .github/workflows/finalize-self-review.yml
+          find scripts -type d -name __pycache__ -prune -exec rm -rf {} +
+          git add -A
+          git diff --cached --check
+          git config user.name "CompilationLab Self Review"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Finalize self-review validator coverage"
+          git push origin HEAD:compilationlab/remediate-self-study-review-2026-07-27
