@@ -48,7 +48,7 @@ replacement = '''def patch_saved_value_alignment() -> None:
 
 
 def patch_day06_contract() -> None:'''
-text, count = pattern.subn(replacement, text, count=1)
+text, count = pattern.subn(lambda _: replacement, text, count=1)
 if count != 1:
     raise SystemExit(f"saved-value function replacement: expected one match, found {count}")
 path.write_text(text, encoding="utf-8")
