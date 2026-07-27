@@ -78,8 +78,19 @@ jobs:
           Path('/tmp/russian-language-audit.txt').write_text('\n'.join(report), encoding='utf-8')
           PY
 
+      - name: Pack current source tree
+        run: |
+          tar --exclude=.git --exclude=node_modules --exclude=docs/.vitepress/cache --exclude=docs/.vitepress/dist \
+            -czf /tmp/nasm-course-language-review.tar.gz .
+
       - name: Upload audit
         uses: actions/upload-artifact@v4
         with:
           name: russian-language-audit
           path: /tmp/russian-language-audit.txt
+
+      - name: Upload source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: nasm-course-language-review
+          path: /tmp/nasm-course-language-review.tar.gz
