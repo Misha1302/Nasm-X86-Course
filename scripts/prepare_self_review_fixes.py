@@ -51,4 +51,12 @@ def patch_day06_contract() -> None:'''
 text, count = pattern.subn(lambda _: replacement, text, count=1)
 if count != 1:
     raise SystemExit(f"saved-value function replacement: expected one match, found {count}")
+
+old_fence = 'new = fence.sub(lambda m: "```asm\\n" + patch_complete_asm_block(m.group(1)) + "```", text)'
+new_fence = 'new = fence.sub(lambda m: "```asm\\n" + patch_complete_asm_block(m.group(1)).rstrip() + "\\n```", text)'
+count = text.count(old_fence)
+if count != 1:
+    raise SystemExit(f"Markdown fence preservation: expected one occurrence, found {count}")
+text = text.replace(old_fence, new_fence, 1)
+
 path.write_text(text, encoding="utf-8")
