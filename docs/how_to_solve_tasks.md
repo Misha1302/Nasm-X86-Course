@@ -1,11 +1,13 @@
 # Как решать задачи на NASM
 
+> **Важно для вызовов libc.** Перед `call` должно выполняться `esp % 16 == 0`. Выравнивающие байты и аргументы вместе должны занимать число байт, кратное 16. Подробности: [C ABI / CDECL](/c_abi) и [выравнивание стека](/patterns/libc_alignment).
+
 Эта страница — алгоритм решения. Её нужно открыть, когда условие уже есть, а в голове пока хаос.
 
 ## Алгоритм
 
 1. Напиши C++-идею.
-2. Убери лишний синтаксис C++ и оставь low-level shape.
+2. Убери лишний синтаксис C++ и оставь низкоуровневую схему вычислений.
 3. Выбери регистры.
 4. Напиши NASM-фрагмент вычисления.
 5. Добавь `scanf` / `printf`, если задача требует ввод/вывод.
@@ -30,7 +32,7 @@ answer = a * b + c;
 
 ---
 
-## Шаг 2. Low-level shape
+## Шаг 2. Низкоуровневая схема
 
 Разложи выражение на простые действия:
 
@@ -47,7 +49,7 @@ print answer
 if (x < y) answer = 1;
 ```
 
-shape будет таким:
+схема будет такой:
 
 ```text
 load x
@@ -68,7 +70,7 @@ answer = 1
 | `ecx` | временное значение / счётчик |
 | `edx` | деление, остаток, временное значение |
 
-Не используй `ebx`, `esi`, `edi` как обычные временные регистры в полной функции, пока не умеешь сохранять их. В CDECL они callee-saved.
+Не используй `ebx`, `esi`, `edi` как обычные временные регистры в полной функции, пока не умеешь сохранять их. По CDECL вызываемая функция обязана их сохранять.
 
 ---
 
@@ -103,19 +105,21 @@ eax = eax + c
 Шаблон чтения одного `int`:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push x
 push fmtIn
 call scanf
-add esp, 8
+add esp, 16
 ```
 
 Шаблон печати результата из `eax`:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push eax
 push fmtOut
 call printf
-add esp, 8
+add esp, 16
 ```
 
 Главная ловушка:
@@ -153,9 +157,9 @@ add esp, 8
 | Ноль / граница | `x=0`, `month=1` |
 | Опасный смысл | отрицательное число, максимум маски, деление |
 
-Пример для branchless abs:
+Пример для модуля без переходов:
 
-| `x` | expected |
+| `x` | ожидаемый результат |
 |---:|---:|
 | `0` | `0` |
 | `1` | `1` |
@@ -185,30 +189,39 @@ section .text
     global main
 
 main:
+    push ebp
+    mov ebp, esp
+    and esp, -16
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push a
     push fmtIn
     call scanf
-    add esp, 8
+    add esp, 16
 
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push b
     push fmtIn
     call scanf
-    add esp, 8
+    add esp, 16
 
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push c
     push fmtIn
     call scanf
-    add esp, 8
+    add esp, 16
 
     mov eax, [a]
     imul eax, [b]
     add eax, [c]
 
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push eax
     push fmtOut
     call printf
-    add esp, 8
+    add esp, 16
 
+    mov esp, ebp
+    pop ebp
     xor eax, eax
     ret
 ```
@@ -223,5 +236,5 @@ main:
 - [ ] После каждого `call` есть правильный `add esp, ...`.
 - [ ] Для `idiv` есть `cdq`.
 - [ ] Для `div` есть `xor edx, edx`.
-- [ ] Для signed/unsigned comparison выбран правильный jump.
+- [ ] Для знакового или беззнакового сравнения выбран правильный переход.
 - [ ] Я проверил минимум 3 теста руками.

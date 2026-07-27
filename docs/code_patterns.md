@@ -1,5 +1,7 @@
 # Популярные шаблоны кода NASM x86
 
+> **Важно для вызовов libc.** Перед `call` должно выполняться `esp % 16 == 0`. Выравнивающие байты и аргументы вместе должны занимать число байт, кратное 16. Подробности: [C ABI / CDECL](/c_abi) и [выравнивание стека](/patterns/libc_alignment).
+
 ## Зачем эта страница
 
 Ассемблер проще учить не как набор отдельных инструкций, а как набор стандартных форм.
@@ -57,16 +59,23 @@ section .text
     global main
 
 main:
+    push ebp
+    mov ebp, esp
+    and esp, -16
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push x
     push fmtIn
     call scanf
-    add esp, 8
+    add esp, 16
 
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push dword [x]
     push fmtOut
     call printf
-    add esp, 8
+    add esp, 16
 
+    mov esp, ebp
+    pop ebp
     xor eax, eax
     ret
 ```
@@ -174,7 +183,7 @@ add esp, 8
 
 ---
 
-## 7. Сохранение callee-saved регистров
+## 7. Сохранение регистров, которые обязана сохранять вызываемая функция
 
 Если функция использует `ebx`, `esi`, `edi`, их надо сохранить и восстановить.
 
@@ -271,7 +280,7 @@ jle .else
 .end:
 ```
 
-Главная ошибка: забыть `jmp .end` после then-ветки. Тогда выполнение провалится в `else`.
+Главная ошибка — забыть `jmp .end` после ветки `then`. Тогда выполнение продолжится в `else`.
 
 ---
 
@@ -478,7 +487,7 @@ jnz .has_bit
 
 ---
 
-## 16. Signed-сравнение
+## 16. Знаковое сравнение
 
 ```asm
 mov eax, [x]
@@ -493,7 +502,7 @@ jge .greater_eq
 
 ---
 
-## 17. Unsigned-сравнение
+## 17. Беззнаковое сравнение
 
 ```asm
 mov eax, [x]
@@ -541,7 +550,7 @@ jmp .default
 
 ---
 
-## 19. `switch` через jump table
+## 19. `switch` через таблицу переходов
 
 ```asm
 cmp eax, 3
@@ -651,7 +660,7 @@ add eax, [j]
 mov eax, [base + 4*eax]
 ```
 
-Если base в `edx`:
+Если базовый адрес находится в `edx`:
 
 ```asm
 mov eax, [i]
@@ -662,7 +671,7 @@ mov eax, [edx + 4*eax]
 
 ---
 
-## 23. Signed division
+## 23. Знаковое деление
 
 ```asm
 mov eax, [x]
@@ -679,7 +688,7 @@ edx = x % y
 
 ---
 
-## 24. Unsigned division
+## 24. Беззнаковое деление
 
 ```asm
 mov eax, [x]
@@ -696,7 +705,7 @@ edx = x % y
 
 ---
 
-## 25. Branchless abs
+## 25. Модуль без переходов
 
 ```asm
 mov eax, [x]
@@ -715,7 +724,7 @@ answer = (x ^ mask) - mask;
 
 ---
 
-## 26. Masked merge
+## 26. Объединение по маске
 
 ```asm
 mov eax, [a]
@@ -768,25 +777,25 @@ answer = a | (b << 8) | (c << 16) | (d << 24);
 
 ## 28. Работа с `char` / `short`
 
-Signed `char`:
+Знаковый `char`:
 
 ```asm
 movsx eax, byte [x]
 ```
 
-Unsigned `char`:
+Беззнаковый `char`:
 
 ```asm
 movzx eax, byte [x]
 ```
 
-Signed `short`:
+Знаковый `short`:
 
 ```asm
 movsx eax, word [x]
 ```
 
-Unsigned `short`:
+Беззнаковый `short`:
 
 ```asm
 movzx eax, word [x]
@@ -796,13 +805,13 @@ movzx eax, word [x]
 
 ## 29. Доступ к полю структуры
 
-Если `edx = r`, и поле `j` лежит по offset 4:
+Если `edx = r`, а поле `j` имеет смещение 4:
 
 ```asm
 mov eax, [edx + 4]
 ```
 
-Если массив `a` внутри структуры начинается по offset 8:
+Если массив `a` внутри структуры начинается со смещения 8:
 
 ```asm
 mov eax, [edx + 8 + 4*ecx]
@@ -818,11 +827,11 @@ fld dword [x]
 fld dword [y]
 faddp
 
-sub esp, 8
+sub esp, 12      ; 4 bytes padding + 8-byte double
 fstp qword [esp]
 push fmtFloat
 call printf
-add esp, 12
+add esp, 16
 ```
 
 Важно:
@@ -858,7 +867,7 @@ printf("%f") ждёт double, то есть qword.
 
 Этого достаточно, чтобы уверенно стартовать с большинством учебных задач.
 
-## 31. Branchless select
+## 31. Выбор без переходов
 
 ```asm
 ; eax = a
@@ -877,7 +886,7 @@ mask = FFFFFFFFh -> выбрать a
 mask = 00000000h -> выбрать b
 ```
 
-## 32. Ceil division
+## 32. Деление с округлением вверх
 
 Для положительных чисел:
 
@@ -885,7 +894,7 @@ mask = 00000000h -> выбрать b
 ceil(a / b) = (a + b - 1) / b
 ```
 
-NASM-shape:
+Форма на NASM:
 
 ```asm
 mov eax, [a]
@@ -895,7 +904,7 @@ xor edx, edx
 div dword [b]
 ```
 
-## 33. Min/max через сравнение
+## 33. Минимум и максимум через сравнение
 
 ```asm
 ; eax = current min
@@ -906,9 +915,9 @@ mov eax, ecx
 .keep:
 ```
 
-Для signed-чисел используй signed jumps.
+Для знаковых чисел используй переходы знакового сравнения.
 
-## 34. Recursive function skeleton
+## 34. Каркас рекурсивной функции
 
 ```asm
 func:
@@ -924,7 +933,7 @@ func:
     ret
 ```
 
-## 35. Decimal reverse
+## 35. Разворот десятичной записи
 
 ```text
 rev = 0
@@ -934,7 +943,7 @@ while x != 0:
     x /= 10
 ```
 
-## 36. GCD
+## 36. Наибольший общий делитель
 
 ```text
 while b != 0:
@@ -943,10 +952,10 @@ while b != 0:
     b = r
 ```
 
-## 37. libc call checklist
+## 37. Проверка вызова libc
 
 - аргументы справа налево;
 - адрес строки, не `[строка]`;
-- caller clean-up;
+- очистка стека вызывающей функцией;
 - `eax/ecx/edx` могут быть испорчены;
-- для Spring-04 проверить 16-byte alignment.
+- для Spring-04 проверить 16-байтное выравнивание.

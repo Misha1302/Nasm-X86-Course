@@ -1,5 +1,7 @@
 # x86 C ABI / CDECL: как вызывать C-функции из NASM
 
+> **Важно для вызовов libc.** Перед `call` должно выполняться `esp % 16 == 0`. Выравнивающие байты и аргументы вместе должны занимать число байт, кратное 16. Подробности: [C ABI / CDECL](/c_abi) и [выравнивание стека](/patterns/libc_alignment).
+
 ## Зачем эта страница
 
 Да, без отдельной страницы про ABI курс получается неполным.
@@ -10,17 +12,17 @@
 - почему после `printf` пишем `add esp, 8` или `add esp, 12`;
 - почему `scanf` получает адрес, а `printf` значение;
 - какие регистры функция имеет право испортить;
-- где лежит return value;
+- где лежит возвращаемое значение;
 - почему `[ebp+8]` — первый аргумент;
-- почему variadic-функции вроде `printf` требуют аккуратности.
+- почему функции с переменным числом аргументов, например `printf`, требуют аккуратности.
 
-Эта страница — практическая шпаргалка по **32-bit x86 C ABI / CDECL** для Linux/NASM-задач курса.
+Эта страница — практическая шпаргалка по **C ABI / CDECL для 32-битной x86** в задачах курса на Linux и NASM.
 
 ---
 
 ## Главное за 30 секунд
 
-Для обычного 32-bit x86 CDECL:
+Для обычного CDECL в 32-битной x86:
 
 ```text
 arguments -> stack, right-to-left
@@ -40,17 +42,18 @@ printf("%d\n", x);
 NASM:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push dword [x]      ; second argument: x
 push fmtOut         ; first argument: "%d\n"
 call printf
-add esp, 8          ; caller removes 2 arguments * 4 bytes
+add esp, 16          ; caller removes 2 arguments * 4 bytes
 ```
 
 ---
 
 ## 1. Что такое ABI
 
-ABI = Application Binary Interface.
+ABI — двоичный интерфейс программ: соглашение между отдельно собранными частями программы.
 
 Если очень просто, ABI — это договор между машинным кодом разных модулей.
 
@@ -59,10 +62,10 @@ ABI = Application Binary Interface.
 | Вопрос | ABI говорит |
 |---|---|
 | Где лежат аргументы функции? | В регистрах или на стеке |
-| Кто очищает аргументы со стека? | Caller или callee |
+| Кто очищает аргументы со стека? | вызывающая или вызываемая функция |
 | Где лежит возвращаемое значение? | Обычно в `eax` |
-| Какие регистры можно портить? | Caller-saved |
-| Какие регистры надо восстановить? | Callee-saved |
+| Какие регистры можно менять? | те, которые разрешено менять вызываемой функции |
+| Какие регистры надо восстановить? | те, которые вызываемая функция обязана сохранять |
 | Как выровнен стек? | По правилам платформы |
 | Как называются символы и функции? | Правила линковки |
 
@@ -78,7 +81,7 @@ ABI = Application Binary Interface.
 cdecl = аргументы на стеке + caller clean-up + return in eax
 ```
 
-CDECL важен, потому что `printf`, `scanf` и обычные C-функции в 32-bit учебной среде вызываются именно в этой логике.
+CDECL важен, потому что в учебной 32-битной среде функции `printf`, `scanf` и другие функции C вызываются по этим правилам.
 
 ---
 
@@ -146,11 +149,11 @@ higher addresses
 lower addresses
 ```
 
-После `call` процессор сам кладёт return address, поэтому внутри функции после пролога первый аргумент окажется по `[ebp+8]`.
+Команда `call` сама кладёт в стек адрес возврата. Поэтому после обычного пролога первый аргумент находится по `[ebp+8]`.
 
 ---
 
-## 5. `call` добавляет return address
+## 5. `call` добавляет адрес возврата
 
 Вызов:
 
@@ -165,7 +168,7 @@ call f
 2. jump to f
 ```
 
-Поэтому внутри функции на стеке есть return address.
+Поэтому внутри функции в стеке находится адрес возврата.
 
 Перед `call f` после аргументов:
 
@@ -223,7 +226,7 @@ lower addresses
 
 ---
 
-## 7. Caller clean-up
+## 7. Очистка стека вызывающей функцией
 
 CDECL означает: **стек после вызова чистит вызывающий код**.
 
@@ -261,7 +264,7 @@ bytes_to_remove = argument_count * 4
 
 ---
 
-## 8. Return value
+## 8. Возвращаемое значение
 
 Обычный `int` возвращается в `eax`.
 
@@ -299,21 +302,21 @@ call sum
 eax
 ```
 
-Для некоторых 64-битных integer-результатов может использоваться пара:
+Для некоторых 64-битных целочисленных результатов может использоваться пара:
 
 ```text
 edx:eax
 ```
 
-Для floating point при старом x87-стиле результат может быть в `st(0)`. Но в базовых задачах чаще всего нужен `eax`.
+При вычислениях с плавающей точкой через x87 результат может находиться в `st(0)`. В базовых целочисленных задачах результат обычно возвращается в `eax`.
 
 ---
 
-## 9. Caller-saved и callee-saved
+## 9. Какие регистры можно менять, а какие нужно сохранять
 
 После вызова функции часть регистров может быть испорчена.
 
-### Caller-saved
+### Регистры, которые вызываемая функция может изменить
 
 ```text
 eax, ecx, edx
@@ -331,7 +334,7 @@ pop ecx
 pop eax
 ```
 
-### Callee-saved
+### Регистры, которые вызываемая функция обязана сохранить
 
 ```text
 ebx, esi, edi, ebp
@@ -375,10 +378,11 @@ call printf
 ```asm
 mov eax, [answer]
 
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push eax
 push fmtOut
 call printf
-add esp, 8
+add esp, 16
 
 ; здесь eax уже может быть не answer
 add eax, 1
@@ -390,10 +394,11 @@ add eax, 1
 mov eax, [answer]
 push eax              ; save answer
 
+sub esp, 4       ; saved dword + 4 padding + 8 argument bytes = 16
 push eax
 push fmtOut
 call printf
-add esp, 8
+add esp, 12
 
 pop eax               ; restore answer
 add eax, 1
@@ -414,10 +419,11 @@ printf("%d\n", x);
 NASM:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push dword [x]
 push fmtOut
 call printf
-add esp, 8
+add esp, 16
 ```
 
 Почему `[x]`?
@@ -427,10 +433,11 @@ add esp, 8
 Если ответ уже в `eax`:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push eax
 push fmtOut
 call printf
-add esp, 8
+add esp, 16
 ```
 
 ---
@@ -446,10 +453,11 @@ scanf("%d", &x);
 NASM:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push x
 push fmtIn
 call scanf
-add esp, 8
+add esp, 16
 ```
 
 Почему `x`, а не `[x]`?
@@ -487,11 +495,12 @@ scanf("%d%d", &a, &b);
 Push справа налево:
 
 ```asm
+sub esp, 4       ; padding: 4 + 12 argument bytes = 16
 push b
 push a
 push fmt2
 call scanf
-add esp, 12
+add esp, 16
 ```
 
 Строка формата:
@@ -521,11 +530,12 @@ printf("%d %d\n", a, b);
 Push справа налево:
 
 ```asm
+sub esp, 4       ; padding: 4 + 12 argument bytes = 16
 push dword [b]
 push dword [a]
 push fmt2Out
 call printf
-add esp, 12
+add esp, 16
 ```
 
 Строка:
@@ -536,9 +546,9 @@ fmt2Out db "%d %d", 10, 0
 
 ---
 
-## 15. Variadic-функции: почему `printf` и `scanf` особенные
+## 15. Функции с переменным числом аргументов: почему `printf` и `scanf` особенные
 
-`printf` и `scanf` — variadic functions. Они принимают переменное количество аргументов.
+`printf` и `scanf` принимают переменное число аргументов.
 
 ```c
 printf("%d", x);
@@ -561,10 +571,11 @@ add esp, 4
 
 ```asm
 ; scanf ждёт адрес int, а передали значение int
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push dword [x]
 push fmtIn
 call scanf
-add esp, 8
+add esp, 16
 ```
 
 ```asm
@@ -576,7 +587,7 @@ fstp dword [esp]
 
 ## 16. Про `printf("%f")` и `qword`
 
-В C variadic-функциях `float` продвигается до `double`.
+При вызове функции C с переменным числом аргументов значение `float` передаётся как `double`.
 
 Поэтому:
 
@@ -589,35 +600,30 @@ printf("%f", value);
 NASM-идея с x87:
 
 ```asm
-sub esp, 8
+sub esp, 12      ; 4 bytes padding + 8-byte double
 fstp qword [esp]
 push fmtFloat
 call printf
-add esp, 12
+add esp, 16
 ```
 
-Почему `12`?
+Почему `sub esp,12`?
 
 ```text
-8 bytes double + 4 bytes format pointer = 12 bytes
+8 bytes double + 4 bytes padding = 12 bytes reserved
+после push format: 4 + 8 + 4 = 16 bytes total call area
 ```
 
 ---
 
-## 17. Stack alignment: коротко и честно
+## 17. Выравнивание стека: часть ABI, а не необязательная оптимизация
 
-В простых учебных IA-32 задачах обычно достаточно держать стек **сбалансированным**: сколько положил через `push`, столько убрал через `add esp, ...` или `pop`.
+В поддерживаемой среде GNU/Linux i386 перед каждым вызовом по ABI нужно проверить два независимых условия:
 
-Но в реальных ABI и с современными компиляторами может быть дополнительное требование к выравниванию стека, особенно вокруг SSE и библиотечных вызовов.
+1. параметры лежат непрерывно и в правильном порядке;
+2. непосредственно перед `call` выполняется `esp % 16 == 0`.
 
-Практическое правило для курса:
-
-1. Не порти `esp` без причины.
-2. После каждого CDECL-вызова убирай аргументы.
-3. Перед вызовом libc не оставляй стек в случайном состоянии.
-4. Если пишешь сложную функцию с локальными данными и вызовами, следи за выравниванием отдельно.
-
-Для наших базовых задач главная ошибка почти всегда не “идеальное 16-byte alignment”, а забытый `add esp, ...` или неправильный аргумент.
+После возврата стек также должен быть восстановлен: вызывающая функция удаляет **выравнивающие байты и байты аргументов**. Случайно успешный запуск с неверным выравниванием не доказывает корректность. Формула и способ через вспомогательную функцию приведены в [разделе о выравнивании стека](/patterns/libc_alignment).
 
 ---
 
@@ -642,16 +648,23 @@ sum:
     ret
 
 main:
+    push ebp
+    mov ebp, esp
+    and esp, -16
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push 7
     push 5
     call sum
-    add esp, 8
+    add esp, 16
 
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push eax
     push fmtOut
     call printf
-    add esp, 8
+    add esp, 16
 
+    mov esp, ebp
+    pop ebp
     xor eax, eax
     ret
 ```
@@ -685,21 +698,28 @@ section .text
     global main
 
 main:
+    push ebp
+    mov ebp, esp
+    and esp, -16
+    sub esp, 4       ; padding: 4 + 12 argument bytes = 16
     push b
     push a
     push fmtIn
     call scanf
-    add esp, 12
+    add esp, 16
 
     mov eax, [a]
     imul eax, [b]
     add eax, 10
 
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push eax
     push fmtOut
     call printf
-    add esp, 8
+    add esp, 16
 
+    mov esp, ebp
+    pop ebp
     xor eax, eax
     ret
 ```
@@ -713,16 +733,16 @@ printf("%d\n", a*b + 10);
 
 ---
 
-## 20. Отличие CDECL от других calling conventions
+## 20. Отличие CDECL от других соглашений вызова
 
 В слайдах могут встречаться и другие соглашения вызова. Коротко:
 
-| Convention | Идея |
+| Соглашение | Основная идея |
 |---|---|
-| `cdecl` | аргументы на стеке, caller clean-up |
-| `stdcall` | аргументы на стеке, callee clean-up |
+| `cdecl` | аргументы в стеке удаляет вызывающая функция |
+| `stdcall` | аргументы в стеке удаляет вызываемая функция |
 | `fastcall` | часть аргументов через регистры |
-| `thiscall` | C++ method call, hidden `this` часто через регистр |
+| `thiscall` | вызов метода C++; скрытый `this` часто передаётся через регистр |
 
 В этом курсе для задач держим в голове именно:
 
@@ -730,7 +750,7 @@ printf("%d\n", a*b + 10);
 32-bit Linux/NASM + libc -> practical cdecl model
 ```
 
-x64 ABI не мешаем сюда: там аргументы обычно идут через регистры и правила другие.
+ABI x64 здесь не рассматриваем: там аргументы обычно передаются через регистры и действуют другие правила.
 
 ---
 
@@ -738,7 +758,7 @@ x64 ABI не мешаем сюда: там аргументы обычно ид�
 
 #### 1. Вызов `f(a,b,c)`
 
-Напиши CDECL-push sequence.
+Напиши последовательность `push` для CDECL.
 
 <details>
 <summary>Ответ</summary>
@@ -767,7 +787,7 @@ add esp, 12
 <details>
 <summary>Ответ</summary>
 
-Было два аргумента по 4 байта: format pointer и `x`.
+Было два аргумента по 4 байта: указатель на строку формата и `x`.
 
 </details>
 
@@ -776,7 +796,7 @@ add esp, 12
 <details>
 <summary>Ответ</summary>
 
-Обычно `eax`, `ecx`, `edx` — caller-saved.
+Обычно вызываемая функция может изменить `eax`, `ecx` и `edx`.
 
 </details>
 
@@ -785,7 +805,7 @@ add esp, 12
 <details>
 <summary>Ответ</summary>
 
-Обычно `ebx`, `esi`, `edi`, `ebp` — callee-saved.
+Обычно вызываемая функция обязана сохранить `ebx`, `esi`, `edi` и `ebp`.
 
 </details>
 
@@ -797,10 +817,11 @@ add esp, 12
 Адрес `x`:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push x
 push fmtIn
 call scanf
-add esp, 8
+add esp, 16
 ```
 
 </details>
@@ -813,10 +834,11 @@ add esp, 8
 Значение `[x]`:
 
 ```asm
+sub esp, 8       ; padding: 8 + 8 argument bytes = 16
 push dword [x]
 push fmtOut
 call printf
-add esp, 8
+add esp, 16
 ```
 
 </details>
@@ -829,10 +851,10 @@ add esp, 8
 |---|---|
 | передать `[x]` в `scanf` | нужен адрес, а не значение |
 | передать `x` в `printf("%d")` | напечатаешь адрес, а не значение |
-| забыть `add esp, ...` | caller не очистил аргументы |
+| забыть `add esp, ...` | вызывающая функция не удалила аргументы |
 | перепутать порядок push | функция прочитает аргументы не так |
-| считать `[ebp+4]` первым аргументом | это return address |
-| хранить важное значение в `eax` через `call printf` | `eax` caller-saved, функция может его испортить |
+| считать `[ebp+4]` первым аргументом | там находится адрес возврата |
+| хранить важное значение в `eax` через `call printf` | `printf` имеет право изменить `eax` |
 | использовать `ebx/esi/edi` в своей функции и не восстановить | нарушаешь ABI |
 | передать `dword` для `%f` | `%f` ждёт `double`, 8 байт |
 
@@ -847,15 +869,15 @@ add esp, 8
 - правильно положить аргументы справа налево;
 - очистить стек после CDECL-вызова;
 - понять `[ebp+8]`, `[ebp+12]`;
-- знать, что return value лежит в `eax`;
+- знать, что возвращаемое значение лежит в `eax`;
 - не рассчитывать на сохранность `eax/ecx/edx` после вызова;
 - сохранять `ebx/esi/edi`, если пишешь свою функцию и используешь их;
 - корректно вызывать `scanf`, `printf`, `printf("%f")`.
 
 Если ученик понимает эту страницу, он уже может нормально вызывать функции и читать CDECL-фрагменты.
 
-## Для задач Spring-04: alignment
+## Для задач Spring-04: выравнивание
 
 Если в условии явно сказано, что стек должен быть выровнен по 16 байт при вызове библиотечных функций, обычного “стек сбалансирован” уже мало.
 
-Для таких задач смотри отдельный паттерн: [libc и 16-byte stack alignment](/patterns/libc_alignment).
+Для таких задач смотри отдельный раздел: [libc и 16-байтное выравнивание стека](/patterns/libc_alignment).

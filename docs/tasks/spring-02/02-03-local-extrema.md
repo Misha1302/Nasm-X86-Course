@@ -32,7 +32,7 @@ indices_of_maxima
 ## Ограничения
 
 - `0 <= N <= 500000`;
-- элементы — signed 32-bit.
+- элементы — 32-битные знаковые.
 
 ## Решение
 
@@ -72,7 +72,7 @@ print minimaCount and minimaIndices
 print maximaCount and maximaIndices
 ```
 
-## NASM-shape
+## Схема на NASM
 
 Для условия минимума:
 

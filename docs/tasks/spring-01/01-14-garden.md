@@ -97,13 +97,13 @@ sub ecx, 6
 sar ecx, 31        ; ecx = -1 если X < 6, иначе 0
 ```
 
-Дальше branchless-select:
+Дальше — выбор без ветвлений:
 
 ```text
 answer = (nightAnswer & mask) | (dayAnswer & ~mask)
 ```
 
-## NASM-shape
+## Схема на NASM
 
 ```asm
 ; eax = items = N * M * K
@@ -143,5 +143,5 @@ div ecx
 ## Где в курсе
 
 - [День 09 — деление](/day_09)
-- [День 10 — branchless-домашка](/day_10)
-- [Branchless-маски](/patterns/branchless)
+- [День 10 — задачи без ветвлений](/day_10)
+- [Маски для кода без ветвлений](/patterns/branchless)

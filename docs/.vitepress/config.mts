@@ -3,7 +3,7 @@ import { defineConfig } from "vitepress";
 export default defineConfig({
     base: "/Nasm-X86-Course/",
     title: "NASM x86 для олимпиадников",
-    description: "Самостоятельный курс NASM IA-32: главы, transfer-практика, checkpoints и AI-наставник",
+    description: "Самостоятельный курс NASM IA-32: главы, практика, контрольные точки и ИИ-наставник",
 
     themeConfig: {
         nav: [
@@ -11,7 +11,7 @@ export default defineConfig({
             { text: "Курс", link: "/day_01" },
             { text: "Тетрадь", link: "/transfer_workbook" },
             { text: "Контроль", link: "/checkpoints" },
-            { text: "AI-наставник", link: "/ai_tutor_prompts" },
+            { text: "ИИ-наставник", link: "/ai_tutor_prompts" },
             { text: "Паттерны", link: "/patterns/" },
             { text: "Задачи", link: "/tasks/" },
             { text: "Финал", link: "/day_25" }
@@ -26,9 +26,9 @@ export default defineConfig({
                     { text: "Рабочая тетрадь", link: "/transfer_workbook" },
                     { text: "Ключи тетради", link: "/transfer_keys" },
                     { text: "Контрольные точки", link: "/checkpoints" },
-                    { text: "Ключи checkpoints", link: "/checkpoint_keys" },
-                    { text: "AI-наставник", link: "/ai_tutor_prompts" },
-                    { text: "Проверка AI-наставника", link: "/ai_tutor_eval" },
+                    { text: "Ключи контрольных точек", link: "/checkpoint_keys" },
+                    { text: "ИИ-наставник", link: "/ai_tutor_prompts" },
+                    { text: "Проверка ИИ-наставника", link: "/ai_tutor_eval" },
                     { text: "Пять занятий Дня 10", link: "/day_10_learning_path" },
                     { text: "Как решать задачи", link: "/how_to_solve_tasks" },
                     { text: "Карточки ошибок", link: "/debug_cards" },
@@ -45,7 +45,7 @@ export default defineConfig({
                     { text: "День 02 — сборка", link: "/day_02" },
                     { text: "День 03 — CPU и инструкции", link: "/day_03" },
                     { text: "День 04 — регистры", link: "/day_04" },
-                    { text: "Checkpoint 1", link: "/checkpoints#checkpoint-1-после-дня-04" },
+                    { text: "Контрольная точка 1", link: "/checkpoints#checkpoint-1-после-дня-04" },
                     { text: "День 05 — память", link: "/day_05" },
                     { text: "День 06 — ввод/вывод", link: "/day_06" }
                 ]
@@ -56,9 +56,9 @@ export default defineConfig({
                     { text: "День 07 — арифметика", link: "/day_07" },
                     { text: "День 08 — расширение", link: "/day_08" },
                     { text: "День 09 — деление", link: "/day_09" },
-                    { text: "День 10 — branchless", link: "/day_10" },
+                    { text: "День 10 — код без переходов", link: "/day_10" },
                     { text: "Маршрут Дня 10", link: "/day_10_learning_path" },
-                    { text: "Checkpoint 2", link: "/checkpoints#checkpoint-2-после-дня-10" }
+                    { text: "Контрольная точка 2", link: "/checkpoints#checkpoint-2-после-дня-10" }
                 ]
             },
             {
@@ -69,7 +69,7 @@ export default defineConfig({
                     { text: "День 13 — if и циклы", link: "/day_13" },
                     { text: "День 14 — switch", link: "/day_14" },
                     { text: "День 15 — адресация", link: "/day_15" },
-                    { text: "Checkpoint 3", link: "/checkpoints#checkpoint-3-после-дня-15" }
+                    { text: "Контрольная точка 3", link: "/checkpoints#checkpoint-3-после-дня-15" }
                 ]
             },
             {
@@ -79,21 +79,21 @@ export default defineConfig({
                     { text: "День 17 — CDECL", link: "/day_17" },
                     { text: "День 18 — reverse", link: "/day_18" },
                     { text: "День 19 — структуры", link: "/day_19" },
-                    { text: "Checkpoint 4", link: "/checkpoints#checkpoint-4-после-дня-19" }
+                    { text: "Контрольная точка 4", link: "/checkpoints#checkpoint-4-после-дня-19" }
                 ]
             },
             {
                 text: "Runtime, safety и FPU",
                 items: [
                     { text: "День 20 — до main", link: "/day_20" },
-                    { text: "День 21 — memory safety", link: "/day_21" },
-                    { text: "День 22 — floating point", link: "/day_22" },
+                    { text: "День 21 — безопасность памяти", link: "/day_21" },
+                    { text: "День 22 — числа с плавающей точкой", link: "/day_22" },
                     { text: "День 23 — x87", link: "/day_23" },
                     { text: "Практика — double", link: "/fpu_double" },
-                    { text: "Checkpoint 5", link: "/checkpoints#checkpoint-5-после-дня-23" },
-                    { text: "День 24 — C++ object model", link: "/day_24" },
-                    { text: "Checkpoint 6", link: "/checkpoints#checkpoint-6-после-дня-24" },
-                    { text: "День 25 — mock exam", link: "/day_25" },
+                    { text: "Контрольная точка 5", link: "/checkpoints#checkpoint-5-после-дня-23" },
+                    { text: "День 24 — модель объектов C++", link: "/day_24" },
+                    { text: "Контрольная точка 6", link: "/checkpoints#checkpoint-6-после-дня-24" },
+                    { text: "День 25 — пробным экзаменом", link: "/day_25" },
                     { text: "После IA-32: x86-64", link: "/modern_x86_64_next" }
                 ]
             },
@@ -101,7 +101,7 @@ export default defineConfig({
                 text: "Экзаменационные паттерны",
                 items: [
                     { text: "Обзор", link: "/patterns/" },
-                    { text: "Branchless-маски", link: "/patterns/branchless" },
+                    { text: "Маски без переходов", link: "/patterns/branchless" },
                     { text: "Битовые циклы", link: "/patterns/bit_counting" },
                     { text: "Десятичные алгоритмы", link: "/patterns/decimal" },
                     { text: "Рекурсия", link: "/patterns/recursion" },
@@ -131,7 +131,8 @@ export default defineConfig({
                     { text: "Справочник инструкций", link: "/instruction_reference" },
                     { text: "Популярные инструкции", link: "/popular_instructions" },
                     { text: "Шаблоны кода", link: "/code_patterns" },
-                    { text: "Полный самостоятельный учебник", link: "/textbook" }
+                    { text: "Полный самостоятельный учебник", link: "/textbook" },
+                    { text: "Тетрадь без встроенных ответов", link: "/closed_book_workbook" }
                 ]
             }
         ],

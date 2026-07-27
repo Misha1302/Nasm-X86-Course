@@ -7,6 +7,9 @@ section .text
     global main
 
 main:
+    push ebp
+    mov ebp, esp
+    and esp, -16
     mov eax, [x]
     cmp eax, 3
     ja .default
@@ -38,11 +41,14 @@ main:
     xor eax, eax
 
 .print:
+    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
     push eax
     push fmtOut
     call printf
-    add esp, 8
+    add esp, 16
 
+    mov esp, ebp
+    pop ebp
     xor eax, eax
     ret
 

@@ -73,7 +73,7 @@ for i = 0..N-1:
 print distinct
 ```
 
-## NASM-shape
+## Схема на NASM
 
 `strcmp(current, saved)`:
 
@@ -87,16 +87,16 @@ test eax, eax
 je .found
 ```
 
-`strcpy(destination, source)`:
+`strcpy(назначение, источник)`:
 
 ```asm
 push current
-push destination
+push назначение
 call strcpy
 add esp, 8
 ```
 
-Перед каждым libc call нужен alignment.
+Перед каждым вызовом функции из libc нужно выровнять стек.
 
 ## Ошибки
 
@@ -105,10 +105,10 @@ add esp, 8
 | сравнивать адреса строк | нужно сравнивать содержимое через `strcmp` |
 | выделить 10 байт на строку | нужен байт `0` |
 | не ограничить `%s` | лучше читать через `%15s` |
-| перепутать аргументы `strcpy` | сначала destination, потом source |
-| забыть alignment | явное требование условия |
+| перепутать аргументы `strcpy` | сначала назначение, потом источник |
+| забыть выравнивание | это явное требование условия |
 
 ## Где в курсе
 
 - [Строки и файлы](/patterns/strings_files)
-- [libc и alignment](/patterns/libc_alignment)
+- [libc и выравнивание](/patterns/libc_alignment)
