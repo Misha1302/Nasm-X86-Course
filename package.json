@@ -6,8 +6,9 @@
   "scripts": {
     "docs:generate": "python3 scripts/generate_course_docs.py",
     "course:validate": "python3 scripts/validate_course.py",
-    "docs:dev": "npm run docs:generate && vitepress dev docs --host 0.0.0.0",
-    "docs:build": "npm run docs:generate && npm run course:validate && vitepress build docs",
+    "course:pedagogy": "python3 scripts/validate_pedagogy.py",
+    "docs:dev": "npm run docs:generate && npm run course:validate && npm run course:pedagogy && vitepress dev docs --host 0.0.0.0",
+    "docs:build": "npm run docs:generate && npm run course:validate && npm run course:pedagogy && vitepress build docs",
     "docs:preview": "vitepress preview docs --host 0.0.0.0",
     "docs:clean": "rm -rf docs/.vitepress/cache docs/.vitepress/dist docs/textbook.md docs/course_migration.md docs/closed_book_workbook.md"
   },
