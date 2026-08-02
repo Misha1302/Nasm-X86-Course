@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "day10": {
+    "mandatory_sessions": ["10A", "10B", "10C", "10D", "10E"],
+    "optional_sessions": ["10F"],
+    "checkpoint2_required": ["CP2-MASK", "CP2-SIGNMASK-BUG", "CP2-CEIL", "CP2-GARDEN", "CP2-AREA"],
+    "final_bonus_only": ["10F", "01-16"]
+  },
+  "checkpoints": {
+    "1": {"maximum": 12, "threshold": 10, "critical": ["CP1-REG", "CP1-SIZE-R", "CP1-SIZE-W"]},
+    "2": {"maximum": 16, "threshold": 13, "critical": ["CP2-DIV", "CP2-SCANF", "CP2-MASK", "CP2-IDIV-BUG", "CP2-GARDEN", "CP2-AREA"]},
+    "3": {"maximum": 12, "threshold": 10, "critical": ["CP3-CMP", "CP3-TABLE", "CP3-LOOP", "CP3-FLAGS"]},
+    "4": {"maximum": 10, "threshold": 8, "critical": ["CP4-STACK", "CP4-FRAME", "CP4-STRUCT", "CP4-EBX", "CP4-TRANSFER"]},
+    "5": {"maximum": 16, "threshold": 13, "critical": ["CP5-X87", "CP5-VARARGS", "CP5-STARTUP", "CP5-SAFETY", "CP5-X87-TRANSFER"]},
+    "6": {"maximum": 10, "threshold": 8, "critical": ["CP6-VCALL", "CP6-ABI", "CP6-CALLS"]}
+  },
+  "final_exam": {
+    "maximum": 100,
+    "threshold": 80,
+    "block_minimums": {"A": 12, "B": 12, "C": 16, "D": 13, "E": 9},
+    "critical": ["A1", "A2", "B1", "C1", "C3", "D1", "E2"]
+  }
+}

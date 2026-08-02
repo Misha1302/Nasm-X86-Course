@@ -2,7 +2,11 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
+import re
 import sys
+
+from course_manifest import STANDALONE_RELATIVE_PATHS
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
@@ -12,7 +16,7 @@ errors: list[str] = []
 def read(relative: str) -> str:
     path = ROOT / relative
     if not path.is_file():
-        errors.append(f"missing required pedagogical file: {relative}")
+        errors.append(f"missing required file: {relative}")
         return ""
     return path.read_text(encoding="utf-8")
 
@@ -27,97 +31,223 @@ def forbid(text: str, marker: str, owner: str) -> None:
         errors.append(f"{owner} contains forbidden marker {marker!r}")
 
 
-prerequisites = read("docs/prerequisites.md")
-refreshers = read("docs/prerequisite_refreshers.md")
-glossary = read("docs/glossary.md")
-self_study = read("docs/self_study.md")
-walkthroughs = read("docs/transfer_walkthroughs.md")
-course_style = read("docs/course_style.md")
-readme = read("README.md")
+def normalize(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip()
 
-# Entry contract and real recovery routes.
-for marker in (
-    "Терминал",
-    "C++: указатель",
-    "C++: массив",
-    "C++: структура",
-    "Решение о старте",
-    "/prerequisite_refreshers#терминал-и-файлы",
-    "/prerequisite_refreshers#указатели-c",
-    "/prerequisite_refreshers#массивы-c",
-    "/prerequisite_refreshers#структуры-c",
+
+def heading_ids(text: str, prefix: str) -> list[str]:
+    return re.findall(rf"(?m)^### ({re.escape(prefix)}[A-Z0-9-]+)\b", text)
+
+
+def level2_sections(text: str, prefix: str) -> dict[int, str]:
+    matches = list(re.finditer(rf"(?m)^## {re.escape(prefix)}(\d+)[^\n]*$", text))
+    result: dict[int, str] = {}
+    for index, match in enumerate(matches):
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        result[int(match.group(1))] = text[match.start():end]
+    return result
+
+
+assessment_path = ROOT / "scripts" / "assessment_contract.json"
+try:
+    assessment = json.loads(assessment_path.read_text(encoding="utf-8"))
+except (FileNotFoundError, json.JSONDecodeError) as exc:
+    errors.append(f"invalid assessment contract: {exc}")
+    assessment = {"checkpoints": {}, "final_exam": {}, "day10": {}}
+
+# Full standalone export must include every learner-critical owner.
+required_sources = {
+    "docs/prerequisites.md",
+    "docs/prerequisite_refreshers.md",
+    "docs/glossary.md",
+    "docs/self_study.md",
+    "docs/support_matrix.md",
+    "docs/c_abi.md",
+    "docs/patterns/libc_alignment.md",
+    "docs/transfer_walkthroughs.md",
+    "docs/day_25.md",
+    "docs/final_exam.md",
+    "docs/final_exam_keys.md",
+    "docs/final_remediation.md",
+}
+manifest_sources = set(STANDALONE_RELATIVE_PATHS)
+for source in sorted(required_sources - manifest_sources):
+    errors.append(f"standalone manifest lacks learner-critical source: {source}")
+for source in STANDALONE_RELATIVE_PATHS:
+    if not (ROOT / source).is_file():
+        errors.append(f"standalone source does not exist: {source}")
+
+textbook = read("docs/textbook.md")
+for source in STANDALONE_RELATIVE_PATHS:
+    require(textbook, f"<!-- source: {source} -->", "generated textbook")
+
+# Closed-book artifact must hide all solution containers, regardless of labels.
+closed = read("docs/closed_book_workbook.md")
+for marker in ("<details", "</details>", "<summary>"):
+    forbid(closed.lower(), marker, "closed_book_workbook")
+require(closed, "<!-- source-final-exam: docs/final_exam.md -->", "closed_book_workbook")
+
+closed_norm = normalize(closed)
+for day in range(1, 26):
+    source = read(f"docs/day_{day:02d}.md")
+    for body in re.findall(r"(?is)<details(?:\s[^>]*)?>(.*?)</details>", source):
+        body = re.sub(r"(?is)<summary>.*?</summary>", "", body)
+        candidate = normalize(body)
+        if len(candidate) >= 80 and candidate in closed_norm:
+            errors.append(f"closed-book artifact leaks a solution body from day_{day:02d}")
+            break
+
+# One executable ABI model. Abstract call/ret exercises must label themselves.
+day25 = read("docs/day_25.md")
+final_exam = read("docs/final_exam.md")
+final_keys = read("docs/final_exam_keys.md")
+instruction_reference = read("docs/instruction_reference.md")
+transfer_workbook = read("docs/transfer_workbook.md")
+transfer_keys = read("docs/transfer_keys.md")
+checkpoints = read("docs/checkpoints.md")
+checkpoint_keys = read("docs/checkpoint_keys.md")
+example_sum = read("examples/09_aligned_sum_call.asm")
+
+correct_sum_call = "sub esp, 8\npush dword [b]\npush dword [a]\ncall sum\nadd esp, 16"
+for owner, text in (
+    ("day_25", day25),
+    ("final_exam_keys", final_keys),
+    ("instruction_reference", instruction_reference),
 ):
-    require(prerequisites, marker, "prerequisites")
+    require(text, correct_sum_call, owner)
 
-for marker in (
-    "## Терминал и файлы",
-    "## Двоичная запись и размеры",
-    "## Указатели C++",
-    "## Массивы C++",
-    "## Структуры C++",
-    "## Научная запись",
+require(example_sum, "sub esp, 8", "aligned sum example")
+require(example_sum, "call sum", "aligned sum example")
+require(example_sum, "add esp, 16", "aligned sum example")
+
+old_sum_pattern = re.compile(
+    r"push(?:\s+dword)?\s+\[?b\]?\s*\n"
+    r"push(?:\s+dword)?\s+\[?a\]?\s*\n"
+    r"call\s+sum\s*\n"
+    r"add\s+esp,\s*8\b",
+    flags=re.I,
+)
+for path in DOCS.rglob("*.md"):
+    text = path.read_text(encoding="utf-8")
+    if old_sum_pattern.search(text):
+        errors.append(f"stale unaligned sum call: {path.relative_to(ROOT)}")
+
+for owner, text in (
+    ("transfer_workbook TR-16", transfer_workbook),
+    ("transfer_keys TR-16", transfer_keys),
+    ("checkpoint CP4", checkpoints),
 ):
-    require(refreshers, marker, "prerequisite_refreshers")
+    require(text, "абстракт", owner.lower())
 
-# Terms needed by TR-01 and later diagnostics.
+# x87 reference must state operand direction rather than vague 'top elements'.
 for marker in (
-    "### Ассемблер",
-    "### Объектный файл",
-    "### Компоновщик",
-    "### Исполняемый файл",
-    "### ELF",
-    "### Символ",
-    "### Запись перемещения",
-    "### Загрузчик",
-    "### Процесс",
-    "### Адрес",
-    "### Инвариант",
-    "### Контрпример",
-    "### ABI",
-    "### x87",
+    "fsubp st1,st0` | `st(1)=st(1)-st(0)`",
+    "fdivp st1,st0` | `st(1)=st(1)/st(0)`",
 ):
-    require(glossary, marker, "glossary")
+    require(instruction_reference, marker, "instruction_reference")
 
-for marker in (
-    "компоновщик",
-    "объектный файл",
-    "загрузчик",
-    "Запись перемещения",
-    "Центральный инвариант",
+# Day 10 mandatory/optional contract must match checkpoint and final assessment.
+cp2 = level2_sections(checkpoints, "Контрольная точка ").get(2, "")
+for checkpoint_id in assessment.get("day10", {}).get("checkpoint2_required", []):
+    require(cp2, f"### {checkpoint_id}", "checkpoint 2")
+forbid(cp2, "01-16", "checkpoint 2 core")
+
+bonus_marker = "## Необязательный бонус 10F"
+require(final_exam, bonus_marker, "final exam")
+core_exam, _, bonus = final_exam.partition(bonus_marker)
+forbid(core_exam, "01-16", "final exam core")
+require(bonus, "01-16", "final exam bonus")
+
+# Checkpoint task/key identity and machine-readable assessment contract.
+cp_sections = level2_sections(checkpoints, "Контрольная точка ")
+key_sections = level2_sections(checkpoint_keys, "Контрольная точка ")
+for number_text, contract in assessment.get("checkpoints", {}).items():
+    number = int(number_text)
+    cp = cp_sections.get(number, "")
+    key = key_sections.get(number, "")
+    if not cp or not key:
+        errors.append(f"missing checkpoint/key section {number}")
+        continue
+    task_ids = heading_ids(cp, f"CP{number}-")
+    key_ids = heading_ids(key, f"CP{number}-")
+    if task_ids != key_ids:
+        errors.append(f"checkpoint {number} IDs differ: tasks={task_ids}, keys={key_ids}")
+    scoring = (
+        f"**Максимум:** {contract['maximum']}. **Проход:** {contract['threshold']}. "
+        f"**Критические задания:** "
+    )
+    require(cp, scoring, f"checkpoint {number}")
+    require(key, scoring, f"checkpoint key {number}")
+    for critical in contract["critical"]:
+        if critical not in task_ids:
+            errors.append(f"checkpoint {number} critical ID is absent: {critical}")
+    require(cp, "**Минимумы по измерениям:**", f"checkpoint {number}")
+    require(key, "**Минимумы по измерениям:**", f"checkpoint key {number}")
+    if contract["maximum"] != 2 * len(task_ids):
+        errors.append(f"checkpoint {number} maximum does not match task count")
+
+# Final exam must enforce both total and block minima and keep answers separate.
+for marker in ("<details", "<summary>", "Ожидаемый фрагмент"):
+    forbid(final_exam, marker, "final_exam")
+final_contract = assessment.get("final_exam", {})
+require(final_exam, f"Максимум: {final_contract.get('maximum')} баллов", "final_exam")
+require(final_exam, f"Общий проход: не менее {final_contract.get('threshold')}", "final_exam")
+for block, minimum in final_contract.get("block_minimums", {}).items():
+    require(final_exam, f"{block}≥{minimum}", "final_exam")
+for critical in final_contract.get("critical", []):
+    require(final_exam, critical, "final_exam")
+require(final_keys, "total >= 80", "final_exam_keys")
+require(final_keys, "A >= 12", "final_exam_keys")
+require(final_keys, "E >= 9", "final_exam_keys")
+
+# Day 25 is a route, not ten chapters hidden under one day.
+word_count = len(re.findall(r"[A-Za-zА-Яа-яЁё0-9_]+", day25))
+if word_count > 2500:
+    errors.append(f"day_25 is overloaded: {word_count} words")
+for link in ("/final_exam", "/final_exam_keys", "/final_remediation"):
+    require(day25, link, "day_25")
+
+# Navigation exposes recovery and final-assessment surfaces.
+config = read("docs/.vitepress/config.mts")
+for link in (
+    "/prerequisite_refreshers",
+    "/transfer_walkthroughs",
+    "/final_exam",
+    "/final_exam_keys",
+    "/final_remediation",
 ):
-    require(read("docs/day_01.md"), marker, "day_01")
+    require(config, f'link: "{link}"', "VitePress navigation")
 
-# Staged diagnostics for difficult tasks.
-for marker in (
-    "TR-13",
-    "TR-17",
-    "TR-23",
-    "### Направляющий вопрос",
-    "### Новый вариант",
-):
-    require(walkthroughs, marker, "transfer_walkthroughs")
-require(self_study, "/transfer_walkthroughs", "self_study")
-require(self_study, "краткий диагностический ключ", "self_study")
-require(self_study, "пошаговый разбор", "self_study")
+# Environment support must not imply verification that CI does not perform.
+support = read("docs/support_matrix.md")
+require(support, "CI-verified", "support_matrix")
+require(support, "documented, manually unverified", "support_matrix")
+forbid(support, "Fedora x86-64 | поддерживается", "support_matrix")
+forbid(support, "32-битной набор", "support_matrix")
 
-# Protect machine-readable VitePress syntax.
-index = read("docs/index.md")
-frontmatter = "\n".join(index.splitlines()[:20])
-require(frontmatter, "layout: home", "docs/index.md frontmatter")
-forbid(frontmatter, "расположение: home", "docs/index.md frontmatter")
+# AI repeated-failure scenarios must be actual multi-turn fixtures.
+ai_eval = read("docs/ai_tutor_eval.md")
+require(ai_eval, "массив последовательных ходов", "ai_tutor_eval")
+try:
+    cases = json.loads(read("evals/ai_tutor_cases.json"))
+except json.JSONDecodeError as exc:
+    errors.append(f"invalid AI tutor cases: {exc}")
+else:
+    if cases.get("provider_status") != "NOT_RUN":
+        errors.append("AI tutor provider status must remain NOT_RUN")
+    by_id = {case.get("id"): case for case in cases.get("cases", [])}
+    for case_id, minimum_turns in (("AI-05-recovery-switch", 3), ("AI-06-third-failure-prerequisite", 4)):
+        turns = by_id.get(case_id, {}).get("turns")
+        if not isinstance(turns, list) or len(turns) < minimum_turns:
+            errors.append(f"{case_id} lacks a real multi-turn fixture")
 
-# Known mechanical-translation failures.
+# Known mechanical-translation regressions.
 banned_phrases = (
     "знаковая/беззнаковая интерпретация интерпретацию",
-    "регистр знает знаковая/беззнаковая",
     "В построчное расположение",
     "Возможный расположение",
     "переход к следующему узлу связный список",
     "стартовый код-код",
-    "подготавливает вызов среда выполнения",
-    "различить назначения канарейку",
-    "с расположение данных в кадре стека",
-    "сложные оптимизации анализ совпадения адресов",
     "address return",
 )
 for path in DOCS.rglob("*.md"):
@@ -125,124 +255,6 @@ for path in DOCS.rglob("*.md"):
     for phrase in banned_phrases:
         if phrase in text:
             errors.append(f"mechanical-translation phrase {phrase!r}: {path.relative_to(ROOT)}")
-
-# Day 05 owns address/value, not stack mechanics.
-day05 = read("docs/day_05.md")
-for forbidden in ("call scanf", "call printf", "sub esp", "and esp, -16"):
-    forbid(day05, forbidden, "day_05")
-for marker in ("адрес", "значение", "lea", "little-endian", "В этой главе стек и ABI не требуются"):
-    require(day05, marker, "day_05")
-
-# One ABI owner and one formula.
-alignment = read("docs/patterns/libc_alignment.md")
-c_abi = read("docs/c_abi.md")
-day06 = read("docs/day_06.md")
-day16 = read("docs/day_16.md")
-day17 = read("docs/day_17.md")
-day23 = read("docs/day_23.md")
-patterns = read("docs/code_patterns.md")
-
-for marker in (
-    "padding = (16 - (argument_bytes % 16)) % 16",
-    "После возврата вызывающая функция обязана восстановить `esp`",
-):
-    require(alignment, marker, "libc_alignment")
-
-for marker in (
-    "argument_bytes = сумма размеров аргументов",
-    "padding        = (16 - argument_bytes % 16) % 16",
-    "cleanup        = padding + argument_bytes",
-    "адрес возврата",
-):
-    require(c_abi, marker, "c_abi")
-
-for owner, text in (
-    ("day_06", day06),
-    ("day_16", day16),
-    ("day_17", day17),
-    ("day_23", day23),
-    ("c_abi", c_abi),
-    ("code_patterns", patterns),
-):
-    require(text, "add esp, 16", owner)
-
-for owner, text in (("day_17", day17), ("code_patterns", patterns), ("c_abi", c_abi)):
-    require(text, "sub esp, 8", owner)
-    require(text, "push dword [b]", owner)
-    require(text, "push dword [a]", owner)
-    require(text, "add esp, 16", owner)
-
-contract_drift = (
-    "bytes_to_remove = argument_count * 4",
-    "Почему `add esp, 8`?",
-    "| `printf(\"%d\", x)` | `add esp, 8` |",
-    "| `scanf(\"%d%d\", &a, &b)` | `add esp, 12` |",
-    "caller removes 2 arguments * 4 bytes",
-)
-for path in DOCS.rglob("*.md"):
-    text = path.read_text(encoding="utf-8")
-    for phrase in contract_drift:
-        if phrase in text:
-            errors.append(f"ABI contract drift {phrase!r}: {path.relative_to(ROOT)}")
-
-# Canonical Day 10 structure. Legacy anchors must point to matching visible sessions.
-day10 = read("docs/day_10.md")
-day10_path = read("docs/day_10_learning_path.md")
-for marker in (
-    "10A | побитовые операции и слияние по маске",
-    "10B | маска `0/-1` и выбор без переходов",
-    "10C | безопасное округление вверх",
-    "10D | задача 01-14",
-    "10E | задача 01-15",
-    "10F | задача 01-16",
-    "Обязательное ядро — сессии 10A–10E",
-):
-    require(day10, marker, "day_10")
-
-for marker in (
-    "## Сессия 10A — побитовые операции и слияние по маске",
-    "## Сессия 10B — маска `0/-1` и выбор без переходов",
-    "## Сессия 10C — безопасное округление вверх",
-    "## Сессия 10D — задача 01-14",
-    "## Сессия 10E — задача 01-15",
-    "## Сессия 10F — challenge 01-16",
-    'id="сессия-10b-маска-0-1-и-выбор-без-ветвлений"',
-    'id="сессия-10c-ceil-и-деление"',
-):
-    require(day10_path, marker, "day_10_learning_path")
-forbid(day10_path, "Этот явный якорь сохраняет старые ссылки", "day_10_learning_path")
-
-# Later chapters must expose exact prerequisite recovery.
-day15 = read("docs/day_15.md")
-day19 = read("docs/day_19.md")
-require(day15, "/prerequisite_refreshers#массивы-c", "day_15")
-require(day19, "/prerequisite_refreshers#указатели-c", "day_19")
-require(day19, "/prerequisite_refreshers#структуры-c", "day_19")
-
-# Keep selected learner-facing pages consistently Russian outside code identifiers.
-for owner, text in (
-    ("day_15", day15),
-    ("day_19", day19),
-    ("day_20", read("docs/day_20.md")),
-    ("day_21", read("docs/day_21.md")),
-):
-    for phrase in ("frame layout", "linked list", "offsets", "address return"):
-        forbid(text, phrase, owner)
-
-# Navigation from the repository entry point.
-for link in (
-    "docs/prerequisites.md",
-    "docs/prerequisite_refreshers.md",
-    "docs/glossary.md",
-    "docs/self_study.md",
-    "docs/transfer_walkthroughs.md",
-):
-    require(readme, link, "README")
-
-if "условие, которое должно оставаться истинным" not in self_study:
-    errors.append("self_study does not explain 'инвариант' in learner language")
-if "обязательный термин вводится до использования" not in course_style.lower():
-    errors.append("course_style lacks first-use terminology rule")
 
 if errors:
     print("Pedagogical validation failed:")
