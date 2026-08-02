@@ -1,28 +1,8 @@
-# Популярные шаблоны кода NASM x86
+# Популярные шаблоны NASM IA-32
 
-> **Важно для вызовов libc.** Перед `call` должно выполняться `esp % 16 == 0`. Выравнивающие байты и аргументы вместе должны занимать число байт, кратное 16. Подробности: [C ABI / CDECL](/c_abi) и [выравнивание стека](/patterns/libc_alignment).
+Эта страница — краткая шпаргалка. Она не вводит новые правила и не является отдельным владельцем ABI-контракта. Для расчёта padding и очистки используй [канонический шаблон выравнивания](/patterns/libc_alignment), для CDECL — [справочник CDECL](/c_abi).
 
-## Зачем эта страница
-
-Ассемблер проще учить не как набор отдельных инструкций, а как набор стандартных форм.
-
-Почти все учебные задачи собираются из паттернов:
-
-```text
-прочитать число;
-посчитать выражение;
-проверить условие;
-сделать цикл;
-вызвать функцию;
-обратиться к массиву;
-вернуть результат.
-```
-
-Эта страница — шпаргалка по таким шаблонам.
-
----
-
-## 1. Минимальная программа
+## 1. Минимальный `main`
 
 ```asm
 section .text
@@ -33,46 +13,15 @@ main:
     ret
 ```
 
-Смысл:
-
-```text
-return 0;
-```
-
-`eax` хранит возвращаемое значение `main`.
-
----
-
-## 2. `scanf` и `printf`
+## 2. Выровненный `main`
 
 ```asm
-section .data
-    fmtIn db "%d", 0
-    fmtOut db "%d", 10, 0
-
-section .bss
-    x resd 1
-
-section .text
-    extern scanf
-    extern printf
-    global main
-
 main:
     push ebp
     mov ebp, esp
     and esp, -16
-    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
-    push x
-    push fmtIn
-    call scanf
-    add esp, 16
 
-    sub esp, 8       ; padding: 8 + 8 argument bytes = 16
-    push dword [x]
-    push fmtOut
-    call printf
-    add esp, 16
+    ; body: esp % 16 == 0
 
     mov esp, ebp
     pop ebp
@@ -80,16 +29,45 @@ main:
     ret
 ```
 
-Главное:
+## 3. `scanf("%d", &x)`
 
-```text
-scanf получает адрес: x
-printf получает значение: [x]
+Из состояния `esp % 16 == 0`:
+
+```asm
+sub esp, 8
+push x
+push fmtIn
+call scanf
+add esp, 16
 ```
 
----
+`scanf` получает адрес, поэтому используется `x`, а не `[x]`.
 
-## 3. Пролог функции
+## 4. `printf("%d", x)`
+
+```asm
+sub esp, 8
+push dword [x]
+push fmtOut
+call printf
+add esp, 16
+```
+
+`printf` получает значение.
+
+## 5. `printf("%f", value)` из x87
+
+```asm
+sub esp, 12
+fstp qword [esp]
+push fmtFloat
+call printf
+add esp, 16
+```
+
+## 6. Классический кадр функции
+
+Пролог:
 
 ```asm
 push ebp
@@ -97,26 +75,7 @@ mov ebp, esp
 sub esp, N
 ```
 
-Смысл:
-
-```text
-сохранили старый ebp;
-создали новый фрейм;
-выделили N байт под локальные переменные.
-```
-
-Если локальных переменных нет:
-
-```asm
-push ebp
-mov ebp, esp
-```
-
----
-
-## 4. Эпилог функции
-
-Полная форма:
+Эпилог:
 
 ```asm
 mov esp, ebp
@@ -124,23 +83,7 @@ pop ebp
 ret
 ```
 
-Короткая форма:
-
-```asm
-leave
-ret
-```
-
-`leave` примерно равно:
-
-```asm
-mov esp, ebp
-pop ebp
-```
-
----
-
-## 5. Карта фрейма
+Карта:
 
 ```text
 [ebp+16]  argument 3
@@ -148,15 +91,10 @@ pop ebp
 [ebp+8]   argument 1
 [ebp+4]   return address
 [ebp]     old ebp
-[ebp-4]   local variable 1
-[ebp-8]   local variable 2
+[ebp-4]   local 1
 ```
 
-Первый аргумент — `[ebp+8]`, потому что `[ebp+4]` занят адресом возврата, а `[ebp]` — старым `ebp`.
-
----
-
-## 6. Функция `sum(a, b)`
+## 7. Собственная функция `sum(a,b)`
 
 ```asm
 sum:
@@ -166,32 +104,27 @@ sum:
     mov eax, [ebp+8]
     add eax, [ebp+12]
 
+    mov esp, ebp
     pop ebp
     ret
 ```
 
-Вызов:
+Вызов из выровненного участка:
 
 ```asm
+sub esp, 8
 push dword [b]
 push dword [a]
 call sum
-add esp, 8
+add esp, 16
 ```
 
-Результат лежит в `eax`.
-
----
-
-## 7. Сохранение регистров, которые обязана сохранять вызываемая функция
-
-Если функция использует `ebx`, `esi`, `edi`, их надо сохранить и восстановить.
+## 8. Сохранение `ebx`, `esi`, `edi`
 
 ```asm
-my_func:
+f:
     push ebp
     mov ebp, esp
-
     push ebx
     push esi
     push edi
@@ -201,23 +134,18 @@ my_func:
     pop edi
     pop esi
     pop ebx
-
+    mov esp, ebp
     pop ebp
     ret
 ```
 
-Снимать нужно в обратном порядке.
-
----
-
-## 8. Простой `if`
+## 9. Простой `if`
 
 C++:
 
 ```cpp
-if (x == 0) {
+if (x == 0)
     y = 1;
-}
 ```
 
 NASM:
@@ -225,470 +153,58 @@ NASM:
 ```asm
 mov eax, [x]
 test eax, eax
-jne .skip
-
+jne .end
 mov dword [y], 1
-
-.skip:
+.end:
 ```
 
-Общий паттерн:
-
-```asm
-; check condition
-jcc .skip_if_false
-
-; body
-
-.skip_if_false:
-```
-
-Часто удобно прыгать по обратному условию, чтобы перепрыгнуть тело.
-
----
-
-## 9. `if / else`
-
-C++:
-
-```cpp
-if (x > y) {
-    result = x - y;
-} else {
-    result = y - x;
-}
-```
-
-NASM:
+## 10. `if / else`
 
 ```asm
 mov eax, [x]
 cmp eax, [y]
 jle .else
 
-.then:
-    mov eax, [x]
-    sub eax, [y]
-    mov [result], eax
-    jmp .end
+mov eax, [x]
+sub eax, [y]
+jmp .end
 
 .else:
-    mov eax, [y]
-    sub eax, [x]
-    mov [result], eax
+mov eax, [y]
+sub eax, [x]
 
 .end:
+mov [result], eax
 ```
 
-Главная ошибка — забыть `jmp .end` после ветки `then`. Тогда выполнение продолжится в `else`.
-
----
-
-## 10. `while`
-
-C++:
-
-```cpp
-while (x != 0) {
-    x >>= 1;
-}
-```
-
-NASM:
+## 11. Цикл по массиву `int`
 
 ```asm
-.loop:
-    mov eax, [x]
-    test eax, eax
-    je .end
-
-    shr dword [x], 1
-    jmp .loop
-
-.end:
-```
-
-Общий паттерн:
-
-```asm
-.loop:
-    ; check condition
-    jcc .end
-
-    ; body
-
-    jmp .loop
-
-.end:
-```
-
----
-
-## 11. `do while`
-
-C++:
-
-```cpp
-do {
-    x >>= 1;
-} while (x != 0);
-```
-
-NASM:
-
-```asm
-.loop:
-    shr dword [x], 1
-
-    mov eax, [x]
-    test eax, eax
-    jne .loop
-```
-
-Отличие:
-
-```text
-while    — проверка до тела;
-do while — проверка после тела.
-```
-
----
-
-## 12. `for`
-
-C++:
-
-```cpp
-for (int i = 0; i < n; ++i) {
-    sum += i;
-}
-```
-
-NASM:
-
-```asm
-xor ecx, ecx        ; i = 0
-xor eax, eax        ; sum = 0
+xor ecx, ecx
+xor eax, eax
 
 .loop:
     cmp ecx, [n]
-    jge .end
+    jae .end
 
-    add eax, ecx
-
+    add eax, [a + 4*ecx]
     inc ecx
     jmp .loop
 
 .end:
 ```
 
-Общий паттерн:
-
-```asm
-; init
-
-.loop:
-    ; check
-    jcc .end
-
-    ; body
-
-    ; update
-    jmp .loop
-
-.end:
-```
-
----
-
-## 13. `break` и `continue`
-
-C++:
-
-```cpp
-while (...) {
-    if (bad) break;
-    if (skip) continue;
-    body;
-}
-```
-
-NASM:
-
-```asm
-.loop:
-    ; loop condition
-    jcc .end
-
-    ; if bad -> break
-    cmp ...
-    je .end
-
-    ; if skip -> continue
-    cmp ...
-    je .continue
-
-    ; body
-
-.continue:
-    ; update if needed
-    jmp .loop
-
-.end:
-```
-
-Коротко:
-
-```text
-break    -> jmp .end
-continue -> jmp .continue / .loop
-```
-
----
-
-## 14. Проверка на ноль
-
-```asm
-test eax, eax
-je .zero
-```
-
-или:
-
-```asm
-cmp eax, 0
-je .zero
-```
-
-Идиоматичнее обычно:
-
-```asm
-test eax, eax
-```
-
----
-
-## 15. Проверка бита
-
-Нечётность:
-
-```asm
-mov eax, [x]
-test eax, 1
-jne .odd
-```
-
-Проверка маски:
-
-```asm
-test eax, MASK
-jnz .has_bit
-```
-
----
-
-## 16. Знаковое сравнение
-
-```asm
-mov eax, [x]
-cmp eax, [y]
-jl .less
-jle .less_eq
-jg .greater
-jge .greater_eq
-```
-
-Использовать для `int`, `short`, `signed char`.
-
----
-
-## 17. Беззнаковое сравнение
-
-```asm
-mov eax, [x]
-cmp eax, [y]
-jb .below
-jbe .below_eq
-ja .above
-jae .above_eq
-```
-
-Использовать для `unsigned`, размеров и индексов.
-
----
-
-## 18. `switch` через цепочку сравнений
-
-```asm
-cmp eax, 1
-je .case1
-cmp eax, 2
-je .case2
-cmp eax, 3
-je .case3
-jmp .default
-
-.case1:
-    ; body
-    jmp .end
-
-.case2:
-    ; body
-    jmp .end
-
-.case3:
-    ; body
-    jmp .end
-
-.default:
-    ; body
-
-.end:
-```
-
-Используется для малого количества `case` или разреженных значений.
-
----
-
-## 19. `switch` через таблицу переходов
-
-```asm
-cmp eax, 3
-ja .default
-jmp [.table + 4*eax]
-
-.table:
-    dd .case0
-    dd .case1
-    dd .case2
-    dd .case3
-
-.case0:
-    ; body
-    jmp .end
-
-.case1:
-    ; body
-    jmp .end
-
-.case2:
-    ; body
-    jmp .end
-
-.case3:
-    ; body
-    jmp .end
-
-.default:
-    ; body
-
-.end:
-```
-
-Если `case` начинаются не с нуля:
-
-```asm
-sub eax, MIN_CASE
-cmp eax, MAX_CASE - MIN_CASE
-ja .default
-jmp [.table + 4*eax]
-```
-
----
-
-## 20. Чтение массива `int a[i]`
-
-Если `edx = base`, `ecx = i`:
-
-```asm
-mov eax, [edx + 4*ecx]
-```
-
-Адрес `&a[i]`:
-
-```asm
-lea eax, [edx + 4*ecx]
-```
-
----
-
-## 21. Цикл по массиву
-
-C++:
-
-```cpp
-sum = 0;
-for (int i = 0; i < n; ++i)
-    sum += a[i];
-```
-
-NASM:
-
-```asm
-xor eax, eax        ; sum = 0
-xor ecx, ecx        ; i = 0
-mov edx, [a]        ; base pointer, если a — pointer
-
-.loop:
-    cmp ecx, [n]
-    jge .end
-
-    add eax, [edx + 4*ecx]
-
-    inc ecx
-    jmp .loop
-
-.end:
-```
-
----
-
-## 22. Двумерный массив `a[i][j]`
-
-Если `int a[R][C]`:
-
-```text
-address = base + 4 * (i*C + j)
-```
-
-NASM:
-
-```asm
-mov eax, [i]
-imul eax, C
-add eax, [j]
-mov eax, [base + 4*eax]
-```
-
-Если базовый адрес находится в `edx`:
-
-```asm
-mov eax, [i]
-imul eax, C
-add eax, [j]
-mov eax, [edx + 4*eax]
-```
-
----
-
-## 23. Знаковое деление
+## 12. Знаковое деление
 
 ```asm
 mov eax, [x]
 cdq
 idiv dword [y]
+; eax = quotient
+; edx = remainder
 ```
 
-После:
-
-```text
-eax = x / y
-edx = x % y
-```
-
----
-
-## 24. Беззнаковое деление
+## 13. Беззнаковое деление
 
 ```asm
 mov eax, [x]
@@ -696,266 +212,38 @@ xor edx, edx
 div dword [y]
 ```
 
-После:
-
-```text
-eax = x / y
-edx = x % y
-```
-
----
-
-## 25. Модуль без переходов
+## 14. Слияние по маске
 
 ```asm
-mov eax, [x]
-mov edx, eax
-sar edx, 31
-xor eax, edx
-sub eax, edx
-```
-
-Формула:
-
-```cpp
-mask = x >> 31;
-answer = (x ^ mask) - mask;
-```
-
----
-
-## 26. Объединение по маске
-
-```asm
+; result = (a & mask) | (b & ~mask)
 mov eax, [a]
-and eax, [c]
+and eax, [mask]
 
-mov ecx, [c]
-not ecx
-and ecx, [b]
+mov edx, [mask]
+not edx
+and edx, [b]
 
-or eax, ecx
-```
-
-Формула:
-
-```cpp
-answer = (a & c) | (b & ~c);
-```
-
----
-
-## 27. Упаковка четырёх байтов
-
-```asm
-mov eax, [a]
-and eax, 255
-
-mov ecx, [b]
-and ecx, 255
-shl ecx, 8
-or eax, ecx
-
-mov ecx, [c]
-and ecx, 255
-shl ecx, 16
-or eax, ecx
-
-mov ecx, [d]
-and ecx, 255
-shl ecx, 24
-or eax, ecx
-```
-
-Формула:
-
-```cpp
-answer = a | (b << 8) | (c << 16) | (d << 24);
-```
-
----
-
-## 28. Работа с `char` / `short`
-
-Знаковый `char`:
-
-```asm
-movsx eax, byte [x]
-```
-
-Беззнаковый `char`:
-
-```asm
-movzx eax, byte [x]
-```
-
-Знаковый `short`:
-
-```asm
-movsx eax, word [x]
-```
-
-Беззнаковый `short`:
-
-```asm
-movzx eax, word [x]
-```
-
----
-
-## 29. Доступ к полю структуры
-
-Если `edx = r`, а поле `j` имеет смещение 4:
-
-```asm
-mov eax, [edx + 4]
-```
-
-Если массив `a` внутри структуры начинается со смещения 8:
-
-```asm
-mov eax, [edx + 8 + 4*ecx]
-```
-
----
-
-## 30. x87: напечатать `float/double`
-
-```asm
-finit
-fld dword [x]
-fld dword [y]
-faddp
-
-sub esp, 12      ; 4 bytes padding + 8-byte double
-fstp qword [esp]
-push fmtFloat
-call printf
-add esp, 16
-```
-
-Важно:
-
-```text
-printf("%f") ждёт double, то есть qword.
-```
-
----
-
-## Что выучить первым
-
-Сначала не надо пытаться помнить все 30 шаблонов. Первый уровень:
-
-```text
-1. минимальная программа
-2. scanf/printf
-3. пролог/эпилог
-4. карта фрейма
-5. вызов функции
-6. if
-7. if/else
-8. while
-9. for
-10. проверка на ноль
-11. signed/unsigned comparison
-12. массив a[i]
-13. signed division
-14. branchless abs
-15. masked merge
-16. упаковка байтов
-```
-
-Этого достаточно, чтобы уверенно стартовать с большинством учебных задач.
-
-## 31. Выбор без переходов
-
-```asm
-; eax = a
-; edx = b
-; ecx = mask: 0 или FFFFFFFFh
-and eax, ecx
-not ecx
-and edx, ecx
 or eax, edx
 ```
 
-Смысл:
-
-```text
-mask = FFFFFFFFh -> выбрать a
-mask = 00000000h -> выбрать b
-```
-
-## 32. Деление с округлением вверх
-
-Для положительных чисел:
-
-```text
-ceil(a / b) = (a + b - 1) / b
-```
-
-Форма на NASM:
+## 15. Маска знака `0/-1`
 
 ```asm
-mov eax, [a]
-add eax, [b]
-dec eax
-xor edx, edx
-div dword [b]
+mov edx, eax
+sar edx, 31
 ```
 
-## 33. Минимум и максимум через сравнение
+## 16. Адрес элемента массива
 
 ```asm
-; eax = current min
-; ecx = candidate
-cmp ecx, eax
-jge .keep
-mov eax, ecx
-.keep:
+; edx = base, ecx = i
+lea eax, [edx + 4*ecx]   ; &a[i]
+mov eax, [edx + 4*ecx]   ; a[i]
 ```
 
-Для знаковых чисел используй переходы знакового сравнения.
+## Как пользоваться страницей
 
-## 34. Каркас рекурсивной функции
-
-```asm
-func:
-    push ebp
-    mov ebp, esp
-    sub esp, 4
-
-    ; base case
-    ; recursive call
-
-    mov esp, ebp
-    pop ebp
-    ret
-```
-
-## 35. Разворот десятичной записи
-
-```text
-rev = 0
-while x != 0:
-    digit = x % 10
-    rev = rev * 10 + digit
-    x /= 10
-```
-
-## 36. Наибольший общий делитель
-
-```text
-while b != 0:
-    r = a % b
-    a = b
-    b = r
-```
-
-## 37. Проверка вызова libc
-
-- аргументы справа налево;
-- адрес строки, не `[строка]`;
-- очистка стека вызывающей функцией;
-- `eax/ecx/edx` могут быть испорчены;
-- для Spring-04 проверить 16-байтное выравнивание.
+1. Сначала выведи шаблон из модели главы.
+2. Затем сравни со шпаргалкой.
+3. Не копируй вызов функции, пока не доказано исходное состояние `esp`.
+4. При изменении числа или размера аргументов заново вычисли padding и cleanup.
