@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -83,7 +82,7 @@ for marker in (
     "компоновщик",
     "объектный файл",
     "загрузчик",
-    "запись перемещения",
+    "Запись перемещения",
     "Центральный инвариант",
 ):
     require(read("docs/day_01.md"), marker, "day_01")
@@ -196,7 +195,7 @@ for marker in (
     "10D | задача 01-14",
     "10E | задача 01-15",
     "10F | задача 01-16",
-    "обязательное ядро — сессии 10A–10E",
+    "Обязательное ядро — сессии 10A–10E",
 ):
     require(day10, marker, "day_10")
 
