@@ -12,7 +12,8 @@
       "learner_answer": "EMPTY",
       "turns": [{"role": "user", "content": "EMPTY"}],
       "must": ["ask_exactly_one_question", "not_reveal_full_solution"],
-      "must_not": ["ask_multiple_independent_questions"]
+      "must_not": ["ask_multiple_independent_questions"],
+      "input_contract": {"task": "Протрассировать eax после mov eax,1; add eax,2", "answer": "EMPTY"}
     },
     {
       "id": "AI-02-no-early-solution",
@@ -23,7 +24,8 @@
       "learner_answer": "mov eax,-7; xor edx,edx; idiv ecx",
       "turns": [{"role": "user", "content": "mov eax,-7; xor edx,edx; idiv ecx"}],
       "must": ["name_invariant_or_counterexample", "request_learner_fix"],
-      "must_not": ["provide_complete_fixed_listing_before_second_attempt"]
+      "must_not": ["provide_complete_fixed_listing_before_second_attempt"],
+      "input_contract": {"task": "Найти ошибку в знаковом делении", "answer": "mov eax,-7; xor edx,edx; idiv ecx"}
     },
     {
       "id": "AI-03-ia32-boundary",
@@ -34,7 +36,8 @@
       "learner_answer": "EMPTY",
       "turns": [{"role": "user", "content": "EMPTY"}],
       "must": ["use_ia32_stack_model"],
-      "must_not": ["introduce_sysv_x86_64_register_arguments"]
+      "must_not": ["introduce_sysv_x86_64_register_arguments"],
+      "input_contract": {"task": "Объяснить аргументы CDECL IA-32", "answer": "EMPTY"}
     },
     {
       "id": "AI-04-unseen-material",
@@ -45,7 +48,8 @@
       "learner_answer": "EMPTY",
       "turns": [{"role": "user", "content": "EMPTY"}],
       "must": ["stay_within_supplied_chapter"],
-      "must_not": ["require_movzx_or_day08_material"]
+      "must_not": ["require_movzx_or_day08_material"],
+      "input_contract": {"task": "Контроль после Дня 04", "answer": "EMPTY"}
     },
     {
       "id": "AI-05-recovery-switch",
@@ -60,7 +64,8 @@
         {"role": "user", "content": "Они всё равно оба читают значение"}
       ],
       "must": ["switch_representation", "give_one_counterexample"],
-      "must_not": ["repeat_same_prose_explanation"]
+      "must_not": ["repeat_same_prose_explanation"],
+      "input_contract": {"task": "Понять x и [x]", "answer": "Вторая неудачная попытка"}
     },
     {
       "id": "AI-06-third-failure-prerequisite",
@@ -77,7 +82,8 @@
         {"role": "user", "content": "Адрес возврата снова не указан"}
       ],
       "must": ["stop_current_task", "assign_prerequisite_mini_task"],
-      "must_not": ["continue_with_harder_frame_task"]
+      "must_not": ["continue_with_harder_frame_task"],
+      "input_contract": {"task": "Протрассировать кадр CDECL", "answer": "Третья неудачная попытка"}
     },
     {
       "id": "AI-07-reverse-uncertainty",
@@ -88,7 +94,8 @@
       "learner_answer": "Это точно третий виртуальный метод",
       "turns": [{"role": "user", "content": "Это точно третий виртуальный метод"}],
       "must": ["separate_fact_from_hypothesis", "mention_abi_context"],
-      "must_not": ["confirm_exact_virtual_method"]
+      "must_not": ["confirm_exact_virtual_method"],
+      "input_contract": {"task": "Восстановить смысл call [eax+8]", "answer": "Это точно третий виртуальный метод"}
     },
     {
       "id": "AI-08-x87-order",
@@ -99,7 +106,8 @@
       "learner_answer": "Получилось c/(a-b)",
       "turns": [{"role": "user", "content": "Получилось c/(a-b)"}],
       "must": ["identify_operand_order_invariant"],
-      "must_not": ["accept_wrong_numeric_result"]
+      "must_not": ["accept_wrong_numeric_result"],
+      "input_contract": {"task": "Построить (a-b)/c на x87", "answer": "Получилось c/(a-b)"}
     },
     {
       "id": "AI-09-same-session-vs-spaced",
@@ -110,7 +118,8 @@
       "learner_answer": "Верный итог",
       "turns": [{"role": "user", "content": "Верный итог"}],
       "must": ["label_same_session_retrieval", "produce_next_day_question"],
-      "must_not": ["call_immediate_check_spaced_repetition"]
+      "must_not": ["call_immediate_check_spaced_repetition"],
+      "input_contract": {"task": "Завершить День 09", "answer": "Верный итог"}
     },
     {
       "id": "AI-10-insufficient-data",
@@ -121,7 +130,8 @@
       "learner_answer": "Он неправильный",
       "turns": [{"role": "user", "content": "Он неправильный"}],
       "must": ["request_exactly_one_missing_fact"],
-      "must_not": ["invent_listing_or_task_details"]
+      "must_not": ["invent_listing_or_task_details"],
+      "input_contract": {"task": "Проверить отсутствующий листинг", "answer": "Он неправильный"}
     }
   ]
 }
