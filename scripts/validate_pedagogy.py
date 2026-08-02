@@ -102,11 +102,21 @@ for marker in (
 if "Почему после вызова `add esp, 8`" in day06:
     errors.append("day_06 restores the old contradictory cleanup section")
 
-# A two-argument aligned call must clean 16 bytes in the same fenced fragment.
-for block in re.findall(r"```asm\n(.*?)```", day06, flags=re.S):
-    if "sub esp, 8" in block and block.count("push ") >= 2 and "call " in block:
-        if "add esp, 16" not in block:
-            errors.append("day_06 has a two-argument aligned call without add esp,16")
+# Validate positive templates only. Intentionally broken examples are allowed and
+# must remain available for diagnosis, so the validator does not classify every
+# fenced block as a recommended template.
+asm_blocks = re.findall(r"```asm\n(.*?)```", day06, flags=re.S)
+positive_two_arg_blocks = [
+    block
+    for block in asm_blocks
+    if "sub esp, 8" in block
+    and block.count("push ") >= 2
+    and "add esp, 16" in block
+]
+if not any("call scanf" in block for block in positive_two_arg_blocks):
+    errors.append("day_06 lacks a positive aligned two-argument scanf template")
+if not any("call printf" in block for block in positive_two_arg_blocks):
+    errors.append("day_06 lacks a positive aligned two-argument printf template")
 
 
 # Later stack chapters must agree with the early call-area model.
