@@ -1,213 +1,127 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "prompt_page": "docs/ai_tutor_prompts.md",
   "provider_status": "NOT_RUN",
   "cases": [
     {
       "id": "AI-01-one-question",
       "mode": "universal",
-      "task": "Trace eax after mov eax,1; add eax,2",
-      "learner_answer": "EMPTY",
-      "must": [
-        "ask_exactly_one_question",
-        "not_reveal_full_solution"
-      ],
-      "must_not": [
-        "ask_multiple_independent_questions"
-      ],
       "prompt_heading": "1. Универсальный наставник по главе",
-      "chapter_files": [
-        "docs/day_03.md"
-      ],
-      "input_contract": {
-        "task": "Trace eax after mov eax,1; add eax,2",
-        "answer": "EMPTY"
-      }
+      "chapter_files": ["docs/day_03.md"],
+      "task": "Протрассировать eax после mov eax,1; add eax,2",
+      "learner_answer": "EMPTY",
+      "turns": [{"role": "user", "content": "EMPTY"}],
+      "must": ["ask_exactly_one_question", "not_reveal_full_solution"],
+      "must_not": ["ask_multiple_independent_questions"]
     },
     {
       "id": "AI-02-no-early-solution",
       "mode": "review",
-      "task": "Find the bug in signed division",
-      "learner_answer": "mov eax,-7; xor edx,edx; idiv ecx",
-      "must": [
-        "name_invariant_or_counterexample",
-        "request_learner_fix"
-      ],
-      "must_not": [
-        "provide_complete_fixed_listing_before_second_attempt"
-      ],
       "prompt_heading": "5. Разбор моего решения",
-      "chapter_files": [
-        "docs/day_09.md"
-      ],
-      "input_contract": {
-        "task": "Find the bug in signed division",
-        "answer": "mov eax,-7; xor edx,edx; idiv ecx"
-      }
+      "chapter_files": ["docs/day_09.md"],
+      "task": "Найти ошибку в знаковом делении",
+      "learner_answer": "mov eax,-7; xor edx,edx; idiv ecx",
+      "turns": [{"role": "user", "content": "mov eax,-7; xor edx,edx; idiv ecx"}],
+      "must": ["name_invariant_or_counterexample", "request_learner_fix"],
+      "must_not": ["provide_complete_fixed_listing_before_second_attempt"]
     },
     {
       "id": "AI-03-ia32-boundary",
       "mode": "guided",
-      "task": "Explain CDECL stack arguments in IA-32",
-      "learner_answer": "EMPTY",
-      "must": [
-        "use_ia32_stack_model"
-      ],
-      "must_not": [
-        "introduce_sysv_x86_64_register_arguments"
-      ],
       "prompt_heading": "2. Совместное изучение новой темы",
-      "chapter_files": [
-        "docs/day_17.md",
-        "docs/c_abi.md"
-      ],
-      "input_contract": {
-        "task": "Explain CDECL stack arguments in IA-32",
-        "answer": "EMPTY"
-      }
+      "chapter_files": ["docs/day_17.md", "docs/c_abi.md"],
+      "task": "Объяснить аргументы CDECL IA-32",
+      "learner_answer": "EMPTY",
+      "turns": [{"role": "user", "content": "EMPTY"}],
+      "must": ["use_ia32_stack_model"],
+      "must_not": ["introduce_sysv_x86_64_register_arguments"]
     },
     {
       "id": "AI-04-unseen-material",
       "mode": "strict_exam",
-      "task": "Checkpoint after Day 04",
-      "learner_answer": "EMPTY",
-      "must": [
-        "stay_within_supplied_chapter"
-      ],
-      "must_not": [
-        "require_movzx_or_day08_material"
-      ],
       "prompt_heading": "3. Режим строгого зачёта",
-      "chapter_files": [
-        "docs/day_04.md"
-      ],
-      "input_contract": {
-        "task": "Checkpoint after Day 04",
-        "answer": "EMPTY"
-      }
+      "chapter_files": ["docs/day_04.md"],
+      "task": "Контроль после Дня 04",
+      "learner_answer": "EMPTY",
+      "turns": [{"role": "user", "content": "EMPTY"}],
+      "must": ["stay_within_supplied_chapter"],
+      "must_not": ["require_movzx_or_day08_material"]
     },
     {
       "id": "AI-05-recovery-switch",
       "mode": "diagnosis",
-      "task": "Understand x versus [x]",
-      "learner_answer": "Second failed attempt repeats that both are values",
-      "must": [
-        "switch_representation",
-        "give_one_counterexample"
-      ],
-      "must_not": [
-        "repeat_same_prose_explanation"
-      ],
       "prompt_heading": "4. Диагностика непонимания",
-      "chapter_files": [
-        "docs/day_05.md"
+      "chapter_files": ["docs/day_05.md"],
+      "task": "Понять x и [x]",
+      "learner_answer": "Вторая неудачная попытка",
+      "turns": [
+        {"role": "user", "content": "x и [x] — это одно значение"},
+        {"role": "assistant", "content": "diagnostic_question_placeholder"},
+        {"role": "user", "content": "Они всё равно оба читают значение"}
       ],
-      "input_contract": {
-        "task": "Understand x versus [x]",
-        "answer": "Second failed attempt repeats that both are values"
-      }
+      "must": ["switch_representation", "give_one_counterexample"],
+      "must_not": ["repeat_same_prose_explanation"]
     },
     {
       "id": "AI-06-third-failure-prerequisite",
       "mode": "diagnosis",
-      "task": "Trace CDECL frame",
-      "learner_answer": "Third failed attempt still omits return address",
-      "must": [
-        "stop_current_task",
-        "assign_prerequisite_mini_task"
-      ],
-      "must_not": [
-        "continue_with_harder_frame_task"
-      ],
       "prompt_heading": "4. Диагностика непонимания",
-      "chapter_files": [
-        "docs/day_16.md",
-        "docs/day_17.md"
+      "chapter_files": ["docs/day_16.md", "docs/day_17.md"],
+      "task": "Протрассировать кадр CDECL",
+      "learner_answer": "Третья неудачная попытка",
+      "turns": [
+        {"role": "user", "content": "На вершине первый аргумент"},
+        {"role": "assistant", "content": "counterexample_placeholder"},
+        {"role": "user", "content": "После call вершина всё равно аргумент"},
+        {"role": "assistant", "content": "changed_representation_placeholder"},
+        {"role": "user", "content": "Адрес возврата снова не указан"}
       ],
-      "input_contract": {
-        "task": "Trace CDECL frame",
-        "answer": "Third failed attempt still omits return address"
-      }
+      "must": ["stop_current_task", "assign_prerequisite_mini_task"],
+      "must_not": ["continue_with_harder_frame_task"]
     },
     {
       "id": "AI-07-reverse-uncertainty",
       "mode": "review",
-      "task": "Reconstruct C-like meaning of call [eax+8]",
-      "learner_answer": "This is definitely the third virtual method",
-      "must": [
-        "separate_fact_from_hypothesis",
-        "mention_abi_context"
-      ],
-      "must_not": [
-        "confirm_exact_virtual_method"
-      ],
       "prompt_heading": "5. Разбор моего решения",
-      "chapter_files": [
-        "docs/day_24.md"
-      ],
-      "input_contract": {
-        "task": "Reconstruct C-like meaning of call [eax+8]",
-        "answer": "This is definitely the third virtual method"
-      }
+      "chapter_files": ["docs/day_24.md"],
+      "task": "Восстановить смысл call [eax+8]",
+      "learner_answer": "Это точно третий виртуальный метод",
+      "turns": [{"role": "user", "content": "Это точно третий виртуальный метод"}],
+      "must": ["separate_fact_from_hypothesis", "mention_abi_context"],
+      "must_not": ["confirm_exact_virtual_method"]
     },
     {
       "id": "AI-08-x87-order",
       "mode": "strict_exam",
-      "task": "Build (a-b)/c with x87",
-      "learner_answer": "Produces c/(a-b)",
-      "must": [
-        "identify_operand_order_invariant"
-      ],
-      "must_not": [
-        "accept_wrong_numeric_result"
-      ],
       "prompt_heading": "3. Режим строгого зачёта",
-      "chapter_files": [
-        "docs/day_23.md"
-      ],
-      "input_contract": {
-        "task": "Build (a-b)/c with x87",
-        "answer": "Produces c/(a-b)"
-      }
+      "chapter_files": ["docs/day_23.md"],
+      "task": "Построить (a-b)/c на x87",
+      "learner_answer": "Получилось c/(a-b)",
+      "turns": [{"role": "user", "content": "Получилось c/(a-b)"}],
+      "must": ["identify_operand_order_invariant"],
+      "must_not": ["accept_wrong_numeric_result"]
     },
     {
       "id": "AI-09-same-session-vs-spaced",
       "mode": "guided",
-      "task": "Finish Day 09 session",
-      "learner_answer": "Correct final answer",
-      "must": [
-        "label_same_session_retrieval",
-        "produce_next_day_question"
-      ],
-      "must_not": [
-        "call_immediate_check_spaced_repetition"
-      ],
       "prompt_heading": "2. Совместное изучение новой темы",
-      "chapter_files": [
-        "docs/day_09.md"
-      ],
-      "input_contract": {
-        "task": "Finish Day 09 session",
-        "answer": "Correct final answer"
-      }
+      "chapter_files": ["docs/day_09.md"],
+      "task": "Завершить День 09",
+      "learner_answer": "Верный итог",
+      "turns": [{"role": "user", "content": "Верный итог"}],
+      "must": ["label_same_session_retrieval", "produce_next_day_question"],
+      "must_not": ["call_immediate_check_spaced_repetition"]
     },
     {
       "id": "AI-10-insufficient-data",
       "mode": "compact",
-      "task": "Review an omitted listing",
-      "learner_answer": "It is wrong",
-      "must": [
-        "request_exactly_one_missing_fact"
-      ],
-      "must_not": [
-        "invent_listing_or_task_details"
-      ],
       "prompt_heading": "7. Компактная инструкция для небольшого объёма контекста",
       "chapter_files": [],
-      "input_contract": {
-        "task": "Review an omitted listing",
-        "answer": "It is wrong"
-      }
+      "task": "Проверить отсутствующий листинг",
+      "learner_answer": "Он неправильный",
+      "turns": [{"role": "user", "content": "Он неправильный"}],
+      "must": ["request_exactly_one_missing_fact"],
+      "must_not": ["invent_listing_or_task_details"]
     }
   ]
 }
