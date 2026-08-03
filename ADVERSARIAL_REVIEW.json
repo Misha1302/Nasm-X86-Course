@@ -1,4 +1,11 @@
 {
+  "schema_version": "2.0",
+  "result": "PASS",
+  "provenance": {
+    "source_tree_sha256": "75a9a06024651293c907530fbc71a087f860c902e418203f1e0c1ee0906f51d6",
+    "runner": "scripts/run_adversarial_review.py",
+    "runner_sha256": "58f1a5880ffdb547919e9a23914f322c060d262ad91bfb413c48b6692f4fc5cb"
+  },
   "mandatory_skill_attacks": [
     {
       "assessment": "CP1",
@@ -125,6 +132,15 @@
       "failures": [
         "critical CP2-AREA: 0 < 1",
         "mandatory skill integer_area_and_int32_min_boundary: evidence 0 < 1"
+      ]
+    },
+    {
+      "assessment": "CP2",
+      "skill": "signed_division_overflow",
+      "result": "BLOCKED",
+      "failures": [
+        "critical CP2-IDIV-OVERFLOW: 0 < 1",
+        "mandatory skill signed_division_overflow: evidence 0 < 1"
       ]
     },
     {
@@ -483,14 +499,14 @@
       ]
     }
   ],
-  "mandatory_skill_attack_count": 55,
+  "mandatory_skill_attack_count": 56,
   "competing_assessment_owners": [
     "scripts/assessment_contract.json"
   ],
-  "day25_and_closed_book_leakage": "BLOCKED_BY_VALIDATE_LEAKAGE",
-  "day10_future_dependency": "BLOCKED_BY_VALIDATE_PEDAGOGY",
-  "transfer_copy_attacks": "BLOCKED_BY_TRANSFER_FINGERPRINTS_AND_STRUCTURE",
-  "mutation_evasion_attempts": 20,
+  "mutation_report_sha256": "a4b83cd7a5a3bc1e21fa118a9659629d688f662b9253e6b837c72fcbe93eb398",
+  "mutation_evasion_attempts": 25,
   "mutation_evasion_survivors": 0,
-  "result": "PASS"
+  "day25_and_closed_book_leakage": "BLOCKED_BY_VISIBLE_TEXT_VALIDATION",
+  "day10_future_dependency": "BLOCKED_BY_ACTUAL_SOURCE_ORDER",
+  "transfer_copy_attacks": "BLOCKED_BY_TRANSFER_FINGERPRINTS_AND_STRUCTURE"
 }

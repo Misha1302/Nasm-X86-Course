@@ -1,8 +1,19 @@
 {
-  "schema": "PASS",
+  "schema_version": "2.0",
+  "result": "PASS",
+  "provenance": {
+    "source_tree_sha256": "75a9a06024651293c907530fbc71a087f860c902e418203f1e0c1ee0906f51d6",
+    "runner": "scripts/validate_assessment.py",
+    "runner_sha256": "dd00592e9fef158875640e08db05488b48342b1c9e64bbfbf7bc22cc6deb300a"
+  },
+  "validator_selftests": {
+    "dynamic_domain_assignments": 972,
+    "duplicate_evidence_rejected": true,
+    "asymmetric_mapping_rejected": true
+  },
   "exhaustive_checkpoint_assignments": {
     "CP1": 729,
-    "CP2": 6561,
+    "CP2": 19683,
     "CP3": 729,
     "CP4": 243,
     "CP5": 6561,
@@ -17,7 +28,7 @@
     "CP2-known-false-pass-ceil-zero": {
       "assessment": "CP2",
       "passed": false,
-      "total": 13,
+      "total": 15,
       "failures": [
         "mandatory skill branchless_safe_ceil: evidence 0 < 1"
       ],
@@ -133,7 +144,7 @@
     "CP2-positive-all-full": {
       "assessment": "CP2",
       "passed": true,
-      "total": 16,
+      "total": 18,
       "failures": [],
       "missing_skills": [],
       "missing_variants": []

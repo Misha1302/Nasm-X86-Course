@@ -1,162 +1,320 @@
-[
-  {
-    "id": "M01-cleanup-16-to-8",
-    "owner": "semantics",
-    "expected": "ASM-CALL-AREA",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-CALL-AREA: scanf padding/cleanup mismatch",
-    "pass": true
+{
+  "schema_version": "2.0",
+  "result": "PASS",
+  "provenance": {
+    "source_tree_sha256": "75a9a06024651293c907530fbc71a087f860c902e418203f1e0c1ee0906f51d6",
+    "runner": "scripts/run_mutations.py",
+    "runner_sha256": "611801b02e1cb78d0749b204e7a5f11faff618ea6becfa0fb8b77922c0d30737"
   },
-  {
-    "id": "M02-remove-padding",
-    "owner": "semantics",
-    "expected": "ASM-CALL-AREA",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-CALL-AREA: scanf padding/cleanup mismatch",
-    "pass": true
+  "source_tree_sha256": "75a9a06024651293c907530fbc71a087f860c902e418203f1e0c1ee0906f51d6",
+  "contract_sha256": "0c76a1ec458ef6214df1ea7b62531381c8a232b06e116b79e3b6844ba2d5f182",
+  "mutation_ids": [
+    "M01-cleanup-12-to-8",
+    "M02-remove-padding",
+    "M03-remove-cdq",
+    "M04-reverse-fsubp",
+    "M05-reverse-fdivp",
+    "M06-remove-restore-esi",
+    "M07-scanf-value",
+    "M08-idiv-immediate",
+    "M09-make-10F-core",
+    "M10-include-01-16-in-100",
+    "M11-remove-cp3-loop-evidence",
+    "M12-safety-optional",
+    "M13-remove-refreshers-manifest",
+    "M14-answer-in-closed-book",
+    "M15-transfer-without-key",
+    "M16-change-cp-threshold",
+    "M17-break-anchor",
+    "M18-reverse-startup",
+    "M19-return-c3-to-day25",
+    "M20-accept-known-false-pass",
+    "M21-html-comment-leak",
+    "M22-duplicate-evidence",
+    "M23-asymmetric-evidence",
+    "M24-remove-negative-oracle",
+    "M25-move-explanation-outside-owner"
+  ],
+  "summary": {
+    "total": 25,
+    "caught": 25,
+    "survivors": 0
   },
-  {
-    "id": "M03-remove-cdq",
-    "owner": "semantics",
-    "expected": "ASM-IDIV-CDQ",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-IDIV-CDQ: signed division fixture lost cdq",
-    "pass": true
-  },
-  {
-    "id": "M04-reverse-fsubp",
-    "owner": "semantics",
-    "expected": "ASM-X87-SUB",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-X87-SUB: wrong fsubp direction",
-    "pass": true
-  },
-  {
-    "id": "M05-reverse-fdivp",
-    "owner": "semantics",
-    "expected": "ASM-X87-DIV",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-X87-DIV: wrong fdivp direction",
-    "pass": true
-  },
-  {
-    "id": "M06-remove-restore-esi",
-    "owner": "semantics",
-    "expected": "ASM-CALLEE-SAVED",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-CALLEE-SAVED: esi is not restored on every return path",
-    "pass": true
-  },
-  {
-    "id": "M07-scanf-value",
-    "owner": "semantics",
-    "expected": "ASM-SCANF-ADDRESS",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-SCANF-ADDRESS: scanf must receive x address, not [x] value",
-    "pass": true
-  },
-  {
-    "id": "M08-idiv-immediate",
-    "owner": "semantics",
-    "expected": "ASM-IDIV-OPERAND",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-IDIV-OPERAND: idiv must use r/m operand, not immediate",
-    "pass": true
-  },
-  {
-    "id": "M09-make-10F-core",
-    "owner": "assessment",
-    "expected": "ASSESS-DAY10-BONUS",
-    "exit_code": 1,
-    "message": "ASSESS-DAY10-BONUS: 10F must remain optional",
-    "pass": true
-  },
-  {
-    "id": "M10-include-01-16-in-100",
-    "owner": "assessment",
-    "expected": "ASSESS-BONUS",
-    "exit_code": 1,
-    "message": "ASSESS-BONUS: bonus tasks must not be included in the final maximum",
-    "pass": true
-  },
-  {
-    "id": "M11-remove-cp3-loop-evidence",
-    "owner": "assessment",
-    "expected": "ASSESS-TASK-SKILL",
-    "exit_code": 1,
-    "message": "ASSESS-TASK-SKILL CP3/CP3-LOOP: mapped skill loop_lowering does not accept evidence from this task",
-    "pass": true
-  },
-  {
-    "id": "M12-safety-optional",
-    "owner": "assessment",
-    "expected": "ASSESS-MANDATORY",
-    "exit_code": 1,
-    "message": "ASSESS-MANDATORY CP5/memory_safety_boundaries: outcome is no longer mandatory",
-    "pass": true
-  },
-  {
-    "id": "M13-remove-refreshers-manifest",
-    "owner": "semantics",
-    "expected": "MANIFEST-STANDALONE",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\nVALIDATE_ASM=PASS\n\nMANIFEST-STANDALONE: prerequisite refreshers/final route missing",
-    "pass": true
-  },
-  {
-    "id": "M14-answer-in-closed-book",
-    "owner": "semantics",
-    "expected": "LEAK-C3",
-    "exit_code": 1,
-    "message": "LEAK-C3: docs/closed_book_workbook.md contains protected fingerprint C3-aligned-sum-call: sub esp, 8; push dword [b]; push dword [a]; call sum; add esp, 16",
-    "pass": true
-  },
-  {
-    "id": "M15-transfer-without-key",
-    "owner": "semantics",
-    "expected": "TRANSFER-SYNC",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\n\nTRANSFER-SYNC TR-05: task changed without contract update",
-    "pass": true
-  },
-  {
-    "id": "M16-change-cp-threshold",
-    "owner": "semantics",
-    "expected": "DOCS-ASSESSMENT",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\nVALIDATE_ASM=PASS\nVALIDATE_MANIFEST=PASS\n\nDOCS-ASSESSMENT: day_25 missing synchronized marker **81**",
-    "pass": true
-  },
-  {
-    "id": "M17-break-anchor",
-    "owner": "semantics",
-    "expected": "LINK-ANCHOR",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\n\nLINK-ANCHOR: pedagogy source docs/day_10_learning_path.md#10b-safe-ceil-machine-model missing",
-    "pass": true
-  },
-  {
-    "id": "M18-reverse-startup",
-    "owner": "semantics",
-    "expected": "STARTUP-DIRECTION",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\nVALIDATE_ASM=PASS\nVALIDATE_MANIFEST=PASS\nVALIDATE_DOCS_CONTRACT=PASS\n\nSTARTUP-DIRECTION: startup/runtime/main direction reversed or missing",
-    "pass": true
-  },
-  {
-    "id": "M19-return-c3-to-day25",
-    "owner": "semantics",
-    "expected": "LEAK-C3",
-    "exit_code": 1,
-    "message": "LEAK-C3: docs/day_25.md contains protected fingerprint C3-aligned-sum-call: sub esp, 8; push dword [b]; push dword [a]; call sum; add esp, 16",
-    "pass": true
-  },
-  {
-    "id": "M20-accept-known-false-pass",
-    "owner": "assessment",
-    "expected": "ASSESS-REGRESSION",
-    "exit_code": 1,
-    "message": "ASSESS-REGRESSION CP2-known-false-pass-ceil-zero: expected True, got False; ('mandatory skill branchless_safe_ceil: evidence 0 < 1',)",
-    "pass": true
-  }
-]
+  "results": [
+    {
+      "id": "M01-cleanup-12-to-8",
+      "owner": "semantics",
+      "target": "examples/14_scanf_call.asm",
+      "before_sha256": "6229412418f255f98b3381dd38a6cf6a7ce43897dc2e98354e8a37371fe77699",
+      "after_sha256": "208195a8e93e8b481d869c85bc002e66a8243127c863a1ddca1128067f820a16",
+      "expected": "ASM-CALL-AREA",
+      "exit_code": 1,
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-CALL-AREA: scanf padding/cleanup mismatch",
+      "pass": true
+    },
+    {
+      "id": "M02-remove-padding",
+      "owner": "semantics",
+      "target": "examples/14_scanf_call.asm",
+      "before_sha256": "6229412418f255f98b3381dd38a6cf6a7ce43897dc2e98354e8a37371fe77699",
+      "after_sha256": "b667fdc3094838f74096fc3f7841c40a4dd194864875ee769e2c20074729dfcb",
+      "expected": "ASM-CALL-AREA",
+      "exit_code": 1,
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-CALL-AREA: scanf padding/cleanup mismatch",
+      "pass": true
+    },
+    {
+      "id": "M03-remove-cdq",
+      "owner": "semantics",
+      "target": "examples/11_idiv_overflow_negative.asm",
+      "before_sha256": "53dc25553f9d7277687021172d35ff34bc5b77b742cb023cc033c11a47915f7c",
+      "after_sha256": "6f1589c7d1464ae25fd76e24eba8eb19b0146bef5ac32022db3c6481143e58ad",
+      "expected": "ASM-IDIV-CDQ",
+      "exit_code": 1,
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-IDIV-CDQ: signed division fixture lost cdq",
+      "pass": true
+    },
+    {
+      "id": "M04-reverse-fsubp",
+      "owner": "semantics",
+      "target": "examples/13_x87_order.asm",
+      "before_sha256": "57e74c7dc8b9695392f0b15a774bf6226fe59800a45ff7148cd82fad1d80ce5b",
+      "after_sha256": "1fb34dd394613a15ca9d9e1de787d8a5e126e36859f7eee4036f21dffc326c17",
+      "expected": "ASM-X87-SUB",
+      "exit_code": 1,
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-X87-SUB: wrong fsubp direction",
+      "pass": true
+    },
+    {
+      "id": "M05-reverse-fdivp",
+      "owner": "semantics",
+      "target": "examples/13_x87_order.asm",
+      "before_sha256": "57e74c7dc8b9695392f0b15a774bf6226fe59800a45ff7148cd82fad1d80ce5b",
+      "after_sha256": "578bb2e0a2a7804494c76e2f5cc0e37a22b2ebf22d5f23ec3a0311ae363836be",
+      "expected": "ASM-X87-DIV",
+      "exit_code": 1,
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-X87-DIV: wrong fdivp direction",
+      "pass": true
+    },
+    {
+      "id": "M06-remove-restore-esi",
+      "owner": "semantics",
+      "target": "examples/12_callee_saved.asm",
+      "before_sha256": "7985ca4e45170f17754ab8907ada4f48b48b3dc14222c88e1d5f8535639fdcd9",
+      "after_sha256": "0f7d7c795172bc4ff35433fb514c693ef5917b8980edcdf88ea5b25b658d01d2",
+      "expected": "ASM-CALLEE-SAVED",
+      "exit_code": 1,
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-CALLEE-SAVED: esi is not restored on every return path",
+      "pass": true
+    },
+    {
+      "id": "M07-scanf-value",
+      "owner": "semantics",
+      "target": "examples/14_scanf_call.asm",
+      "before_sha256": "6229412418f255f98b3381dd38a6cf6a7ce43897dc2e98354e8a37371fe77699",
+      "after_sha256": "cb0ae36fc8c7a3a76315eacace34cfcdef22fe863a98d1b350ce046e328b4e73",
+      "expected": "ASM-SCANF-ADDRESS",
+      "exit_code": 1,
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-SCANF-ADDRESS: scanf must receive x address, not [x] value",
+      "pass": true
+    },
+    {
+      "id": "M08-idiv-immediate",
+      "owner": "semantics",
+      "target": "examples/11_idiv_overflow_negative.asm",
+      "before_sha256": "53dc25553f9d7277687021172d35ff34bc5b77b742cb023cc033c11a47915f7c",
+      "after_sha256": "8f0a6b1ff2316276beb5173eec0326050f57a82a6d9e22d0009da86161448654",
+      "expected": "ASM-IDIV-OPERAND",
+      "exit_code": 1,
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-IDIV-OPERAND: idiv must use r/m operand, not immediate",
+      "pass": true
+    },
+    {
+      "id": "M09-make-10F-core",
+      "owner": "assessment",
+      "target": "scripts/assessment_contract.json",
+      "before_sha256": "567157652d6d96acda285fbc623c2071fd2ffb5fa85b4af72c0ac17c89cced35",
+      "after_sha256": "abe629e074d73c7a3475859c1d8d3603410daf0ffc4fb15cf5a7bab3909676c8",
+      "expected": "ASSESS-DAY10-BONUS",
+      "exit_code": 1,
+      "message": "ASSESS-DAY10-BONUS: 10F must remain optional",
+      "pass": true
+    },
+    {
+      "id": "M10-include-01-16-in-100",
+      "owner": "assessment",
+      "target": "scripts/assessment_contract.json",
+      "before_sha256": "567157652d6d96acda285fbc623c2071fd2ffb5fa85b4af72c0ac17c89cced35",
+      "after_sha256": "83f8608fa398b59c44909f9dd62b4c7e5919a457931f11c068ddaed35fc94b19",
+      "expected": "ASSESS-BONUS",
+      "exit_code": 1,
+      "message": "ASSESS-BONUS: bonus tasks must not be included in the final maximum",
+      "pass": true
+    },
+    {
+      "id": "M11-remove-cp3-loop-evidence",
+      "owner": "assessment",
+      "target": "scripts/assessment_contract.json",
+      "before_sha256": "567157652d6d96acda285fbc623c2071fd2ffb5fa85b4af72c0ac17c89cced35",
+      "after_sha256": "347ee49054a253ccdaa564f72f6852979dd9e25a5314d9eb4a795a47d1b24ff5",
+      "expected": "ASSESS-EVIDENCE",
+      "exit_code": 1,
+      "message": "ASSESS-EVIDENCE-BIDIRECTIONAL CP3/loop_lowering: task.skills=['CP3-LOOP'] evidence=['CP3-TABLE']",
+      "pass": true
+    },
+    {
+      "id": "M12-safety-optional",
+      "owner": "assessment",
+      "target": "scripts/assessment_contract.json",
+      "before_sha256": "567157652d6d96acda285fbc623c2071fd2ffb5fa85b4af72c0ac17c89cced35",
+      "after_sha256": "00d178266f1b238bc89fee835009adb81200a6d64a08412dadba677a90ddc65e",
+      "expected": "ASSESS-MANDATORY",
+      "exit_code": 1,
+      "message": "ASSESS-MANDATORY CP5/memory_safety_boundaries: outcome is no longer mandatory",
+      "pass": true
+    },
+    {
+      "id": "M13-remove-refreshers-manifest",
+      "owner": "semantics",
+      "target": "scripts/course_manifest.py",
+      "before_sha256": "aaf623ad535c5ee99354ea55089b7aab8ced000c3677a132da7ed031ac0e0653",
+      "after_sha256": "0b26b939cdda5a81aab060a96bd0fd3be7fc93d3790ab4404851f26aebae8354",
+      "expected": "MANIFEST-STANDALONE",
+      "exit_code": 1,
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\nVALIDATE_ASM=PASS\n\nMANIFEST-STANDALONE: prerequisite refreshers/final route missing",
+      "pass": true
+    },
+    {
+      "id": "M14-answer-in-closed-book",
+      "owner": "semantics",
+      "target": "docs/closed_book_workbook.md",
+      "before_sha256": "1c74fefe0f52b962c497aed229ec70a235cedecb739dbb4cbca32fec791eab2c",
+      "after_sha256": "ef7f4f44fc46ae589d9960f482fa810c382f410798bd22d32dc58e69a3fafca0",
+      "expected": "LEAK-C3",
+      "exit_code": 1,
+      "message": "LEAK-C3: docs/closed_book_workbook.md contains protected fingerprint C3-aligned-sum-call: sub esp, 8; push dword [b]; push dword [a]; call sum; add esp, 16",
+      "pass": true
+    },
+    {
+      "id": "M15-transfer-without-key",
+      "owner": "semantics",
+      "target": "docs/transfer_workbook.md",
+      "before_sha256": "8cac88fc31587d4c02eb7ec0963579fac7c822db5c70614ef004fa7a6a499e9b",
+      "after_sha256": "d4687f335378fea15b187f9bee3596def273473b126564c81e2a082caa4aaf80",
+      "expected": "TRANSFER-SYNC",
+      "exit_code": 1,
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\n\nTRANSFER-SYNC TR-05: task changed without contract update",
+      "pass": true
+    },
+    {
+      "id": "M16-change-cp-threshold",
+      "owner": "semantics",
+      "target": "scripts/assessment_contract.json",
+      "before_sha256": "567157652d6d96acda285fbc623c2071fd2ffb5fa85b4af72c0ac17c89cced35",
+      "after_sha256": "1f151adba3aa07355998895ee2604bf15e003d8add8b50c623e431be535f0362",
+      "expected": "DOCS-ASSESSMENT",
+      "exit_code": 1,
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\nVALIDATE_ASM=PASS\nVALIDATE_MANIFEST=PASS\n\nDOCS-ASSESSMENT: day_25 missing synchronized marker **81**",
+      "pass": true
+    },
+    {
+      "id": "M17-break-anchor",
+      "owner": "semantics",
+      "target": "docs/day_10_learning_path.md",
+      "before_sha256": "9c07b2c3af9fa6548e9429b3d88437f7e5c77b33ddde2d7dfb36d04a5bd4282e",
+      "after_sha256": "3d61bc3697b835397e714ad5dd293c9f92e98377420f1a80faf889ce37fd4e74",
+      "expected": "LINK-ANCHOR",
+      "exit_code": 1,
+      "message": "VALIDATE_LEAKAGE=PASS\n\nLINK-ANCHOR: pedagogy source docs/day_10_learning_path.md#10b-safe-ceil-machine-model missing",
+      "pass": true
+    },
+    {
+      "id": "M18-reverse-startup",
+      "owner": "semantics",
+      "target": "docs/instruction_reference.md",
+      "before_sha256": "fa5cfa132a2357d1ccfeef1c1d8f0dfb39343796fa267f5276a36c939a7f7c12",
+      "after_sha256": "62f649d8e0aa79cc901c516abdc0b0d28f19bfe8dc9bb291d909a6460d79c1c3",
+      "expected": "STARTUP-DIRECTION",
+      "exit_code": 1,
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\nVALIDATE_ASM=PASS\nVALIDATE_MANIFEST=PASS\nVALIDATE_DOCS_CONTRACT=PASS\n\nSTARTUP-DIRECTION: startup/runtime/main direction reversed or missing",
+      "pass": true
+    },
+    {
+      "id": "M19-return-c3-to-day25",
+      "owner": "semantics",
+      "target": "docs/day_25.md",
+      "before_sha256": "3e98dc852d6299d73fd2acf1d3384846b426edb2dec19f35944b5b2294faf4ef",
+      "after_sha256": "34053be8d6b476d3b801a9f607baa1eccebfaa4ba386c32acbf19f48be665155",
+      "expected": "LEAK-C3",
+      "exit_code": 1,
+      "message": "LEAK-C3: docs/day_25.md contains protected fingerprint C3-aligned-sum-call: sub esp, 8; push dword [b]; push dword [a]; call sum; add esp, 16",
+      "pass": true
+    },
+    {
+      "id": "M20-accept-known-false-pass",
+      "owner": "assessment",
+      "target": "tests/fixtures/scoring.json",
+      "before_sha256": "53a15f25f47c76398b15db939c1374692a77933ec50c8ef32716fe08d1fcc8e0",
+      "after_sha256": "f1cc36f0d1698f3cbc613bde1fd9ca2047678196b6cb593d23c90d8420629dbb",
+      "expected": "ASSESS-REGRESSION",
+      "exit_code": 1,
+      "message": "ASSESS-REGRESSION CP2-known-false-pass-ceil-zero: expected True, got False; ('mandatory skill branchless_safe_ceil: evidence 0 < 1',)",
+      "pass": true
+    },
+    {
+      "id": "M21-html-comment-leak",
+      "owner": "semantics",
+      "target": "docs/closed_book_workbook.md",
+      "before_sha256": "1c74fefe0f52b962c497aed229ec70a235cedecb739dbb4cbca32fec791eab2c",
+      "after_sha256": "1ce9938fc46672bc64769dfc87ad4e0d30d8a512cd4bf3f43696c79989a23c89",
+      "expected": "LEAK-C3",
+      "exit_code": 1,
+      "message": "LEAK-C3: docs/closed_book_workbook.md contains protected fingerprint C3-aligned-sum-call: sub esp, 8; push dword [b]; push dword [a]; call sum; add esp, 16",
+      "pass": true
+    },
+    {
+      "id": "M22-duplicate-evidence",
+      "owner": "assessment",
+      "target": "scripts/assessment_contract.json",
+      "before_sha256": "567157652d6d96acda285fbc623c2071fd2ffb5fa85b4af72c0ac17c89cced35",
+      "after_sha256": "774aff89c2ec46a9b00ddbe00c3fe46f8b9830d2ba999e020c7e2901019bc939",
+      "expected": "ASSESS-EVIDENCE-DUP",
+      "exit_code": 1,
+      "message": "ASSESS-EVIDENCE-DUP CP1/overlapping_register_trace: duplicate evidence ('CP1-REG', 1)",
+      "pass": true
+    },
+    {
+      "id": "M23-asymmetric-evidence",
+      "owner": "assessment",
+      "target": "scripts/assessment_contract.json",
+      "before_sha256": "567157652d6d96acda285fbc623c2071fd2ffb5fa85b4af72c0ac17c89cced35",
+      "after_sha256": "e65b362638ce14dda893c903ed827f2a6963c41cd5652527af777c722a24bd29",
+      "expected": "ASSESS-EVIDENCE-BIDIRECTIONAL",
+      "exit_code": 1,
+      "message": "ASSESS-EVIDENCE-BIDIRECTIONAL CP1/overlapping_register_trace: task.skills=['CP1-REG'] evidence=['CP1-SIZE-R']",
+      "pass": true
+    },
+    {
+      "id": "M24-remove-negative-oracle",
+      "owner": "semantics",
+      "target": "scripts/executable_contract.json",
+      "before_sha256": "2543320dd98e865c6afaea4c40e325222217652bfb0b19973620260980922c22",
+      "after_sha256": "66dd7018906248cf14ea810ace94eb3e5b88553f6cb6e8d10c62e6e9406f1dd7",
+      "expected": "ASM-NEGATIVE-CONTRACT",
+      "exit_code": 1,
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-NEGATIVE-CONTRACT: examples/11_idiv_overflow_negative.asm lacks exact supported expected outcome",
+      "pass": true
+    },
+    {
+      "id": "M25-move-explanation-outside-owner",
+      "owner": "semantics",
+      "target": "docs/day_10_learning_path.md",
+      "before_sha256": "9c07b2c3af9fa6548e9429b3d88437f7e5c77b33ddde2d7dfb36d04a5bd4282e",
+      "after_sha256": "ba4cff07e1c5c2f1e2d2a29e86a9c53004b7029f9ef151ec6304a239922dc0c2",
+      "expected": "PEDAGOGY-SECTION",
+      "exit_code": 1,
+      "message": "VALIDATE_LEAKAGE=PASS\n\nPEDAGOGY-SECTION branchless_safe_ceil/explanation: fragment 'mov ecx, edx' missing from docs/day_10_learning_path.md#10b-safe-ceil-machine-model",
+      "pass": true
+    }
+  ]
+}

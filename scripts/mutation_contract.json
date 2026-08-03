@@ -1,0 +1,205 @@
+{
+  "schema_version": "1.0",
+  "mutations": [
+    {
+      "id": "M01-cleanup-12-to-8",
+      "path": "examples/14_scanf_call.asm",
+      "old": "add esp, 12",
+      "new": "add esp, 8",
+      "owner": "semantics",
+      "expected_diagnostic": "ASM-CALL-AREA"
+    },
+    {
+      "id": "M02-remove-padding",
+      "path": "examples/14_scanf_call.asm",
+      "old": "    sub esp, 4\n",
+      "new": "",
+      "owner": "semantics",
+      "expected_diagnostic": "ASM-CALL-AREA"
+    },
+    {
+      "id": "M03-remove-cdq",
+      "path": "examples/11_idiv_overflow_negative.asm",
+      "old": "    cdq\n",
+      "new": "",
+      "owner": "semantics",
+      "expected_diagnostic": "ASM-IDIV-CDQ"
+    },
+    {
+      "id": "M04-reverse-fsubp",
+      "path": "examples/13_x87_order.asm",
+      "old": "fsubp st1, st0",
+      "new": "fsubrp st1, st0",
+      "owner": "semantics",
+      "expected_diagnostic": "ASM-X87-SUB"
+    },
+    {
+      "id": "M05-reverse-fdivp",
+      "path": "examples/13_x87_order.asm",
+      "old": "fdivp st1, st0",
+      "new": "fdivrp st1, st0",
+      "owner": "semantics",
+      "expected_diagnostic": "ASM-X87-DIV"
+    },
+    {
+      "id": "M06-remove-restore-esi",
+      "path": "examples/12_callee_saved.asm",
+      "old": "    pop esi\n",
+      "new": "",
+      "owner": "semantics",
+      "expected_diagnostic": "ASM-CALLEE-SAVED"
+    },
+    {
+      "id": "M07-scanf-value",
+      "path": "examples/14_scanf_call.asm",
+      "old": "    push x\n",
+      "new": "    push dword [x]\n",
+      "owner": "semantics",
+      "expected_diagnostic": "ASM-SCANF-ADDRESS"
+    },
+    {
+      "id": "M08-idiv-immediate",
+      "path": "examples/11_idiv_overflow_negative.asm",
+      "old": "    idiv ecx\n",
+      "new": "    idiv -1\n",
+      "owner": "semantics",
+      "expected_diagnostic": "ASM-IDIV-OPERAND"
+    },
+    {
+      "id": "M09-make-10F-core",
+      "path": "scripts/assessment_contract.json",
+      "old": "\"optional_sessions\": [\n      \"10F\"\n    ]",
+      "new": "\"optional_sessions\": []",
+      "owner": "assessment",
+      "expected_diagnostic": "ASSESS-DAY10-BONUS"
+    },
+    {
+      "id": "M10-include-01-16-in-100",
+      "path": "scripts/assessment_contract.json",
+      "old": "\"included_in_maximum\": false",
+      "new": "\"included_in_maximum\": true",
+      "owner": "assessment",
+      "expected_diagnostic": "ASSESS-BONUS"
+    },
+    {
+      "id": "M11-remove-cp3-loop-evidence",
+      "path": "scripts/assessment_contract.json",
+      "old": "\"task\": \"CP3-LOOP\"",
+      "new": "\"task\": \"CP3-TABLE\"",
+      "owner": "assessment",
+      "expected_diagnostic": "ASSESS-EVIDENCE"
+    },
+    {
+      "id": "M12-safety-optional",
+      "path": "scripts/assessment_contract.json",
+      "old": "\"memory_safety_boundaries\": {\n          \"mandatory\": true",
+      "new": "\"memory_safety_boundaries\": {\n          \"mandatory\": false",
+      "owner": "assessment",
+      "expected_diagnostic": "ASSESS-MANDATORY"
+    },
+    {
+      "id": "M13-remove-refreshers-manifest",
+      "path": "scripts/course_manifest.py",
+      "old": "    \"docs/prerequisite_refreshers.md\",\n",
+      "new": "",
+      "owner": "semantics",
+      "expected_diagnostic": "MANIFEST-STANDALONE"
+    },
+    {
+      "id": "M14-answer-in-closed-book",
+      "path": "docs/closed_book_workbook.md",
+      "old": "# Тетрадь NASM IA-32 без встроенных ответов",
+      "new": "# Тетрадь NASM IA-32 без встроенных ответов\n\n## Ответ\nsub esp, 8\npush dword [b]\npush dword [a]\ncall sum\nadd esp, 16",
+      "owner": "semantics",
+      "expected_diagnostic": "LEAK-C3"
+    },
+    {
+      "id": "M15-transfer-without-key",
+      "path": "docs/transfer_workbook.md",
+      "old": "`Container* c`",
+      "new": "`Holder* c`",
+      "owner": "semantics",
+      "expected_diagnostic": "TRANSFER-SYNC"
+    },
+    {
+      "id": "M16-change-cp-threshold",
+      "path": "scripts/assessment_contract.json",
+      "old": "\"maximum\": 100,\n      \"threshold\": 80",
+      "new": "\"maximum\": 100,\n      \"threshold\": 81",
+      "owner": "semantics",
+      "expected_diagnostic": "DOCS-ASSESSMENT"
+    },
+    {
+      "id": "M17-break-anchor",
+      "path": "docs/day_10_learning_path.md",
+      "old": "<a id=\"10b-safe-ceil-machine-model\"></a>",
+      "new": "<a id=\"renamed\"></a>",
+      "owner": "semantics",
+      "expected_diagnostic": "LINK-ANCHOR"
+    },
+    {
+      "id": "M18-reverse-startup",
+      "path": "docs/instruction_reference.md",
+      "old": "exec → loader → _start → runtime startup → main → exit",
+      "new": "main → runtime startup → _start → loader → exec",
+      "owner": "semantics",
+      "expected_diagnostic": "STARTUP-DIRECTION"
+    },
+    {
+      "id": "M19-return-c3-to-day25",
+      "path": "docs/day_25.md",
+      "old": "\n## Порядок после попытки",
+      "new": "\n```asm\nsub esp, 8\npush dword [b]\npush dword [a]\ncall sum\nadd esp, 16\n```\n\n## Порядок после попытки",
+      "owner": "semantics",
+      "expected_diagnostic": "LEAK-C3"
+    },
+    {
+      "id": "M20-accept-known-false-pass",
+      "path": "tests/fixtures/scoring.json",
+      "old": "\"expected_pass\": false",
+      "new": "\"expected_pass\": true",
+      "owner": "assessment",
+      "expected_diagnostic": "ASSESS-REGRESSION"
+    },
+    {
+      "id": "M21-html-comment-leak",
+      "path": "docs/closed_book_workbook.md",
+      "old": "# Тетрадь NASM IA-32 без встроенных ответов",
+      "new": "# Тетрадь NASM IA-32 без встроенных ответов\n\n<pre><code>sub<!--x--> esp, 8\npush<!--x--> dword [b]\npush<!--x--> dword [a]\ncall<!--x--> sum\nadd<!--x--> esp, 16</code></pre>",
+      "owner": "semantics",
+      "expected_diagnostic": "LEAK-C3"
+    },
+    {
+      "id": "M22-duplicate-evidence",
+      "path": "scripts/assessment_contract.json",
+      "old": "\"acceptable_evidence\": [\n            {\n              \"task\": \"CP1-REG\",\n              \"minimum_score\": 1\n            }\n          ]",
+      "new": "\"acceptable_evidence\": [\n            {\n              \"task\": \"CP1-REG\",\n              \"minimum_score\": 1\n            },\n            {\n              \"task\": \"CP1-REG\",\n              \"minimum_score\": 1\n            }\n          ]",
+      "owner": "assessment",
+      "expected_diagnostic": "ASSESS-EVIDENCE-DUP"
+    },
+    {
+      "id": "M23-asymmetric-evidence",
+      "path": "scripts/assessment_contract.json",
+      "old": "\"task\": \"CP1-REG\",\n              \"minimum_score\": 1",
+      "new": "\"task\": \"CP1-SIZE-R\",\n              \"minimum_score\": 1",
+      "owner": "assessment",
+      "expected_diagnostic": "ASSESS-EVIDENCE-BIDIRECTIONAL"
+    },
+    {
+      "id": "M24-remove-negative-oracle",
+      "path": "scripts/executable_contract.json",
+      "old": "\"expected\": \"SIGFPE\",",
+      "new": "",
+      "owner": "semantics",
+      "expected_diagnostic": "ASM-NEGATIVE-CONTRACT"
+    },
+    {
+      "id": "M25-move-explanation-outside-owner",
+      "path": "docs/day_10_learning_path.md",
+      "old": "mov ecx, edx\nneg ecx\nor ecx, edx\nshr ecx, 31",
+      "new": "mov ebx, edx\nneg ebx\nor ebx, edx\nshr ebx, 31",
+      "owner": "semantics",
+      "expected_diagnostic": "PEDAGOGY-SECTION"
+    }
+  ]
+}

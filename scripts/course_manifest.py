@@ -32,3 +32,13 @@ GENERATED_RELATIVE_PATHS = (
     "docs/closed_book_workbook.md",
     "docs/generated_source_manifest.json",
 )
+
+
+PEDAGOGY_ROUTE_RELATIVE_PATHS = (
+    "docs/day_09.md",
+    "docs/day_10_learning_path.md",
+    "docs/tasks/spring-01/01-14-garden.md",
+    "docs/instruction_reference.md",
+    "docs/transfer_workbook.md",
+    "docs/checkpoints.md",
+)

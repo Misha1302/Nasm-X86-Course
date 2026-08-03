@@ -1,34 +1,80 @@
 name: Course contracts
+
 on:
   pull_request:
   push:
     branches: [main]
+
+permissions:
+  contents: read
+
 jobs:
-  fast-contracts:
+  contracts-and-evidence:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: {python-version: '3.12'}
+        with:
+          python-version: '3.12'
       - run: python3 scripts/generate_course_docs.py
       - run: python3 scripts/validate_semantics.py
       - run: python3 scripts/validate_assessment.py
+      - run: python3 scripts/validate_review_regressions.py
       - run: python3 scripts/run_adversarial_review.py
-  mutation:
+      - name: Tracked evidence must match this revision
+        run: |
+          git diff --exit-code -- docs/generated_source_manifest.json ASSESSMENT_PROOF.json ADVERSARIAL_REVIEW.json ADVERSARIAL_REVIEW.md MUTATION_REPORT.json MUTATION_REPORT.md
+
+  independent-mutation:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: {python-version: '3.12'}
+        with:
+          python-version: '3.12'
       - run: python3 scripts/generate_course_docs.py
       - run: python3 scripts/run_mutations.py
-  docs-and-asm:
+      - name: Mutation evidence must match this revision
+        run: git diff --exit-code -- MUTATION_REPORT.json MUTATION_REPORT.md
+
+  docs-asm-visual:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: {node-version: 22, cache: npm}
-      - run: sudo apt-get update && sudo apt-get install -y nasm gcc-multilib
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install IA-32 and browser tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nasm gcc-multilib libc6-dev-i386
+          python3 -m pip install --disable-pip-version-check playwright==1.54.0
+          python3 -m playwright install --with-deps chromium
       - run: npm ci --no-audit --no-fund
       - run: npm run docs:build
       - run: bash scripts/verify_nasm_examples.sh
+      - name: Render real VitePress build
+        run: |
+          python3 scripts/serve_built_site.py --root docs/.vitepress/dist --base /Nasm-X86-Course/ --host 127.0.0.1 --port 4173 > /tmp/vitepress-static.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || true; cat /tmp/vitepress-static.log' EXIT
+          for _ in $(seq 1 60); do
+            kill -0 "$server_pid" 2>/dev/null || { echo "Built-site server exited before readiness" >&2; exit 1; }
+            curl -fsS http://127.0.0.1:4173/Nasm-X86-Course/day_25 >/dev/null && break
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:4173/Nasm-X86-Course/final_exam >/dev/null
+          python3 scripts/render_vitepress_pages.py --base-url http://127.0.0.1:4173/Nasm-X86-Course/ --output render-evidence/vitepress
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vitepress-render-evidence
+          path: render-evidence/vitepress
+          if-no-files-found: error

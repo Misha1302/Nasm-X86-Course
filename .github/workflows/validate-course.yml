@@ -5,8 +5,12 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   docs:
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,6 +29,7 @@ jobs:
         run: npm run docs:build
 
   asm-examples:
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

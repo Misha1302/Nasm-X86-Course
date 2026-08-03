@@ -20,6 +20,18 @@ PAGES = [
     "day_10",
     "day_10_learning_path",
 ]
+EXPECTED_TEXT = {
+    "day_25": "CP1 + CP2 + CP3 + CP4 + CP5 + CP6 + FINAL",
+    "final_exam": "Финальный экзамен",
+    "final_exam_keys": "Ключи",
+    "checkpoints": "Контрольная точка 1",
+    "checkpoint_keys": "Контрольная точка 1",
+    "transfer_workbook": "TR-01",
+    "closed_book_workbook": "без встроенных ответов",
+    "day_10": "День 10",
+    "day_10_learning_path": "Сессия 10C",
+}
+
 VIEWPORTS = [
     # label, CSS viewport width/height, device scale factor, browser zoom percent
     ("desktop", 1440, 1000, 1.0, 100),
@@ -55,6 +67,12 @@ def main() -> int:
                         device_scale_factor=device_scale_factor,
                     )
                     page = context.new_page()
+                    console_errors: list[str] = []
+                    failed_requests: list[str] = []
+                    bad_responses: list[str] = []
+                    page.on("console", lambda msg: console_errors.append(msg.text) if msg.type == "error" else None)
+                    page.on("requestfailed", lambda req: failed_requests.append(req.url))
+                    page.on("response", lambda resp: bad_responses.append(f"{resp.status} {resp.url}") if resp.status >= 400 else None)
                     page.set_default_timeout(20_000)
                     url = urljoin(ns.base_url.rstrip("/") + "/", page_name)
                     response = page.goto(url, wait_until="networkidle")
@@ -73,7 +91,8 @@ def main() -> int:
                           tables: document.querySelectorAll('.VPDoc table').length,
                           codeBlocks: document.querySelectorAll('.VPDoc pre').length,
                           rawAnchorText: document.body.innerText.includes('<a id='),
-                          visibleDetails: [...document.querySelectorAll('details')].filter(x => x.open).length
+                          visibleDetails: [...document.querySelectorAll('details')].filter(x => x.open).length,
+                          mainText: document.querySelector('.VPDoc')?.innerText || ''
                         })"""
                     )
                     overflow = int(metrics["scrollWidth"]) > int(metrics["clientWidth"]) + 1
@@ -108,6 +127,9 @@ def main() -> int:
                         "code_blocks": int(metrics["codeBlocks"]),
                         "raw_anchor_text": bool(metrics["rawAnchorText"]),
                         "visible_open_details": int(metrics["visibleDetails"]),
+                        "console_errors": console_errors,
+                        "failed_requests": failed_requests,
+                        "bad_responses": bad_responses,
                         "screenshots": screenshot_paths,
                     }
                     evidence.append(item)
@@ -119,6 +141,16 @@ def main() -> int:
                         failures.append(f"{page_name}/{label}: horizontal overflow")
                     if metrics["rawAnchorText"]:
                         failures.append(f"{page_name}/{label}: raw anchor text")
+                    if EXPECTED_TEXT[page_name].lower() not in str(metrics["mainText"]).lower():
+                        failures.append(f"{page_name}/{label}: expected content missing")
+                    if console_errors:
+                        failures.append(f"{page_name}/{label}: console errors: {console_errors[:2]}")
+                    if failed_requests:
+                        failures.append(f"{page_name}/{label}: failed requests: {failed_requests[:2]}")
+                    if bad_responses:
+                        failures.append(f"{page_name}/{label}: HTTP asset failures: {bad_responses[:2]}")
+                    if page_name in {"day_25", "closed_book_workbook"} and int(metrics["visibleDetails"]) != 0:
+                        failures.append(f"{page_name}/{label}: answer details unexpectedly open")
                     context.close()
         finally:
             browser.close()

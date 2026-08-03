@@ -7,6 +7,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from course_manifest import PEDAGOGY_ROUTE_RELATIVE_PATHS
+from visible_text import normalize_visible
+
 ROOT = Path(__file__).resolve().parents[1]
 
 class VError(RuntimeError): pass
@@ -17,17 +20,11 @@ def require(c: bool, msg: str) -> None:
 def strip_comments(s: str) -> str:
     return '\n'.join(line.split(';',1)[0] for line in s.splitlines())
 
-def _normalize(s: str) -> str:
-    s = s.lower()
-    s = s.replace('dword ptr','dword').replace('byte ptr','byte').replace('word ptr','word')
-    return re.sub(r'[^a-z0-9_+%\[\]=<>!*/-]+','',s)
-
 def norm(s: str) -> str:
-    return _normalize(strip_comments(s))
+    return normalize_visible(s, strip_comments=True)
 
 def norm_fingerprint(s: str) -> str:
-    # Contract fingerprints use semicolons as instruction separators, not comments.
-    return _normalize(s)
+    return normalize_visible(s, strip_comments=False)
 
 def section(text: str, anchor: str, next_anchor: str | None = None) -> str:
     start = text.index(f'<a id="{anchor}"></a>')
@@ -60,23 +57,38 @@ def validate_leakage() -> None:
             for p in c['solution_container_patterns']:
                 require(p not in low, f'CLOSED-BOOK-CONTAINER: {rel} contains forbidden solution marker {p!r}')
 
+def source_location(source: str) -> tuple[int, int]:
+    src, sep, anchor = source.partition('#')
+    require(src in PEDAGOGY_ROUTE_RELATIVE_PATHS, f'PEDAGOGY-ROUTE: {src} is absent from canonical route')
+    body=(ROOT/src).read_text(encoding='utf-8')
+    if not sep:
+        return (PEDAGOGY_ROUTE_RELATIVE_PATHS.index(src), 0)
+    marker=f'<a id="{anchor}"></a>'
+    require(marker in body, f'LINK-ANCHOR: pedagogy source {source} missing')
+    return (PEDAGOGY_ROUTE_RELATIVE_PATHS.index(src), body.index(marker))
+
+
+def pedagogy_source_section(source: str) -> str:
+    src, sep, anchor = source.partition('#')
+    body=(ROOT/src).read_text(encoding='utf-8')
+    if not sep:
+        return body
+    return exact_anchor_section(body, anchor)
+
+
 def validate_pedagogy() -> None:
     c=json.loads((ROOT/'scripts/pedagogy_contract.json').read_text(encoding='utf-8'))
+    require(c.get('schema_version') == '2.0', 'PEDAGOGY-SCHEMA: expected 2.0')
     for skill,e in c['events'].items():
-        x,u,a=e['explanation']['order'],e['required_use']['order'],e['assessment']['order']
-        require(x<u<a, f'PEDAGOGY-ORDER {skill}: expected explanation < required use < assessment, got {x},{u},{a}')
+        locations=[]
         for kind in ('explanation','required_use','assessment'):
             source=e[kind]['source']
-            src, sep, anchor = source.partition('#')
-            require((ROOT/src).is_file(), f'PEDAGOGY-SOURCE {skill}: missing {src}')
-            if sep:
-                body=(ROOT/src).read_text(encoding='utf-8')
-                explicit=set(re.findall(r'<a id="([^"]+)"',body))
-                headings={slug(h) for h in re.findall(r'^#{1,6}\s+(.+)$',body,re.M)}
-                require(anchor in explicit|headings, f'LINK-ANCHOR: pedagogy source {source} missing')
-    d10=(ROOT/'docs/day_10_learning_path.md').read_text(encoding='utf-8').lower()
+            locations.append(source_location(source))
+            section_body=pedagogy_source_section(source)
+            for fragment in e[kind].get('required_fragments',[]):
+                require(fragment.lower() in section_body.lower(), f'PEDAGOGY-SECTION {skill}/{kind}: fragment {fragment!r} missing from {source}')
+        require(locations[0] < locations[1] < locations[2], f'PEDAGOGY-ORDER {skill}: actual source positions are {locations}')
     required=(ROOT/'docs/tasks/spring-01/01-14-garden.md').read_text(encoding='utf-8').lower()
-    require('mov ecx, edx' in d10 and 'neg ecx' in d10 and 'or ecx, edx' in d10 and 'shr ecx, 31' in d10, 'PEDAGOGY-CEIL: complete branchless nonzero explanation missing before use')
     code = '\n'.join(re.findall(r'```asm[^\n]*\n(.*?)```', required, flags=re.S | re.I))
     for forbidden in ('setnz','sete ','cmov','jz ','jnz '):
         require(forbidden not in code, f'PEDAGOGY-FUTURE-DEPENDENCY: garden requires forbidden mechanism {forbidden.strip()}')
@@ -130,7 +142,10 @@ def validate_asm() -> None:
         p=ROOT/rel; require(p.is_file(),f'ASM-BLOCK: missing {rel}')
         text=p.read_text(encoding='utf-8'); require(bd['class'] in allowed,f'ASM-BLOCK: invalid class {bd["class"]}')
         require(f'; BLOCK: {bd["class"]}' in text,f'ASM-BLOCK: {rel} lacks explicit classification')
+        seconds=bd.get('timeout_seconds',c.get('default_timeout_seconds'))
+        require(type(seconds) is int and seconds > 0,f'ASM-TIMEOUT-CONTRACT: {rel} lacks positive timeout')
         if bd['class']=='RUN': require((ROOT/bd['golden']).is_file(),f'ASM-GOLDEN: {rel} lacks expected output')
+        if bd['class']=='NEGATIVE': require(bd.get('expected') in {'SIGFPE'},f'ASM-NEGATIVE-CONTRACT: {rel} lacks exact supported expected outcome')
     ceil=(ROOT/'examples/10_branchless_ceil.asm').read_text(encoding='utf-8').lower()
     for needle in ('xor edx, edx','div ecx','mov ecx, edx','neg ecx','or ecx, edx','shr ecx, 31','add eax, ecx'):
         require(needle in ceil,f'ASM-CEIL: missing {needle}')
@@ -138,7 +153,7 @@ def validate_asm() -> None:
     require('cdq' in idiv,'ASM-IDIV-CDQ: signed division fixture lost cdq')
     require(re.search(r'\bidiv\s+(?![-+]?\d)',idiv) is not None,'ASM-IDIV-OPERAND: idiv must use r/m operand, not immediate')
     scanf=(ROOT/'examples/14_scanf_call.asm').read_text(encoding='utf-8').lower()
-    require('sub esp, 8' in scanf and 'add esp, 16' in scanf,'ASM-CALL-AREA: scanf padding/cleanup mismatch')
+    require('sub esp, 4' in scanf and 'add esp, 12' in scanf,'ASM-CALL-AREA: scanf padding/cleanup mismatch')
     require(re.search(r'push\s+x\b',scanf) is not None and 'push dword [x]' not in scanf and 'push [x]' not in scanf,'ASM-SCANF-ADDRESS: scanf must receive x address, not [x] value')
     cs=(ROOT/'examples/12_callee_saved.asm').read_text(encoding='utf-8')
     require(all_return_paths_restore(cs,'esi'),'ASM-CALLEE-SAVED: esi is not restored on every return path')
@@ -159,7 +174,9 @@ def validate_manifest() -> None:
     for rel in expected_generated:
         require((ROOT/rel).is_file(),f'MANIFEST-GENERATED-MISSING: {rel}')
     manifest=json.loads((ROOT/'docs/generated_source_manifest.json').read_text(encoding='utf-8'))
+    require(manifest.get('schema_version') == '2.0','MANIFEST-PROVENANCE: expected schema 2.0')
     require(bool(manifest.get('source_tree_sha256')),'MANIFEST-PROVENANCE: source tree digest missing')
+    require(manifest.get('source_identity') == {'kind':'content-sha256','value':manifest['source_tree_sha256']},'MANIFEST-PROVENANCE: content identity mismatch')
     for rel,digest in manifest.get('generated',{}).items():
         require((ROOT/rel).is_file(),f'MANIFEST-PROVENANCE: generated file missing: {rel}')
         actual=hashlib.sha256((ROOT/rel).read_bytes()).hexdigest()
@@ -199,8 +216,21 @@ def validate_links() -> None:
     startup=(ROOT/'docs/instruction_reference.md').read_text(encoding='utf-8')
     require('exec → loader → _start → runtime startup → main → exit' in startup,'STARTUP-DIRECTION: startup/runtime/main direction reversed or missing')
 
+
+def validate_ci_contract() -> None:
+    workflow=(ROOT/'.github/workflows/course-contracts.yml').read_text(encoding='utf-8')
+    for marker in (
+        'render_vitepress_pages.py',
+        'docs/generated_source_manifest.json ASSESSMENT_PROOF.json',
+        'MUTATION_REPORT.json',
+        'ADVERSARIAL_REVIEW.json',
+        'validate_review_regressions.py',
+        'timeout-minutes:',
+    ):
+        require(marker in workflow, f'CI-CONTRACT: permanent workflow lacks {marker}')
+
 def main() -> int:
-    checks=[validate_leakage,validate_pedagogy,validate_transfers,validate_asm,validate_manifest,validate_docs_contract,validate_links]
+    checks=[validate_leakage,validate_pedagogy,validate_transfers,validate_asm,validate_manifest,validate_docs_contract,validate_links,validate_ci_contract]
     try:
         for fn in checks:
             fn(); print(fn.__name__.upper()+'=PASS')

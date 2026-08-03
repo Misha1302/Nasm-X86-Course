@@ -223,6 +223,7 @@ push, pop, call, ret, movsx, movzx
 
 Шаблон `(x ^ signMask) - signMask` возвращает знаковый `abs(x)` только при предусловии `x != INT32_MIN`. Без этого предусловия результат следует трактовать как 32-битную unsigned bit magnitude, а не как положительный `int32_t`.
 
+<a id="callee-saved"></a>
 ### Callee-saved
 
 Для полной IA-32 CDECL-функции недостаточно увидеть `push ebx/esi/edi`: каждый изменённый callee-saved-регистр должен быть восстановлен на каждом достижимом пути `ret`.

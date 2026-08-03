@@ -2,8 +2,8 @@
   "schema_version": "1.0",
   "tasks": {
     "TR-05": {
-      "task_fingerprint": "149c893b3b1a27438bcc068acc3e1c1c21ea148e57e1a1ba3e69ab3a80d8e487",
-      "key_fingerprint": "c99277b675b3194f9b4e38746efe121469be098e478cce67ac0d50be758b7de8",
+      "task_fingerprint": "bf8a5b9d0a8126aeda8688583eae4d5df25a1882c6ee107ec8ff14623c11ad01",
+      "key_fingerprint": "e56a75595efe5e2bc6a3207f41cbf7b85afd22fe220540e83a9033521e147c53",
       "required_features": [
         "Container*",
         "head->value",
@@ -15,8 +15,8 @@
       "requires_diagnostic_counterexample": true
     },
     "TR-16": {
-      "task_fingerprint": "6f1ab1c339721f1b5d7b1ce20e1fa14c09fcf1de4cfb2a1e992c0a5ea6e5e63c",
-      "key_fingerprint": "ce62d85dd086e243e759780176d09984d01b24d60cf286b9757f79fd78e7fc95",
+      "task_fingerprint": "1eff92a9a7f5f291a2312d95c93c25d933501b07ab015f4048467bc719b9626d",
+      "key_fingerprint": "d8bf055a2de341051d39dd61fc1adae0ac11ed19efde6d6f11424082fee791c0",
       "required_features": [
         "тремя аргументами",
         "esp%16==8",
@@ -28,8 +28,8 @@
       "requires_diagnostic_counterexample": true
     },
     "TR-17": {
-      "task_fingerprint": "5f1aa61896ea6bce72ec77f02342e00162c0af11e6dc1b5d98d1273c916c45f4",
-      "key_fingerprint": "98f640cd4b118a829480fd44d65588b8f14c00a77d4c004b5dcd80237834a5e7",
+      "task_fingerprint": "9cb3773cb6a9d419c2ed457a32de61da79840d18ab1e18357f17788fc65bf998",
+      "key_fingerprint": "379e434c3d7fa272ae9f4dd59455acfaea89b033ded3959075d46cda7361d1c5",
       "required_features": [
         "clamp_sum",
         "ранний возврат",
@@ -41,8 +41,8 @@
       "requires_diagnostic_counterexample": true
     },
     "TR-19": {
-      "task_fingerprint": "7b65dfb072f70a8966b6fb382017c6519000160eb98f516a32ed0868938d7f4d",
-      "key_fingerprint": "a0723e15c8097f13353a1d8c07471ce30981e2be7f9be7a7a5d6bbc8e9e0d9d7",
+      "task_fingerprint": "c0d76155b99255756971062b2128f5c56e420c0a5824504b0f81b2b7a4f5709f",
+      "key_fingerprint": "cd41b7f53d368845baf770f001b102cf530038619a6d4b4bd59804e1e031975d",
       "required_features": [
         "массив вложенных структур",
         "Point",
@@ -54,8 +54,8 @@
       "requires_diagnostic_counterexample": true
     },
     "TR-23": {
-      "task_fingerprint": "1606e6d986d29384d37d166c089132ffd920ac4d1f5e93d2cf94b5183f622890",
-      "key_fingerprint": "63e568110cb4f27c60b287848fefe38d6d69e17f394028df9104bc3484f1c669",
+      "task_fingerprint": "e58b765c2de2bb1989b3b1eaeb3db151ad88900b155b3502f406cff68a5edd79",
+      "key_fingerprint": "e7b0b29156ef383cc920064fd86d7dbaa0cbc938bd5beb58a1a5ea8c9486d6d0",
       "required_features": [
         "(a+b)*(c-d)/(e+f)",
         "максимальную глубину",
