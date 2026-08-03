@@ -160,6 +160,7 @@ jobs:
         run: |
           rm -rf node_modules docs/.vitepress/cache docs/.vitepress/dist render-evidence/vitepress
           git diff --check
+          git switch -c "$FINAL_BRANCH"
           git status --short
           git add -A
           git commit -m "fix: enforce semantic course assessment contracts"
