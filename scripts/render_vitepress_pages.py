@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PAGES = {
     "day_25": "День 25",
     "final_exam": "Финальный экзамен",
-    "final_exam_keys": "Ключи",
+    "final_exam_keys": "Ключ и рубрика финального экзамена",
     "checkpoints": "Контрольные точки",
     "checkpoint_keys": "Ключи",
     "transfer_workbook": "Перенос",
