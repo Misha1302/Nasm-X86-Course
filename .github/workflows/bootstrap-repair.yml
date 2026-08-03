@@ -18,15 +18,18 @@ jobs:
       BASELINE_SHA: d3a172f12d7a1f7e456a6a930007711a55d8d93c
       FINAL_BRANCH: repair/nasm-course-complete-20260803
       BUNDLE_SHA256: 2a97937df8d29199298b7aea1bbb9467825f42d019842de96ec55ff3dc161de8
+      DELTA_SHA256: 643905f53d46a7b144ab9c02327e576af5906366e682206a64132c0978cf7329
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Decode and verify repair bundle
+      - name: Decode and verify repair payloads
         run: |
           cat .repair/parts/part-* | base64 -d > /tmp/nasm-repair-bootstrap-bundle.tar.xz
           echo "$BUNDLE_SHA256  /tmp/nasm-repair-bootstrap-bundle.tar.xz" | sha256sum -c -
+          cat .repair/delta/part-* | base64 -d > /tmp/nasm-repair-delta-v2.patch.xz
+          echo "$DELTA_SHA256  /tmp/nasm-repair-delta-v2.patch.xz" | sha256sum -c -
           python3 - <<'PY'
           import tarfile
           from pathlib import PurePosixPath
@@ -57,6 +60,7 @@ jobs:
           p.write_text(text.replace(old, new), encoding='utf-8')
           PY
           python3 /tmp/nasm-repair-bootstrap-bundle/scripts/apply_repair.py "$GITHUB_WORKSPACE"
+          xz -dc /tmp/nasm-repair-delta-v2.patch.xz | patch -p1 --batch --forward
           git diff --check
           tar --exclude=.git --exclude=node_modules --exclude='docs/.vitepress/cache' --exclude='docs/.vitepress/dist' \
             -czf /tmp/applied-source.tar.gz .
@@ -95,10 +99,12 @@ jobs:
           npm run course:validate
           npm run course:pedagogy
           npm run course:assessment
-          python3 scripts/run_adversarial_review.py
 
       - name: Run mutation suite
         run: npm run course:mutation
+
+      - name: Run adversarial review
+        run: python3 scripts/run_adversarial_review.py
 
       - name: Build VitePress and execute IA-32 examples
         run: |
