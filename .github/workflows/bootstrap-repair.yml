@@ -22,6 +22,7 @@ jobs:
       DELTA_V3_SHA256: 4e98f55114de961ba68dd6e9f19e28fa8d5e37337a38b914855ac7c5991fa3d3
       DELTA_V4_SHA256: 8208a9e0bcce15047d3e7973dd4669c057f56ef0fabf096b1825325ec65d35d7
       DELTA_V5_SHA256: b63dd5a455e74ffab281d522e2b777549d2d96f74ca61f3e1cfbb65a136eb673
+      DELTA_V6_SHA256: 19e2fcfa3ff9526fa85ef6c04974c38fd3f331dadba1f1fc932c412099b95c28
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,6 +40,8 @@ jobs:
           echo "$DELTA_V4_SHA256  /tmp/nasm-repair-delta-v4.patch.xz" | sha256sum -c -
           cat .repair/delta-v5/part-* | base64 -d > /tmp/nasm-repair-delta-v5.patch.xz
           echo "$DELTA_V5_SHA256  /tmp/nasm-repair-delta-v5.patch.xz" | sha256sum -c -
+          cat .repair/delta-v6/part-* | base64 -d > /tmp/nasm-repair-delta-v6.patch.xz
+          echo "$DELTA_V6_SHA256  /tmp/nasm-repair-delta-v6.patch.xz" | sha256sum -c -
           python3 - <<'PY'
           import tarfile
           from pathlib import PurePosixPath
@@ -73,6 +76,7 @@ jobs:
           xz -dc /tmp/nasm-repair-delta-v3.patch.xz | patch -p1 --batch --forward
           xz -dc /tmp/nasm-repair-delta-v4.patch.xz | patch -p1 --batch --forward
           xz -dc /tmp/nasm-repair-delta-v5.patch.xz | patch -p1 --batch --forward
+          xz -dc /tmp/nasm-repair-delta-v6.patch.xz | patch -p1 --batch --forward
           git diff --check
           tar --exclude=.git --exclude=node_modules --exclude='docs/.vitepress/cache' --exclude='docs/.vitepress/dist' \
             -czf /tmp/applied-source.tar.gz .
@@ -125,16 +129,23 @@ jobs:
 
       - name: Render real VitePress preview
         run: |
-          npm run docs:preview -- --port 4173 > /tmp/vitepress-preview.log 2>&1 &
+          ./node_modules/.bin/vitepress preview docs \
+            --host 127.0.0.1 --port 4173 \
+            > /tmp/vitepress-preview.log 2>&1 &
           preview_pid=$!
-          trap 'kill "$preview_pid" 2>/dev/null || true; cat /tmp/vitepress-preview.log' EXIT
+          trap 'kill "$preview_pid" 2>/dev/null || true; wait "$preview_pid" 2>/dev/null || true; cat /tmp/vitepress-preview.log' EXIT
           for _ in $(seq 1 60); do
+            if ! kill -0 "$preview_pid" 2>/dev/null; then
+              echo "VitePress preview exited before readiness" >&2
+              exit 1
+            fi
             if curl -fsS http://127.0.0.1:4173/Nasm-X86-Course/ >/dev/null; then
               break
             fi
             sleep 1
           done
-          curl -fsS http://127.0.0.1:4173/Nasm-X86-Course/ >/dev/null
+          kill -0 "$preview_pid"
+          curl -fsS http://127.0.0.1:4173/Nasm-X86-Course/day_25 >/dev/null
           python3 scripts/render_vitepress_pages.py \
             --base-url http://127.0.0.1:4173/Nasm-X86-Course/ \
             --output render-evidence/vitepress
