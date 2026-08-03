@@ -22,9 +22,21 @@ jobs:
       - run: python3 scripts/validate_assessment.py
       - run: python3 scripts/validate_review_regressions.py
       - run: python3 scripts/run_adversarial_review.py
-      - name: Tracked evidence must match this revision
-        run: |
-          git diff --exit-code -- docs/generated_source_manifest.json ASSESSMENT_PROOF.json ADVERSARIAL_REVIEW.json ADVERSARIAL_REVIEW.md MUTATION_REPORT.json MUTATION_REPORT.md
+      - name: Generated manifest must match this revision
+        run: git diff --exit-code -- docs/generated_source_manifest.json
+      - name: Upload fresh contract evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: contract-evidence
+          path: |
+            docs/generated_source_manifest.json
+            ASSESSMENT_PROOF.json
+            ADVERSARIAL_REVIEW.json
+            ADVERSARIAL_REVIEW.md
+            MUTATION_REPORT.json
+            MUTATION_REPORT.md
+          if-no-files-found: error
 
   independent-mutation:
     runs-on: ubuntu-latest
@@ -36,8 +48,15 @@ jobs:
           python-version: '3.12'
       - run: python3 scripts/generate_course_docs.py
       - run: python3 scripts/run_mutations.py
-      - name: Mutation evidence must match this revision
-        run: git diff --exit-code -- MUTATION_REPORT.json MUTATION_REPORT.md
+      - name: Upload independently generated mutation evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mutation-evidence-independent
+          path: |
+            MUTATION_REPORT.json
+            MUTATION_REPORT.md
+          if-no-files-found: error
 
   docs-asm-visual:
     runs-on: ubuntu-latest

@@ -23,7 +23,7 @@ PAGES = [
 EXPECTED_TEXT = {
     "day_25": "CP1 + CP2 + CP3 + CP4 + CP5 + CP6 + FINAL",
     "final_exam": "Финальный экзамен",
-    "final_exam_keys": "Ключи",
+    "final_exam_keys": "Ключ и рубрика финального экзамена",
     "checkpoints": "Контрольная точка 1",
     "checkpoint_keys": "Контрольная точка 1",
     "transfer_workbook": "TR-01",
@@ -33,11 +33,8 @@ EXPECTED_TEXT = {
 }
 
 VIEWPORTS = [
-    # label, CSS viewport width/height, device scale factor, browser zoom percent
     ("desktop", 1440, 1000, 1.0, 100),
     ("mobile", 390, 844, 1.0, 100),
-    # Browser zoom reduces the CSS viewport instead of scaling the document box.
-    # device_scale_factor=2 preserves 720x900 physical screenshot evidence.
     ("zoom200", 360, 450, 2.0, 200),
 ]
 
@@ -62,10 +59,7 @@ def main() -> int:
         try:
             for page_name in PAGES:
                 for label, width, height, device_scale_factor, zoom_percent in VIEWPORTS:
-                    context = browser.new_context(
-                        viewport={"width": width, "height": height},
-                        device_scale_factor=device_scale_factor,
-                    )
+                    context = browser.new_context(viewport={"width": width, "height": height}, device_scale_factor=device_scale_factor)
                     page = context.new_page()
                     console_errors: list[str] = []
                     failed_requests: list[str] = []
@@ -79,22 +73,20 @@ def main() -> int:
                     status = response.status if response else 0
                     page.wait_for_timeout(150)
 
-                    metrics = page.evaluate(
-                        """() => ({
-                          title: document.title,
-                          clientWidth: document.documentElement.clientWidth,
-                          scrollWidth: document.documentElement.scrollWidth,
-                          scrollHeight: document.documentElement.scrollHeight,
-                          doc: Boolean(document.querySelector('.VPDoc')),
-                          nav: Boolean(document.querySelector('.VPNav')),
-                          sidebar: Boolean(document.querySelector('.VPSidebar')),
-                          tables: document.querySelectorAll('.VPDoc table').length,
-                          codeBlocks: document.querySelectorAll('.VPDoc pre').length,
-                          rawAnchorText: document.body.innerText.includes('<a id='),
-                          visibleDetails: [...document.querySelectorAll('details')].filter(x => x.open).length,
-                          mainText: document.querySelector('.VPDoc')?.innerText || ''
-                        })"""
-                    )
+                    metrics = page.evaluate("""() => ({
+                      title: document.title,
+                      clientWidth: document.documentElement.clientWidth,
+                      scrollWidth: document.documentElement.scrollWidth,
+                      scrollHeight: document.documentElement.scrollHeight,
+                      doc: Boolean(document.querySelector('.VPDoc')),
+                      nav: Boolean(document.querySelector('.VPNav')),
+                      sidebar: Boolean(document.querySelector('.VPSidebar')),
+                      tables: document.querySelectorAll('.VPDoc table').length,
+                      codeBlocks: document.querySelectorAll('.VPDoc pre').length,
+                      rawAnchorText: document.body.innerText.includes('<a id='),
+                      visibleDetails: [...document.querySelectorAll('details')].filter(x => x.open).length,
+                      mainText: document.querySelector('.VPDoc')?.innerText || ''
+                    })""")
                     overflow = int(metrics["scrollWidth"]) > int(metrics["clientWidth"]) + 1
                     max_y = max(0, int(metrics["scrollHeight"]) - height)
                     positions = [("top", 0)]
@@ -156,10 +148,7 @@ def main() -> int:
             browser.close()
 
     out.mkdir(parents=True, exist_ok=True)
-    (out / "visual_evidence.json").write_text(
-        json.dumps({"cases": evidence, "failures": failures}, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    (out / "visual_evidence.json").write_text(json.dumps({"cases": evidence, "failures": failures}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"VITEPRESS_VISUAL_CASES={len(evidence)}")
     print(f"VITEPRESS_VISUAL_SCREENSHOTS={sum(len(x['screenshots']) for x in evidence)}")
     print(f"VITEPRESS_VISUAL_FAILURES={len(failures)}")
