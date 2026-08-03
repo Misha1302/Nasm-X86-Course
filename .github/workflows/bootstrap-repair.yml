@@ -27,22 +27,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install full validation toolchain
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y nasm gcc-multilib
-          python3 -m pip install --disable-pip-version-check playwright==1.54.0
-          python3 -m playwright install --with-deps chromium
-
       - name: Decode and verify repair bundle
         run: |
           cat .repair/parts/part-* | base64 -d > /tmp/nasm-repair-bootstrap-bundle.tar.xz
@@ -78,6 +62,33 @@ jobs:
           PY
           python3 /tmp/nasm-repair-bootstrap-bundle/scripts/apply_repair.py "$GITHUB_WORKSPACE"
           git diff --check
+          tar --exclude=.git --exclude=node_modules --exclude='docs/.vitepress/cache' --exclude='docs/.vitepress/dist' \
+            -czf /tmp/applied-source.tar.gz .
+          sha256sum /tmp/applied-source.tar.gz > /tmp/applied-source.sha256
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bootstrap-applied-source
+          path: |
+            /tmp/applied-source.tar.gz
+            /tmp/applied-source.sha256
+          if-no-files-found: error
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install full validation toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nasm gcc-multilib
+          python3 -m pip install --disable-pip-version-check playwright==1.54.0
+          python3 -m playwright install --with-deps chromium
 
       - name: Install clean Node dependencies
         run: npm ci --no-audit --no-fund
@@ -129,6 +140,4 @@ jobs:
           git commit -m "fix: enforce semantic course assessment contracts"
           final_sha="$(git rev-parse HEAD)"
           git push origin "HEAD:refs/heads/$FINAL_BRANCH"
-          echo "FINAL_BRANCH=$FINAL_BRANCH" >> "$GITHUB_ENV"
-          echo "FINAL_SHA=$final_sha" >> "$GITHUB_ENV"
           printf 'FINAL_BRANCH=%s\nFINAL_SHA=%s\n' "$FINAL_BRANCH" "$final_sha"
