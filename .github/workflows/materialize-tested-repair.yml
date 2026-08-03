@@ -3,7 +3,6 @@ name: Materialize tested NASM repair
 on:
   push:
     branches: [repair/nasm-course-complete-20260803]
-    paths: [.github/workflows/materialize-tested-repair.yml]
 
 permissions:
   actions: read
@@ -38,8 +37,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          rm -rf "$RUNNER_TEMP/tested-source" "$RUNNER_TEMP/tested-source.zip"
-          mkdir -p "$RUNNER_TEMP/tested-source"
+          rm -rf "$RUNNER_TEMP/tested-source" "$RUNNER_TEMP/tested-source.zip" "$RUNNER_TEMP/source"
+          mkdir -p "$RUNNER_TEMP/tested-source" "$RUNNER_TEMP/source"
           curl --fail --silent --show-error --location \
             --header "Authorization: Bearer $GH_TOKEN" \
             --header "Accept: application/vnd.github+json" \
@@ -47,7 +46,6 @@ jobs:
             --output "$RUNNER_TEMP/tested-source.zip"
           unzip -q "$RUNNER_TEMP/tested-source.zip" -d "$RUNNER_TEMP/tested-source"
           echo "$TESTED_SOURCE_SHA256  $RUNNER_TEMP/tested-source/applied-source.tar.gz" | sha256sum -c -
-          mkdir -p "$RUNNER_TEMP/source"
           python3 - <<'PY'
           import os
           import tarfile
@@ -182,12 +180,16 @@ jobs:
                   'content': file_path.read_text(encoding='utf-8'),
               })
 
-          entries.append({
-              'path': '.github/workflows/materialize-tested-repair.yml',
-              'mode': '100644',
-              'type': 'blob',
-              'sha': None,
-          })
+          for temporary_path in (
+              '.github/workflows/materialize-tested-repair.yml',
+              '.repair/materialize-trigger.txt',
+          ):
+              entries.append({
+                  'path': temporary_path,
+                  'mode': '100644',
+                  'type': 'blob',
+                  'sha': None,
+              })
 
           tree = api('POST', '/git/trees', {
               'base_tree': base_tree_sha,
@@ -204,5 +206,5 @@ jobs:
           })
           print(f'FINAL_BRANCH={branch}')
           print(f'FINAL_SHA={commit["sha"]}')
-          print(f'FILES_PUBLISHED={len(entries) - 1}')
+          print(f'FILES_PUBLISHED={len(entries) - 2}')
           PY
