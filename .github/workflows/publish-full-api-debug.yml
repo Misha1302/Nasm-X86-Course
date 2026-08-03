@@ -1,0 +1,69 @@
+name: Diagnose complete Git Data tree
+
+on:
+  push:
+    branches:
+      - repair/nasm-course-complete-20260803
+
+permissions:
+  actions: read
+  contents: write
+  statuses: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    env:
+      BASELINE_SHA: d3a172f12d7a1f7e456a6a930007711a55d8d93c
+      ARTIFACT_ID: '8842821995'
+      SOURCE_SHA256: d8bb9aeea035e1f677c1e12263cfb197c3c9f2fbe663ac340b0b411946176cce
+      PROBE_BRANCH: repair/git-data-full-tree-probe-20260803
+    steps:
+      - name: Prepare exact source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/zip" "$RUNNER_TEMP/source"
+          curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID/zip" -o "$RUNNER_TEMP/a.zip"
+          unzip -q "$RUNNER_TEMP/a.zip" -d "$RUNNER_TEMP/zip"
+          echo "$SOURCE_SHA256  $RUNNER_TEMP/zip/applied-source.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/zip/applied-source.tar.gz" -C "$RUNNER_TEMP/source"
+
+      - name: Build every tree chunk and update probe ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json, os, stat, urllib.error, urllib.parse, urllib.request
+          from pathlib import Path
+          repo=os.environ['GITHUB_REPOSITORY']; token=os.environ['GH_TOKEN']; baseline=os.environ['BASELINE_SHA']
+          probe=os.environ['PROBE_BRANCH']; source=Path(os.environ['RUNNER_TEMP'])/'source'; sha=os.environ['GITHUB_SHA']
+          root=f'https://api.github.com/repos/{repo}'
+          headers={'Authorization':f'Bearer {token}','Accept':'application/vnd.github+json','Content-Type':'application/json','User-Agent':'full-tree-probe'}
+          def api(method,path,payload=None,allow404=False):
+              req=urllib.request.Request(root+path,data=None if payload is None else json.dumps(payload,ensure_ascii=False).encode(),method=method,headers=headers)
+              try:
+                  with urllib.request.urlopen(req,timeout=180) as r:return json.load(r)
+              except urllib.error.HTTPError as e:
+                  if allow404 and e.code==404:return None
+                  raise SystemExit(f'{method} {path}: {e.code}: {e.read().decode(errors="replace")}')
+          def status(context,description):api('POST',f'/statuses/{sha}',{'state':'success','context':context,'description':description})
+          base=api('GET',f'/git/commits/{baseline}'); tree_sha=base['tree']['sha']
+          entries=[]
+          for p in sorted(x for x in source.rglob('*') if x.is_file()):
+              rel=p.relative_to(source).as_posix()
+              if rel.startswith('.github/workflows/'):continue
+              entries.append({'path':rel,'mode':'100755' if p.stat().st_mode & stat.S_IXUSR else '100644','type':'blob','content':p.read_text(encoding='utf-8')})
+          chunks=0
+          for offset in range(0,len(entries),20):
+              tree=api('POST','/git/trees',{'base_tree':tree_sha,'tree':entries[offset:offset+20]}); tree_sha=tree['sha']; chunks+=1
+          status('publisher-full/tree',f'{len(entries)} files in {chunks} chunks')
+          commit=api('POST','/git/commits',{'message':'probe: complete source tree','tree':tree_sha,'parents':[baseline]})
+          ref_path=urllib.parse.quote(f'heads/{probe}',safe='/')
+          old=api('GET',f'/git/ref/{ref_path}',allow404=True)
+          if old:api('PATCH',f'/git/refs/{ref_path}',{'sha':commit['sha'],'force':True})
+          else:api('POST','/git/refs',{'ref':f'refs/heads/{probe}','sha':commit['sha']})
+          status('publisher-full/ref',f'Probe ref {commit["sha"][:12]} published')
+          PY
