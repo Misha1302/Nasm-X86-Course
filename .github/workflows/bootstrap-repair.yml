@@ -21,6 +21,7 @@ jobs:
       DELTA_SHA256: 643905f53d46a7b144ab9c02327e576af5906366e682206a64132c0978cf7329
       DELTA_V3_SHA256: 4e98f55114de961ba68dd6e9f19e28fa8d5e37337a38b914855ac7c5991fa3d3
       DELTA_V4_SHA256: 8208a9e0bcce15047d3e7973dd4669c057f56ef0fabf096b1825325ec65d35d7
+      DELTA_V5_SHA256: b63dd5a455e74ffab281d522e2b777549d2d96f74ca61f3e1cfbb65a136eb673
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,6 +37,8 @@ jobs:
           echo "$DELTA_V3_SHA256  /tmp/nasm-repair-delta-v3.patch.xz" | sha256sum -c -
           cat .repair/delta-v4/part-* | base64 -d > /tmp/nasm-repair-delta-v4.patch.xz
           echo "$DELTA_V4_SHA256  /tmp/nasm-repair-delta-v4.patch.xz" | sha256sum -c -
+          cat .repair/delta-v5/part-* | base64 -d > /tmp/nasm-repair-delta-v5.patch.xz
+          echo "$DELTA_V5_SHA256  /tmp/nasm-repair-delta-v5.patch.xz" | sha256sum -c -
           python3 - <<'PY'
           import tarfile
           from pathlib import PurePosixPath
@@ -69,6 +72,7 @@ jobs:
           xz -dc /tmp/nasm-repair-delta-v2.patch.xz | patch -p1 --batch --forward
           xz -dc /tmp/nasm-repair-delta-v3.patch.xz | patch -p1 --batch --forward
           xz -dc /tmp/nasm-repair-delta-v4.patch.xz | patch -p1 --batch --forward
+          xz -dc /tmp/nasm-repair-delta-v5.patch.xz | patch -p1 --batch --forward
           git diff --check
           tar --exclude=.git --exclude=node_modules --exclude='docs/.vitepress/cache' --exclude='docs/.vitepress/dist' \
             -czf /tmp/applied-source.tar.gz .
