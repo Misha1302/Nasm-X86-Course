@@ -22,6 +22,7 @@ jobs:
       DELTA_V5_SHA256: b63dd5a455e74ffab281d522e2b777549d2d96f74ca61f3e1cfbb65a136eb673
       DELTA_V6_SHA256: 19e2fcfa3ff9526fa85ef6c04974c38fd3f331dadba1f1fc932c412099b95c28
       DELTA_V7_SHA256: 2bd0b1b41a6f14350175129920504bbcaa9d6d8ea88e3405a31f006d0b4f09f0
+      DELTA_V8_SHA256: eac75078483cf8d3c2a13cb3162f512088db599900c1aa23f0c7d4092a7be057
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,12 +31,11 @@ jobs:
       - name: Decode and verify repair payloads
         run: |
           cat .repair/parts/part-* | base64 -d > /tmp/bundle.tar.xz
-          cat .repair/delta/part-* | base64 -d > /tmp/delta-v2.patch.xz
-          cat .repair/delta-v3/part-* | base64 -d > /tmp/delta-v3.patch.xz
-          cat .repair/delta-v4/part-* | base64 -d > /tmp/delta-v4.patch.xz
-          cat .repair/delta-v5/part-* | base64 -d > /tmp/delta-v5.patch.xz
-          cat .repair/delta-v6/part-* | base64 -d > /tmp/delta-v6.patch.xz
-          cat .repair/delta-v7/part-* | base64 -d > /tmp/delta-v7.patch.xz
+          for version in 2 3 4 5 6 7 8; do
+            path=".repair/delta/part-*"
+            if [ "$version" != 2 ]; then path=".repair/delta-v${version}/part-*"; fi
+            cat $path | base64 -d > "/tmp/delta-v${version}.patch.xz"
+          done
           echo "$BUNDLE_SHA256  /tmp/bundle.tar.xz" | sha256sum -c -
           echo "$DELTA_V2_SHA256  /tmp/delta-v2.patch.xz" | sha256sum -c -
           echo "$DELTA_V3_SHA256  /tmp/delta-v3.patch.xz" | sha256sum -c -
@@ -43,6 +43,7 @@ jobs:
           echo "$DELTA_V5_SHA256  /tmp/delta-v5.patch.xz" | sha256sum -c -
           echo "$DELTA_V6_SHA256  /tmp/delta-v6.patch.xz" | sha256sum -c -
           echo "$DELTA_V7_SHA256  /tmp/delta-v7.patch.xz" | sha256sum -c -
+          echo "$DELTA_V8_SHA256  /tmp/delta-v8.patch.xz" | sha256sum -c -
           python3 - <<'PY'
           import tarfile
           from pathlib import PurePosixPath
@@ -63,7 +64,7 @@ jobs:
           git reset --hard "$BASELINE_SHA"
           git clean -fdx
           python3 /tmp/nasm-repair-bootstrap-bundle/scripts/apply_repair.py "$GITHUB_WORKSPACE"
-          for version in 2 3 4 5 6 7; do
+          for version in 2 3 4 5 6 7 8; do
             xz -dc "/tmp/delta-v${version}.patch.xz" | patch -p1 --batch --forward
           done
           git diff --check
