@@ -23,6 +23,7 @@ jobs:
       DELTA_V6_SHA256: 19e2fcfa3ff9526fa85ef6c04974c38fd3f331dadba1f1fc932c412099b95c28
       DELTA_V7_SHA256: 2bd0b1b41a6f14350175129920504bbcaa9d6d8ea88e3405a31f006d0b4f09f0
       DELTA_V8_SHA256: eac75078483cf8d3c2a13cb3162f512088db599900c1aa23f0c7d4092a7be057
+      DELTA_V9_SHA256: ec155a12e3b5a7ad72c0a656bff43a8ac34dd79d6e5dbc173d7ba5fb43cb50b2
     steps:
       - uses: actions/checkout@v4
         with:
@@ -31,19 +32,16 @@ jobs:
       - name: Decode and verify repair payloads
         run: |
           cat .repair/parts/part-* | base64 -d > /tmp/bundle.tar.xz
-          for version in 2 3 4 5 6 7 8; do
+          for version in 2 3 4 5 6 7 8 9; do
             path=".repair/delta/part-*"
             if [ "$version" != 2 ]; then path=".repair/delta-v${version}/part-*"; fi
             cat $path | base64 -d > "/tmp/delta-v${version}.patch.xz"
           done
           echo "$BUNDLE_SHA256  /tmp/bundle.tar.xz" | sha256sum -c -
-          echo "$DELTA_V2_SHA256  /tmp/delta-v2.patch.xz" | sha256sum -c -
-          echo "$DELTA_V3_SHA256  /tmp/delta-v3.patch.xz" | sha256sum -c -
-          echo "$DELTA_V4_SHA256  /tmp/delta-v4.patch.xz" | sha256sum -c -
-          echo "$DELTA_V5_SHA256  /tmp/delta-v5.patch.xz" | sha256sum -c -
-          echo "$DELTA_V6_SHA256  /tmp/delta-v6.patch.xz" | sha256sum -c -
-          echo "$DELTA_V7_SHA256  /tmp/delta-v7.patch.xz" | sha256sum -c -
-          echo "$DELTA_V8_SHA256  /tmp/delta-v8.patch.xz" | sha256sum -c -
+          for version in 2 3 4 5 6 7 8 9; do
+            var="DELTA_V${version}_SHA256"
+            echo "${!var}  /tmp/delta-v${version}.patch.xz" | sha256sum -c -
+          done
           python3 - <<'PY'
           import tarfile
           from pathlib import PurePosixPath
@@ -64,7 +62,7 @@ jobs:
           git reset --hard "$BASELINE_SHA"
           git clean -fdx
           python3 /tmp/nasm-repair-bootstrap-bundle/scripts/apply_repair.py "$GITHUB_WORKSPACE"
-          for version in 2 3 4 5 6 7 8; do
+          for version in 2 3 4 5 6 7 8 9; do
             xz -dc "/tmp/delta-v${version}.patch.xz" | patch -p1 --batch --forward
           done
           git diff --check
@@ -127,14 +125,8 @@ jobs:
           trap 'kill "$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || true' EXIT
           ready=0
           for _ in $(seq 1 60); do
-            if ! kill -0 "$server_pid" 2>/dev/null; then
-              echo "Built-site server exited before readiness" | tee -a /tmp/render.log >&2
-              break
-            fi
-            if curl -fsS http://127.0.0.1:4173/Nasm-X86-Course/day_25 >/dev/null; then
-              ready=1
-              break
-            fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then break; fi
+            if curl -fsS http://127.0.0.1:4173/Nasm-X86-Course/day_25 >/dev/null; then ready=1; break; fi
             sleep 1
           done
           printf 'SERVER_READY=%s\n' "$ready" | tee -a /tmp/render.log
@@ -144,12 +136,10 @@ jobs:
               "http://127.0.0.1:4173/Nasm-X86-Course/$route" \
               >> render-evidence/vitepress/diagnostics/routes.txt || true
           done
-          cp /tmp/vitepress-static.log render-evidence/vitepress/diagnostics/server.log || true
           set +e
           python3 scripts/render_vitepress_pages.py \
             --base-url http://127.0.0.1:4173/Nasm-X86-Course/ \
-            --output render-evidence/vitepress \
-            > /tmp/render.log 2>&1
+            --output render-evidence/vitepress > /tmp/render.log 2>&1
           render_rc=$?
           set -e
           cp /tmp/render.log render-evidence/vitepress/diagnostics/renderer.log || true
@@ -157,7 +147,6 @@ jobs:
           printf 'RENDER_RC=%s\n' "$render_rc" | tee -a render-evidence/vitepress/diagnostics/renderer.log
           cat render-evidence/vitepress/diagnostics/routes.txt
           cat render-evidence/vitepress/diagnostics/renderer.log
-          cat render-evidence/vitepress/diagnostics/server.log
           exit "$render_rc"
 
       - uses: actions/upload-artifact@v4
