@@ -28,6 +28,7 @@ def norm(s: str) -> str:
     return _normalize(strip_comments(s))
 
 def norm_fingerprint(s: str) -> str:
+    # Contract fingerprints use semicolons as instruction separators, not comments.
     return _normalize(s)
 
 def section(text: str, anchor: str, next_anchor: str | None = None) -> str:
