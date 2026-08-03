@@ -2,11 +2,9 @@ name: Bootstrap NASM course repair
 
 on:
   push:
-    branches:
-      - repair/nasm-course-bootstrap-20260803
+    branches: [repair/nasm-course-bootstrap-20260803]
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 permissions:
   contents: write
@@ -18,11 +16,12 @@ jobs:
       BASELINE_SHA: d3a172f12d7a1f7e456a6a930007711a55d8d93c
       FINAL_BRANCH: repair/nasm-course-complete-20260803
       BUNDLE_SHA256: 2a97937df8d29199298b7aea1bbb9467825f42d019842de96ec55ff3dc161de8
-      DELTA_SHA256: 643905f53d46a7b144ab9c02327e576af5906366e682206a64132c0978cf7329
+      DELTA_V2_SHA256: 643905f53d46a7b144ab9c02327e576af5906366e682206a64132c0978cf7329
       DELTA_V3_SHA256: 4e98f55114de961ba68dd6e9f19e28fa8d5e37337a38b914855ac7c5991fa3d3
       DELTA_V4_SHA256: 8208a9e0bcce15047d3e7973dd4669c057f56ef0fabf096b1825325ec65d35d7
       DELTA_V5_SHA256: b63dd5a455e74ffab281d522e2b777549d2d96f74ca61f3e1cfbb65a136eb673
       DELTA_V6_SHA256: 19e2fcfa3ff9526fa85ef6c04974c38fd3f331dadba1f1fc932c412099b95c28
+      DELTA_V7_SHA256: 2bd0b1b41a6f14350175129920504bbcaa9d6d8ea88e3405a31f006d0b4f09f0
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,28 +29,29 @@ jobs:
 
       - name: Decode and verify repair payloads
         run: |
-          cat .repair/parts/part-* | base64 -d > /tmp/nasm-repair-bootstrap-bundle.tar.xz
-          echo "$BUNDLE_SHA256  /tmp/nasm-repair-bootstrap-bundle.tar.xz" | sha256sum -c -
-          cat .repair/delta/part-* | base64 -d > /tmp/nasm-repair-delta-v2.patch.xz
-          echo "$DELTA_SHA256  /tmp/nasm-repair-delta-v2.patch.xz" | sha256sum -c -
-          cat .repair/delta-v3/part-* | base64 -d > /tmp/nasm-repair-delta-v3.patch.xz
-          echo "$DELTA_V3_SHA256  /tmp/nasm-repair-delta-v3.patch.xz" | sha256sum -c -
-          cat .repair/delta-v4/part-* | base64 -d > /tmp/nasm-repair-delta-v4.patch.xz
-          echo "$DELTA_V4_SHA256  /tmp/nasm-repair-delta-v4.patch.xz" | sha256sum -c -
-          cat .repair/delta-v5/part-* | base64 -d > /tmp/nasm-repair-delta-v5.patch.xz
-          echo "$DELTA_V5_SHA256  /tmp/nasm-repair-delta-v5.patch.xz" | sha256sum -c -
-          cat .repair/delta-v6/part-* | base64 -d > /tmp/nasm-repair-delta-v6.patch.xz
-          echo "$DELTA_V6_SHA256  /tmp/nasm-repair-delta-v6.patch.xz" | sha256sum -c -
+          cat .repair/parts/part-* | base64 -d > /tmp/bundle.tar.xz
+          cat .repair/delta/part-* | base64 -d > /tmp/delta-v2.patch.xz
+          cat .repair/delta-v3/part-* | base64 -d > /tmp/delta-v3.patch.xz
+          cat .repair/delta-v4/part-* | base64 -d > /tmp/delta-v4.patch.xz
+          cat .repair/delta-v5/part-* | base64 -d > /tmp/delta-v5.patch.xz
+          cat .repair/delta-v6/part-* | base64 -d > /tmp/delta-v6.patch.xz
+          cat .repair/delta-v7/part-* | base64 -d > /tmp/delta-v7.patch.xz
+          echo "$BUNDLE_SHA256  /tmp/bundle.tar.xz" | sha256sum -c -
+          echo "$DELTA_V2_SHA256  /tmp/delta-v2.patch.xz" | sha256sum -c -
+          echo "$DELTA_V3_SHA256  /tmp/delta-v3.patch.xz" | sha256sum -c -
+          echo "$DELTA_V4_SHA256  /tmp/delta-v4.patch.xz" | sha256sum -c -
+          echo "$DELTA_V5_SHA256  /tmp/delta-v5.patch.xz" | sha256sum -c -
+          echo "$DELTA_V6_SHA256  /tmp/delta-v6.patch.xz" | sha256sum -c -
+          echo "$DELTA_V7_SHA256  /tmp/delta-v7.patch.xz" | sha256sum -c -
           python3 - <<'PY'
           import tarfile
           from pathlib import PurePosixPath
-          path = '/tmp/nasm-repair-bootstrap-bundle.tar.xz'
-          with tarfile.open(path, 'r:xz') as tf:
-              for member in tf.getmembers():
-                  p = PurePosixPath(member.name)
-                  if p.is_absolute() or '..' in p.parts or member.issym() or member.islnk():
+          with tarfile.open('/tmp/bundle.tar.xz', 'r:xz') as archive:
+              for member in archive.getmembers():
+                  path = PurePosixPath(member.name)
+                  if path.is_absolute() or '..' in path.parts or member.issym() or member.islnk():
                       raise SystemExit(f'unsafe archive member: {member.name}')
-              tf.extractall('/tmp')
+              archive.extractall('/tmp')
           PY
           test -f /tmp/nasm-repair-bootstrap-bundle/scripts/apply_repair.py
 
@@ -59,26 +59,16 @@ jobs:
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git switch -C main "$BASELINE_SHA"
           git reset --hard "$BASELINE_SHA"
           git clean -fdx
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('/tmp/nasm-repair-bootstrap-bundle/scripts/apply_repair.py')
-          text = p.read_text(encoding='utf-8')
-          old = 'if branch != "main":\n        raise ApplyError(f"APPLY-BRANCH: expected main, got {branch!r}")'
-          new = 'if branch not in {"main", "repair/nasm-course-bootstrap-20260803", ""}:\n        raise ApplyError(f"APPLY-BRANCH: unexpected bootstrap branch {branch!r}")'
-          if old not in text:
-              raise SystemExit('bootstrap patch target not found')
-          p.write_text(text.replace(old, new), encoding='utf-8')
-          PY
           python3 /tmp/nasm-repair-bootstrap-bundle/scripts/apply_repair.py "$GITHUB_WORKSPACE"
-          xz -dc /tmp/nasm-repair-delta-v2.patch.xz | patch -p1 --batch --forward
-          xz -dc /tmp/nasm-repair-delta-v3.patch.xz | patch -p1 --batch --forward
-          xz -dc /tmp/nasm-repair-delta-v4.patch.xz | patch -p1 --batch --forward
-          xz -dc /tmp/nasm-repair-delta-v5.patch.xz | patch -p1 --batch --forward
-          xz -dc /tmp/nasm-repair-delta-v6.patch.xz | patch -p1 --batch --forward
+          for version in 2 3 4 5 6 7; do
+            xz -dc "/tmp/delta-v${version}.patch.xz" | patch -p1 --batch --forward
+          done
           git diff --check
-          tar --exclude=.git --exclude=node_modules --exclude='docs/.vitepress/cache' --exclude='docs/.vitepress/dist' \
+          tar --exclude=.git --exclude=node_modules \
+            --exclude='docs/.vitepress/cache' --exclude='docs/.vitepress/dist' \
             -czf /tmp/applied-source.tar.gz .
           sha256sum /tmp/applied-source.tar.gz > /tmp/applied-source.sha256
 
@@ -94,7 +84,6 @@ jobs:
         with:
           node-version: 22
           cache: npm
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -106,46 +95,43 @@ jobs:
           python3 -m pip install --disable-pip-version-check playwright==1.54.0
           python3 -m playwright install --with-deps chromium
 
-      - name: Install clean Node dependencies
-        run: npm ci --no-audit --no-fund
+      - run: npm ci --no-audit --no-fund
 
-      - name: Generate and validate course
+      - name: Validate semantic contracts
         run: |
           npm run docs:generate
           npm run course:validate
           npm run course:pedagogy
           npm run course:assessment
+          npm run course:mutation
+          python3 scripts/run_adversarial_review.py
 
-      - name: Run mutation suite
-        run: npm run course:mutation
-
-      - name: Run adversarial review
-        run: python3 scripts/run_adversarial_review.py
-
-      - name: Build VitePress and execute IA-32 examples
+      - name: Build VitePress and execute IA-32 suite
         run: |
           npm run docs:build
           npm run course:asm
 
-      - name: Render real VitePress preview
+      - name: Render real VitePress build
         run: |
-          ./node_modules/.bin/vitepress preview docs \
+          python3 scripts/serve_built_site.py \
+            --root docs/.vitepress/dist \
+            --base /Nasm-X86-Course/ \
             --host 127.0.0.1 --port 4173 \
-            > /tmp/vitepress-preview.log 2>&1 &
-          preview_pid=$!
-          trap 'kill "$preview_pid" 2>/dev/null || true; wait "$preview_pid" 2>/dev/null || true; cat /tmp/vitepress-preview.log' EXIT
+            > /tmp/vitepress-static.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || true; cat /tmp/vitepress-static.log' EXIT
           for _ in $(seq 1 60); do
-            if ! kill -0 "$preview_pid" 2>/dev/null; then
-              echo "VitePress preview exited before readiness" >&2
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              echo "Built-site server exited before readiness" >&2
               exit 1
             fi
-            if curl -fsS http://127.0.0.1:4173/Nasm-X86-Course/ >/dev/null; then
+            if curl -fsS http://127.0.0.1:4173/Nasm-X86-Course/day_25 >/dev/null; then
               break
             fi
             sleep 1
           done
-          kill -0 "$preview_pid"
-          curl -fsS http://127.0.0.1:4173/Nasm-X86-Course/day_25 >/dev/null
+          kill -0 "$server_pid"
+          curl -fsS http://127.0.0.1:4173/Nasm-X86-Course/final_exam >/dev/null
           python3 scripts/render_vitepress_pages.py \
             --base-url http://127.0.0.1:4173/Nasm-X86-Course/ \
             --output render-evidence/vitepress
@@ -156,12 +142,11 @@ jobs:
           path: render-evidence/vitepress
           if-no-files-found: error
 
-      - name: Commit verified repair and publish final branch
+      - name: Publish verified source branch
         run: |
           rm -rf node_modules docs/.vitepress/cache docs/.vitepress/dist render-evidence/vitepress
           git diff --check
           git switch -c "$FINAL_BRANCH"
-          git status --short
           git add -A
           git commit -m "fix: enforce semantic course assessment contracts"
           final_sha="$(git rev-parse HEAD)"
