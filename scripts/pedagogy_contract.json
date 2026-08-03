@@ -1,20 +1,32 @@
 {
-  "schema_version": "1.0",
-  "ordering_rule": "first_explanation < first_required_use < first_assessment",
+  "schema_version": "2.0",
+  "ordering_rule": "actual_source_position(explanation) < actual_source_position(required_use) < actual_source_position(assessment)",
   "events": {
     "branchless_safe_ceil": {
       "mandatory": true,
       "explanation": {
-        "order": 10020,
-        "source": "docs/day_10_learning_path.md#10b-safe-ceil-machine-model"
+        "source": "docs/day_10_learning_path.md#10b-safe-ceil-machine-model",
+        "required_markers": [
+          "mov ecx, edx",
+          "neg ecx",
+          "or ecx, edx",
+          "shr ecx, 31",
+          "add eax, ecx"
+        ]
       },
       "required_use": {
-        "order": 10030,
-        "source": "docs/tasks/spring-01/01-14-garden.md#required-solution"
+        "source": "docs/tasks/spring-01/01-14-garden.md#required-solution",
+        "required_markers": [
+          "boxes = q + nonzero(r)",
+          "mov ecx, edx",
+          "shr ecx, 31"
+        ]
       },
       "assessment": {
-        "order": 10040,
-        "source": "docs/checkpoints.md#cp2-ceil"
+        "source": "docs/checkpoints.md#cp2-ceil",
+        "required_markers": [
+          "частное и остаток после div"
+        ]
       },
       "forbidden_future_dependencies": [
         "setcc",
@@ -26,31 +38,48 @@
     "signed_division_overflow": {
       "mandatory": true,
       "explanation": {
-        "order": 9000,
-        "source": "docs/day_09.md#idiv-overflow"
+        "source": "docs/day_09.md#idiv-overflow",
+        "required_markers": [
+          "INT32_MIN / -1",
+          "2147483648",
+          "#DE"
+        ]
       },
       "required_use": {
-        "order": 9010,
-        "source": "docs/day_09.md#negative-fixture"
+        "source": "docs/day_09.md#negative-fixture",
+        "required_markers": [
+          "examples/11_idiv_overflow_negative.asm",
+          "SIGFPE"
+        ]
       },
       "assessment": {
-        "order": 10040,
-        "source": "docs/checkpoints.md#cp2-idiv-overflow"
+        "source": "docs/checkpoints.md#cp2-idiv-overflow",
+        "required_markers": [
+          "INT32_MIN / -1",
+          "исключение"
+        ]
       }
     },
     "callee_saved_all_returns": {
       "mandatory": true,
       "explanation": {
-        "order": 17000,
-        "source": "docs/instruction_reference.md#callee-saved"
+        "source": "docs/instruction_reference.md#callee-saved",
+        "required_markers": [
+          "восстановлен на каждом достижимом пути ret"
+        ]
       },
       "required_use": {
-        "order": 17010,
-        "source": "docs/transfer_workbook.md#tr-17"
+        "source": "docs/transfer_workbook.md#tr-17",
+        "required_markers": [
+          "временное значение хранится в esi",
+          "восстановление esi на каждом пути"
+        ]
       },
       "assessment": {
-        "order": 19000,
-        "source": "docs/checkpoints.md#cp4-ebx"
+        "source": "docs/checkpoints.md#cp4-ebx",
+        "required_markers": [
+          "симметричное сохранение и восстановление на всех возвратах"
+        ]
       }
     }
   }

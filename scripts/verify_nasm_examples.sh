@@ -12,17 +12,24 @@ need() {
         exit 2
     }
 }
-need python3
-need nasm
-need gcc
-need nm
+for tool in python3 nasm gcc nm timeout base64; do need "$tool"; done
 
 mapfile -t records < <(python3 - "$CONTRACT" <<'PYBLOCK'
-import json, sys
+import base64
+import json
+import sys
 from pathlib import Path
 contract = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 for rel, data in sorted(contract["blocks"].items()):
-    print("\x1f".join((rel, data["class"], data.get("golden", ""), data.get("expected", ""))))
+    stdin = base64.b64encode(data.get("stdin", "").encode("utf-8")).decode("ascii")
+    print("\x1f".join((
+        rel,
+        data["class"],
+        data.get("golden", ""),
+        data.get("expected", ""),
+        stdin,
+        str(data.get("timeout_seconds", 10)),
+    )))
 PYBLOCK
 )
 
@@ -77,20 +84,35 @@ CEND
             gcc -m32 -g -no-pie -Wl,-z,noexecstack "$TMP/${name}_harness.c" "$obj" -o "$exe"
             return 0
             ;;
+        14_scanf_call)
+            cat > "$TMP/${name}_harness.c" <<'CEND'
+#include <stdio.h>
+extern int read_x(void);
+int main(void) {
+    printf("%d\n", read_x());
+    return 0;
+}
+CEND
+            gcc -m32 -g -no-pie -Wl,-z,noexecstack "$TMP/${name}_harness.c" "$obj" -o "$exe"
+            return 0
+            ;;
     esac
     return 1
 }
 
 count=0
 for record in "${records[@]}"; do
-    IFS=$'\x1f' read -r rel class golden expected <<<"$record"
+    IFS=$'\x1f' read -r rel class golden expected stdin_b64 timeout_seconds <<<"$record"
     file="$ROOT/$rel"
     name="$(basename "$file" .asm)"
     obj="$TMP/$name.o"
     exe="$TMP/$name"
     out="$TMP/$name.out"
+    input="$TMP/$name.in"
 
     test -f "$file" || { printf 'ASM-MISSING: %s\n' "$rel" >&2; exit 1; }
+    [[ "$timeout_seconds" =~ ^[1-9][0-9]*$ ]] || { printf 'ASM-TIMEOUT: invalid timeout for %s\n' "$rel" >&2; exit 1; }
+    printf '%s' "$stdin_b64" | base64 -d > "$input"
     nasm -f elf32 -g -F dwarf "$file" -o "$obj"
 
     case "$class" in
@@ -100,36 +122,46 @@ for record in "${records[@]}"; do
             if ! run_special_harness "$name" "$obj" "$exe"; then
                 link_object "$obj" "$exe"
             fi
-            "$exe" > "$out"
+            if ! timeout --signal=KILL "${timeout_seconds}s" "$exe" < "$input" > "$out"; then
+                status=$?
+                printf 'ASM-RUN: %s exited with status %d or timed out\n' "$rel" "$status" >&2
+                exit 1
+            fi
             test -n "$golden" || { printf 'ASM-GOLDEN-MISSING: %s\n' "$rel" >&2; exit 1; }
             diff -u "$ROOT/$golden" "$out"
             ;;
         NEGATIVE)
+            [[ "$expected" == "SIGFPE" ]] || {
+                printf 'ASM-NEGATIVE-EXPECTED: %s has unsupported or missing expected outcome %q\n' "$rel" "$expected" >&2
+                exit 1
+            }
             link_object "$obj" "$exe"
-            python3 - "$exe" "$out" "$expected" "$rel" <<'PYNEG'
+            python3 - "$exe" "$out" "$expected" "$rel" "$timeout_seconds" <<'PYNEG'
 import signal
 import subprocess
 import sys
 from pathlib import Path
 
-exe, out, expected, rel = sys.argv[1:]
-with Path(out).open("wb") as stream:
-    result = subprocess.run(
-        [exe],
-        stdout=stream,
-        stderr=subprocess.STDOUT,
-        check=False,
-    )
-
-if expected == "SIGFPE":
-    wanted = -int(signal.SIGFPE)
-    if result.returncode != wanted:
-        raise SystemExit(
-            f"ASM-NEGATIVE: {rel} expected SIGFPE return {wanted}, "
-            f"got {result.returncode}"
+exe, out, expected, rel, timeout_seconds = sys.argv[1:]
+try:
+    with Path(out).open("wb") as stream:
+        result = subprocess.run(
+            [exe],
+            stdout=stream,
+            stderr=subprocess.STDOUT,
+            check=False,
+            timeout=int(timeout_seconds),
         )
-elif result.returncode == 0:
-    raise SystemExit(f"ASM-NEGATIVE: {rel} unexpectedly succeeded")
+except subprocess.TimeoutExpired as exc:
+    raise SystemExit(f"ASM-TIMEOUT: {rel} exceeded {timeout_seconds}s") from exc
+
+if expected != "SIGFPE":
+    raise SystemExit(f"ASM-NEGATIVE-EXPECTED: unsupported outcome {expected!r} for {rel}")
+wanted = -int(signal.SIGFPE)
+if result.returncode != wanted:
+    raise SystemExit(
+        f"ASM-NEGATIVE: {rel} expected SIGFPE return {wanted}, got {result.returncode}"
+    )
 PYNEG
             ;;
         *)

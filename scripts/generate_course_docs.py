@@ -4,10 +4,10 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-import subprocess
 from pathlib import Path
 
 from course_manifest import DAY_RELATIVE_PATHS, GENERATED_RELATIVE_PATHS, STANDALONE_RELATIVE_PATHS
+from content_normalization import normalize_visible
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
@@ -29,19 +29,9 @@ def sha256_file(path: Path) -> str:
 
 
 def source_snapshot() -> dict[str, str]:
-    paths = [*STANDALONE, ROOT / "scripts" / "generate_course_docs.py", ROOT / "scripts" / "course_manifest.py", FINGERPRINTS]
+    paths = [*STANDALONE, ROOT / "scripts" / "generate_course_docs.py", ROOT / "scripts" / "course_manifest.py", ROOT / "scripts" / "content_normalization.py", FINGERPRINTS]
     return {str(path.relative_to(ROOT)): sha256_file(path) for path in sorted(set(paths))}
 
-
-def git_head() -> str:
-    try:
-        return subprocess.check_output(
-            ["git", "-C", str(ROOT), "rev-parse", "HEAD"],
-            text=True,
-            stderr=subprocess.DEVNULL,
-        ).strip()
-    except (OSError, subprocess.CalledProcessError):
-        return "NOT_A_GIT_WORKTREE"
 
 
 def section(text: str, title: str) -> str:
@@ -67,16 +57,11 @@ def strip_solution_blocks(text: str) -> str:
     return text
 
 
-def strip_comments(text: str) -> str:
-    return "\n".join(line.split(";", 1)[0] for line in text.splitlines())
-
 
 def normalize(text: str, *, strip_asm_comments: bool = True) -> str:
     if strip_asm_comments:
-        text = strip_comments(text)
-    text = text.lower()
-    text = text.replace("dword ptr", "dword").replace("byte ptr", "byte").replace("word ptr", "word")
-    return re.sub(r"[^a-z0-9_+%\[\]=<>!*/-]+", "", text)
+        text = "\n".join(line.split(";", 1)[0] for line in text.splitlines())
+    return normalize_visible(text)
 
 
 def validate_closed_book(text: str) -> None:
@@ -198,8 +183,8 @@ source_tree_sha256 = sha256_bytes(
     "".join(f"{path}\0{digest}\n" for path, digest in sorted(after.items())).encode("utf-8")
 )
 manifest = {
-    "schema_version": "1.0",
-    "source_head": git_head(),
+    "schema_version": "2.0",
+    "source_revision": "sha256:" + source_tree_sha256,
     "source_tree_sha256": source_tree_sha256,
     "sources": after,
     "generated": generated,
@@ -208,7 +193,7 @@ manifest = {
     json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
     encoding="utf-8",
 )
-print(f"GENERATED_SOURCE_HEAD={manifest['source_head']}")
+print(f"GENERATED_SOURCE_REVISION={manifest['source_revision']}")
 print(f"GENERATED_SOURCE_TREE_SHA256={source_tree_sha256}")
 print(f"GENERATED_FILES={len(generated) + 1}")
 print("GENERATED_DOCS=PASS")

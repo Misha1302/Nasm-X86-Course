@@ -1,5 +1,8 @@
 # Mutation report
 
+- Source digest: `c0ddf7966cdc896f1db003fdc0b58100d34b17fd9e27ce059d7590a63a20b51c`
+- Cases: **26**
+
 | ID | Owner | Expected diagnostic | Exit | Result |
 |---|---|---|---:|---|
 | M01-cleanup-16-to-8 | semantics | `ASM-CALL-AREA` | 1 | PASS |
@@ -12,16 +15,22 @@
 | M08-idiv-immediate | semantics | `ASM-IDIV-OPERAND` | 1 | PASS |
 | M09-make-10F-core | assessment | `ASSESS-DAY10-BONUS` | 1 | PASS |
 | M10-include-01-16-in-100 | assessment | `ASSESS-BONUS` | 1 | PASS |
-| M11-remove-cp3-loop-evidence | assessment | `ASSESS-TASK-SKILL` | 1 | PASS |
+| M11-remove-cp3-loop-evidence | assessment | `ASSESS-EVIDENCE-BIDIRECTIONAL` | 1 | PASS |
 | M12-safety-optional | assessment | `ASSESS-MANDATORY` | 1 | PASS |
 | M13-remove-refreshers-manifest | semantics | `MANIFEST-STANDALONE` | 1 | PASS |
 | M14-answer-in-closed-book | semantics | `LEAK-C3` | 1 | PASS |
 | M15-transfer-without-key | semantics | `TRANSFER-SYNC` | 1 | PASS |
-| M16-change-cp-threshold | semantics | `DOCS-ASSESSMENT` | 1 | PASS |
+| M16-change-final-threshold | semantics | `DOCS-ASSESSMENT` | 1 | PASS |
 | M17-break-anchor | semantics | `LINK-ANCHOR` | 1 | PASS |
 | M18-reverse-startup | semantics | `STARTUP-DIRECTION` | 1 | PASS |
 | M19-return-c3-to-day25 | semantics | `LEAK-C3` | 1 | PASS |
 | M20-accept-known-false-pass | assessment | `ASSESS-REGRESSION` | 1 | PASS |
+| M21-html-comment-leak | semantics | `LEAK-C3` | 1 | PASS |
+| M22-duplicate-evidence | assessment | `ASSESS-EVIDENCE-DUPLICATE` | 1 | PASS |
+| M23-asymmetric-evidence | assessment | `ASSESS-EVIDENCE-BIDIRECTIONAL` | 1 | PASS |
+| M24-negative-without-outcome | semantics | `ASM-NEGATIVE-EXPECTED` | 1 | PASS |
+| M25-move-explanation-content | semantics | `PEDAGOGY-CONTENT` | 1 | PASS |
+| M26-wrong-scanf-padding | semantics | `ASM-CALL-AREA` | 1 | PASS |
 
 ## Diagnostics
 
@@ -31,7 +40,7 @@ VALIDATE_LEAKAGE=PASS
 VALIDATE_PEDAGOGY=PASS
 VALIDATE_TRANSFERS=PASS
 
-ASM-CALL-AREA: scanf padding/cleanup mismatch
+ASM-CALL-AREA: aligned sum/printf padding or cleanup mismatch
 ```
 
 ### M02-remove-padding
@@ -40,7 +49,7 @@ VALIDATE_LEAKAGE=PASS
 VALIDATE_PEDAGOGY=PASS
 VALIDATE_TRANSFERS=PASS
 
-ASM-CALL-AREA: scanf padding/cleanup mismatch
+ASM-CALL-AREA: aligned sum/printf padding or cleanup mismatch
 ```
 
 ### M03-remove-cdq
@@ -109,7 +118,7 @@ ASSESS-BONUS: bonus tasks must not be included in the final maximum
 
 ### M11-remove-cp3-loop-evidence
 ```text
-ASSESS-TASK-SKILL CP3/CP3-LOOP: mapped skill loop_lowering does not accept evidence from this task
+ASSESS-EVIDENCE-BIDIRECTIONAL CP3/loop_lowering: CP3-TABLE accepts the skill but task.skills does not declare it
 ```
 
 ### M12-safety-optional
@@ -140,7 +149,7 @@ VALIDATE_PEDAGOGY=PASS
 TRANSFER-SYNC TR-05: task changed without contract update
 ```
 
-### M16-change-cp-threshold
+### M16-change-final-threshold
 ```text
 VALIDATE_LEAKAGE=PASS
 VALIDATE_PEDAGOGY=PASS
@@ -178,4 +187,44 @@ LEAK-C3: docs/day_25.md contains protected fingerprint C3-aligned-sum-call: sub 
 ### M20-accept-known-false-pass
 ```text
 ASSESS-REGRESSION CP2-known-false-pass-ceil-zero: expected True, got False; ('mandatory skill branchless_safe_ceil: evidence 0 < 1',)
+```
+
+### M21-html-comment-leak
+```text
+LEAK-C3: docs/closed_book_workbook.md contains protected fingerprint C3-aligned-sum-call: sub esp, 8; push dword [b]; push dword [a]; call sum; add esp, 16
+```
+
+### M22-duplicate-evidence
+```text
+ASSESS-EVIDENCE-DUPLICATE CP1/overlapping_register_trace: duplicate CP1-REG@1
+```
+
+### M23-asymmetric-evidence
+```text
+ASSESS-EVIDENCE-BIDIRECTIONAL CP1/overlapping_register_trace: CP1-SIZE-R accepts the skill but task.skills does not declare it
+```
+
+### M24-negative-without-outcome
+```text
+VALIDATE_LEAKAGE=PASS
+VALIDATE_PEDAGOGY=PASS
+VALIDATE_TRANSFERS=PASS
+
+ASM-NEGATIVE-EXPECTED: examples/11_idiv_overflow_negative.asm must declare an exact supported outcome
+```
+
+### M25-move-explanation-content
+```text
+VALIDATE_LEAKAGE=PASS
+
+PEDAGOGY-CONTENT branchless_safe_ceil/explanation: marker 'mov ecx, edx' missing from exact section docs/day_10_learning_path.md#10b-safe-ceil-machine-model
+```
+
+### M26-wrong-scanf-padding
+```text
+VALIDATE_LEAKAGE=PASS
+VALIDATE_PEDAGOGY=PASS
+VALIDATE_TRANSFERS=PASS
+
+ASM-CALL-AREA: scanf padding/cleanup mismatch
 ```

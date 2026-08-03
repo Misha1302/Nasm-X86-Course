@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from course_manifest import STANDALONE_RELATIVE_PATHS
+from content_normalization import normalize_visible
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
@@ -35,9 +36,9 @@ def heading_ids(text: str, prefix: str) -> list[str]:
     return re.findall(rf"(?m)^### ({re.escape(prefix)}[A-Z0-9-]+)\b", text)
 
 
+
 def normalize(text: str) -> str:
-    text = text.lower().replace("dword ptr", "dword").replace("word ptr", "word").replace("byte ptr", "byte")
-    return re.sub(r"[^a-z0-9_+%\[\]=<>!*/-]+", "", text)
+    return normalize_visible(text)
 
 
 try:

@@ -39,7 +39,7 @@ def evaluate(assessment_id: str, scores: dict[str, int], *, new_variants: set[st
     for task, td in a['tasks'].items():
         score = scores.get(task, 0)
         maximum = td['maximum']
-        if not isinstance(score, int) or score < 0 or score > maximum:
+        if isinstance(score, bool) or not isinstance(score, int) or score < 0 or score > maximum:
             failures.append(f'{task}: score {score!r} outside 0..{maximum}')
 
     total = sum(scores.get(task, 0) for task in a['tasks'])
@@ -66,7 +66,8 @@ def evaluate(assessment_id: str, scores: dict[str, int], *, new_variants: set[st
 
     if a['kind'] == 'checkpoint':
         for task, td in a['tasks'].items():
-            if scores.get(task, 0) == 1 and task not in new_variants:
+            score = scores.get(task, 0)
+            if 0 < score < td['maximum'] and task not in new_variants:
                 missing_variants.append(task)
                 failures.append(f'{task}: partial score requires a new variant')
     elif readiness:

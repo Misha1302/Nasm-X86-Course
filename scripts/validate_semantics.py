@@ -7,6 +7,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from content_normalization import normalize_visible
+
 ROOT = Path(__file__).resolve().parents[1]
 
 class VError(RuntimeError): pass
@@ -26,7 +28,6 @@ def norm(s: str) -> str:
     return _normalize(strip_comments(s))
 
 def norm_fingerprint(s: str) -> str:
-    # Contract fingerprints use semicolons as instruction separators, not comments.
     return _normalize(s)
 
 def section(text: str, anchor: str, next_anchor: str | None = None) -> str:
@@ -48,11 +49,11 @@ def validate_leakage() -> None:
     c=json.loads((ROOT/'scripts/answer_fingerprints.json').read_text(encoding='utf-8'))
     for rel in c['protected_targets']:
         text=(ROOT/rel).read_text(encoding='utf-8')
-        nt=norm(text)
+        nt=normalize_visible(text)
         for fp in c['fingerprints']:
             if rel not in fp.get('protected_targets', c['protected_targets']):
                 continue
-            nf=norm_fingerprint(fp['fragment'])
+            nf=normalize_visible(fp['fragment'])
             if nf and nf in nt:
                 raise VError(f'LEAK-{fp["task"]}: {rel} contains protected fingerprint {fp["id"]}: {fp["fragment"][:80]}')
         if rel.endswith('closed_book_workbook.md'):
@@ -60,24 +61,69 @@ def validate_leakage() -> None:
             for p in c['solution_container_patterns']:
                 require(p not in low, f'CLOSED-BOOK-CONTAINER: {rel} contains forbidden solution marker {p!r}')
 
+def _source_section(source: str) -> tuple[str, int]:
+    rel, sep, anchor = source.partition('#')
+    path = ROOT / rel
+    require(path.is_file(), f'PEDAGOGY-SOURCE: missing {rel}')
+    text = path.read_text(encoding='utf-8')
+    if not sep:
+        return text, 1
+    explicit = re.search(rf'(?m)^<a id="{re.escape(anchor)}"></a>\s*$', text)
+    if explicit:
+        start = explicit.start()
+        tail = text[explicit.end():]
+        nxt = re.search(r'(?m)^<a id="[^"]+"></a>\s*$', tail)
+        end = explicit.end() + (nxt.start() if nxt else len(tail))
+        return text[start:end], text[:start].count('\n') + 1
+    wanted = anchor
+    for match in re.finditer(r'(?m)^#{1,6}\s+(.+)$', text):
+        if slug(match.group(1)) == wanted:
+            tail = text[match.end():]
+            nxt = re.search(r'(?m)^#{1,6}\s+', tail)
+            end = match.end() + (nxt.start() if nxt else len(tail))
+            return text[match.start():end], text[:match.start()].count('\n') + 1
+    raise VError(f'LINK-ANCHOR: pedagogy source {source} missing')
+
+
+def _course_position(source: str, line: int) -> int:
+    rel, _, anchor = source.partition('#')
+    day = re.fullmatch(r'docs/day_(\d{2})\.md', rel)
+    if day:
+        return int(day.group(1)) * 100_000 + line
+    if rel == 'docs/day_10_learning_path.md':
+        return 1_000_000 + line
+    if rel == 'docs/tasks/spring-01/01-14-garden.md':
+        return 1_050_000 + line
+    if rel == 'docs/instruction_reference.md':
+        return 1_650_000 + line
+    if rel == 'docs/transfer_workbook.md':
+        match = re.search(r'tr-(\d+)', anchor)
+        require(match is not None, f'PEDAGOGY-ROUTE: transfer anchor lacks number: {source}')
+        return int(match.group(1)) * 100_000 + line
+    if rel == 'docs/checkpoints.md':
+        match = re.search(r'cp(\d+)-', anchor)
+        require(match is not None, f'PEDAGOGY-ROUTE: checkpoint anchor lacks number: {source}')
+        bases = {1: 500_000, 2: 1_100_000, 3: 1_600_000, 4: 2_000_000, 5: 2_300_000, 6: 2_500_000}
+        return bases[int(match.group(1))] + line
+    raise VError(f'PEDAGOGY-ROUTE: no canonical route position for {source}')
+
+
 def validate_pedagogy() -> None:
     c=json.loads((ROOT/'scripts/pedagogy_contract.json').read_text(encoding='utf-8'))
-    for skill,e in c['events'].items():
-        x,u,a=e['explanation']['order'],e['required_use']['order'],e['assessment']['order']
-        require(x<u<a, f'PEDAGOGY-ORDER {skill}: expected explanation < required use < assessment, got {x},{u},{a}')
+    require(c.get('schema_version') == '2.0', 'PEDAGOGY-SCHEMA: schema_version must be 2.0')
+    for skill,event in c['events'].items():
+        positions=[]
         for kind in ('explanation','required_use','assessment'):
-            source=e[kind]['source']
-            src, sep, anchor = source.partition('#')
-            require((ROOT/src).is_file(), f'PEDAGOGY-SOURCE {skill}: missing {src}')
-            if sep:
-                body=(ROOT/src).read_text(encoding='utf-8')
-                explicit=set(re.findall(r'<a id="([^"]+)"',body))
-                headings={slug(h) for h in re.findall(r'^#{1,6}\s+(.+)$',body,re.M)}
-                require(anchor in explicit|headings, f'LINK-ANCHOR: pedagogy source {source} missing')
-    d10=(ROOT/'docs/day_10_learning_path.md').read_text(encoding='utf-8').lower()
+            stage=event[kind]
+            body,line=_source_section(stage['source'])
+            normalized=normalize_visible(body)
+            for marker in stage.get('required_markers', []):
+                require(normalize_visible(marker) in normalized, f'PEDAGOGY-CONTENT {skill}/{kind}: marker {marker!r} missing from exact section {stage["source"]}')
+            positions.append(_course_position(stage['source'], line))
+        require(positions[0] < positions[1] < positions[2], f'PEDAGOGY-ORDER {skill}: actual source positions are {positions}')
+
     required=(ROOT/'docs/tasks/spring-01/01-14-garden.md').read_text(encoding='utf-8').lower()
-    require('mov ecx, edx' in d10 and 'neg ecx' in d10 and 'or ecx, edx' in d10 and 'shr ecx, 31' in d10, 'PEDAGOGY-CEIL: complete branchless nonzero explanation missing before use')
-    code = '\n'.join(re.findall(r'```asm[^\n]*\n(.*?)```', required, flags=re.S | re.I))
+    code='\n'.join(re.findall(r'```asm[^\n]*\n(.*?)```', required, flags=re.S|re.I))
     for forbidden in ('setnz','sete ','cmov','jz ','jnz '):
         require(forbidden not in code, f'PEDAGOGY-FUTURE-DEPENDENCY: garden requires forbidden mechanism {forbidden.strip()}')
 
@@ -130,16 +176,31 @@ def validate_asm() -> None:
         p=ROOT/rel; require(p.is_file(),f'ASM-BLOCK: missing {rel}')
         text=p.read_text(encoding='utf-8'); require(bd['class'] in allowed,f'ASM-BLOCK: invalid class {bd["class"]}')
         require(f'; BLOCK: {bd["class"]}' in text,f'ASM-BLOCK: {rel} lacks explicit classification')
-        if bd['class']=='RUN': require((ROOT/bd['golden']).is_file(),f'ASM-GOLDEN: {rel} lacks expected output')
+        if bd['class']=='RUN':
+            require((ROOT/bd['golden']).is_file(),f'ASM-GOLDEN: {rel} lacks expected output')
+            require(isinstance(bd.get('timeout_seconds', 10), int) and bd.get('timeout_seconds', 10) > 0, f'ASM-TIMEOUT: {rel} has invalid timeout')
+        if bd['class']=='NEGATIVE':
+            require(bd.get('expected') in {'SIGFPE'}, f'ASM-NEGATIVE-EXPECTED: {rel} must declare an exact supported outcome')
     ceil=(ROOT/'examples/10_branchless_ceil.asm').read_text(encoding='utf-8').lower()
     for needle in ('xor edx, edx','div ecx','mov ecx, edx','neg ecx','or ecx, edx','shr ecx, 31','add eax, ecx'):
         require(needle in ceil,f'ASM-CEIL: missing {needle}')
     idiv=(ROOT/'examples/11_idiv_overflow_negative.asm').read_text(encoding='utf-8').lower()
     require('cdq' in idiv,'ASM-IDIV-CDQ: signed division fixture lost cdq')
     require(re.search(r'\bidiv\s+(?![-+]?\d)',idiv) is not None,'ASM-IDIV-OPERAND: idiv must use r/m operand, not immediate')
-    scanf=(ROOT/'examples/14_scanf_call.asm').read_text(encoding='utf-8').lower()
-    require('sub esp, 8' in scanf and 'add esp, 16' in scanf,'ASM-CALL-AREA: scanf padding/cleanup mismatch')
+    aligned=(ROOT/'examples/09_aligned_sum_call.asm').read_text(encoding='utf-8').lower()
+    require(aligned.count('sub esp, 8') >= 2 and aligned.count('add esp, 16') >= 2, 'ASM-CALL-AREA: aligned sum/printf padding or cleanup mismatch')
+
+    scanf_rel='examples/14_scanf_call.asm'
+    scanf=(ROOT/scanf_rel).read_text(encoding='utf-8').lower()
+    scanf_contract=c['blocks'][scanf_rel]
+    require(scanf_contract['class']=='RUN','ASM-SCANF-RUNTIME: scanf fixture must execute, not merely compile')
+    require('sub esp, 4' in scanf and 'add esp, 12' in scanf,'ASM-CALL-AREA: scanf padding/cleanup mismatch')
     require(re.search(r'push\s+x\b',scanf) is not None and 'push dword [x]' not in scanf and 'push [x]' not in scanf,'ASM-SCANF-ADDRESS: scanf must receive x address, not [x] value')
+    entry=scanf_contract.get('entry_esp_mod16')
+    wanted=scanf_contract.get('nested_call_esp_mod16')
+    require(entry==12 and wanted==0,'ASM-CALL-ALIGNMENT-CONTRACT: scanf fixture must declare entry=12 and pre-call=0')
+    actual=(entry-4-4-4)%16
+    require(actual==wanted,f'ASM-CALL-ALIGNMENT: scanf pre-call esp%16={actual}, expected {wanted}')
     cs=(ROOT/'examples/12_callee_saved.asm').read_text(encoding='utf-8')
     require(all_return_paths_restore(cs,'esi'),'ASM-CALLEE-SAVED: esi is not restored on every return path')
     x87=(ROOT/'examples/13_x87_order.asm').read_text(encoding='utf-8').lower()
@@ -160,6 +221,7 @@ def validate_manifest() -> None:
         require((ROOT/rel).is_file(),f'MANIFEST-GENERATED-MISSING: {rel}')
     manifest=json.loads((ROOT/'docs/generated_source_manifest.json').read_text(encoding='utf-8'))
     require(bool(manifest.get('source_tree_sha256')),'MANIFEST-PROVENANCE: source tree digest missing')
+    require(manifest.get('source_revision') == 'sha256:' + manifest['source_tree_sha256'], 'MANIFEST-PROVENANCE: source_revision must be content-addressed')
     for rel,digest in manifest.get('generated',{}).items():
         require((ROOT/rel).is_file(),f'MANIFEST-PROVENANCE: generated file missing: {rel}')
         actual=hashlib.sha256((ROOT/rel).read_bytes()).hexdigest()

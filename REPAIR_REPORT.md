@@ -1,48 +1,66 @@
 # REPAIR REPORT
 
-## Verdict
+## Verdict policy
 
 ```text
-GO_FOR_REVIEW
+GO_FOR_REVIEW only when every required GitHub Actions check attached to the current PR head is successful.
+Any changed head without a complete green check set is NO-GO.
 ```
 
-The baseline-pinned repair has been materialized in the complete repository tree, published to the dedicated repair branch, and independently verified by GitHub Actions. Pull request #11 remains unmerged; `main` has not been modified.
+This report deliberately does not embed a mutable commit SHA or historical workflow run IDs. The authoritative revision identity is the current head of pull request #11; the checks attached to that exact head are the release gate.
 
-## Baseline and publication
+## Baseline and mutation boundary
 
 - Repository: `Misha1302/Nasm-X86-Course`.
 - Baseline branch: `main`.
-- Baseline SHA: `d3a172f12d7a1f7e456a6a930007711a55d8d93c`.
-- Final branch: `repair/nasm-course-complete-20260803`.
+- Reviewed baseline SHA: `d3a172f12d7a1f7e456a6a930007711a55d8d93c`.
+- Repair branch: `repair/nasm-course-complete-20260803`.
 - Pull request: `#11` into `main`.
-- Immutable tested-source artifact SHA-256: `d8bb9aeea035e1f677c1e12263cfb197c3c9f2fbe663ac340b0b411946176cce`.
-- Publication method: clean Git Data tree plus non-force fast-forward commits.
-- Merge to `main`: not performed.
+- Merge to `main`: not authorized and not performed by this repair.
 
-## Implemented repair
+## Canonical owners
 
-1. Canonical atomic-skill and evidence assessment model for CP1–CP6 and FINAL.
-2. Executable rejection of false-PASS states and non-compensable mandatory skills.
-3. Day 25 answer-leakage protection and closed-book generation contracts.
-4. Day 10 explanation → practice → assessment dependency repair.
-5. Redesigned transfer tasks, synchronized keys, fingerprints, and counterexamples.
-6. Explicit ASM execution classes and executable IA-32 boundary fixtures.
-7. Signed-division overflow, branchless-ceil, callee-saved, x87-order, and scanf-call checks.
-8. Deterministic semantic validation, mutation testing, and adversarial review.
-9. Permanent GitHub Actions contract workflow and class-aware NASM verification.
-10. VitePress mobile/table overflow repair and real browser evidence from the immutable tested artifact.
+| Contract | Canonical owner |
+|---|---|
+| assessment/tasks/skills/evidence | `scripts/assessment_contract.json` |
+| pedagogy stage sources | `scripts/pedagogy_contract.json` |
+| executable ASM classes and exact outcomes | `scripts/executable_contract.json` |
+| mutation cases | `scripts/mutation_contract.json` |
+| generated-course source list | `scripts/course_manifest.py` |
+| answer fingerprints | `scripts/answer_fingerprints.json` |
 
-## Independent GitHub Actions verification
+## Implemented hardening
 
-The following workflows passed on tested code head `3afcdd18b9017d7bc02adf331840dc62a66abaf3`:
+1. Assessment proof derives every score domain from each task's actual `maximum`; no hard-coded `0..2` domain remains.
+2. Duplicate evidence and asymmetric `task.skills ↔ skill.acceptable_evidence` mappings are rejected.
+3. Closed-book leakage is checked against browser-visible text after HTML comments, tags, entities and Markdown presentation syntax are normalized.
+4. The HTML-comment answer-splitting attack is a required mutation case.
+5. Pedagogy ordering is computed from actual source paths and anchor line positions, with required content checked inside the exact declared section.
+6. Mutation evidence is always regenerated from a canonical 26-case contract. Stale reports are deleted before adversarial verification.
+7. A dedicated regression replaces the mutation runner with a no-op and verifies that adversarial review fails closed.
+8. Generated-document provenance is content-addressed; it no longer embeds the checkout/merge commit SHA.
+9. `examples/14_scanf_call.asm` is an executable RUN fixture. It enters with `esp%16=12`, reserves 4 bytes, calls `scanf` with `esp%16=0`, cleans 12 bytes and returns the read value.
+10. Negative ASM fixtures require an exact supported outcome (`SIGFPE`); generic nonzero exit is not accepted.
+11. Every RUN/NEGATIVE example has a bounded timeout.
+12. Permanent CI renders nine decision-critical VitePress pages at desktop, mobile and 200% zoom, and fails on overflow, missing content, console errors, page errors or failed requests.
+13. Tracked proof reports are regenerated and compared with Git before the contract job can pass.
 
-| Workflow | Run ID | Result |
-|---|---:|---|
-| `Validate course` | `30810537279` | PASS |
-| `Audit course quality` | `30810537264` | PASS |
-| `Course contracts` | `30810537339` | PASS |
+## Deterministic local verification
 
-Observed contract results:
+Commands executed from the repaired source tree:
+
+```bash
+python3 scripts/generate_course_docs.py
+python3 scripts/run_course_validation.py validate
+python3 scripts/run_course_validation.py pedagogy
+python3 scripts/validate_assessment.py
+python3 scripts/run_mutations.py
+python3 scripts/run_adversarial_review.py
+python3 tests/test_evidence_integrity.py
+python3 -m compileall -q scripts tests
+```
+
+Observed receipts:
 
 ```text
 GENERATED_DOCS=PASS
@@ -54,6 +72,7 @@ VALIDATE_MANIFEST=PASS
 VALIDATE_DOCS_CONTRACT=PASS
 VALIDATE_LINKS=PASS
 ASSESSMENT_SCHEMA=PASS
+ASSESSMENT_SCHEMA_PROBES=PASS
 CHECKPOINT_EXHAUSTIVE=PASS
   CP1=729
   CP2=19683
@@ -64,44 +83,41 @@ CHECKPOINT_EXHAUSTIVE=PASS
   total=28188
 FINAL_CONSTRAINT_PROOF=PASS checked=17
 SCORING_REGRESSIONS=PASS count=16
+MUTATIONS_TOTAL=26
+MUTATIONS_CAUGHT=26
+MUTATION_SUITE=PASS
 ADVERSARIAL_MANDATORY_SKILL_ATTACKS=56
 ADVERSARIAL_MUTATION_SURVIVORS=0
 ADVERSARIAL_COMPETING_OWNER=NONE
 ADVERSARIAL_REVIEW=PASS
-MUTATION_SUITE=PASS 20/20
-VITEPRESS_BUILD=PASS
-NASM_IA32_CLASSIFIED_SUITE=PASS
+EVIDENCE_NOOP_ATTACK=BLOCKED
 ```
 
-The earlier immutable-artifact browser run additionally verified 27/27 desktop, mobile, and 200%-zoom cases with zero horizontal-overflow failures.
-
-## CI defects found and repaired during publication
-
-Two environment-dependent defects were exposed only after running the complete repository on GitHub Actions:
-
-1. The mutation job did not generate `docs/closed_book_workbook.md` in its isolated checkout. The permanent workflow now runs `generate_course_docs.py` before mutations.
-2. The legacy ASM workflow tried to link every `.asm` file as a standalone program with `main`. It now delegates to the class-aware `verify_nasm_examples.sh` owner.
-
-Both repaired jobs subsequently passed on GitHub Actions.
-
-## Definition of done
+Content-addressed receipts from this source state:
 
 ```text
-complete repository tree materialized: PASS
-baseline identity preserved: PASS
-semantic contracts: PASS
-assessment proof: PASS
-scoring regressions: PASS
-mutation suite: PASS
-adversarial review: PASS
-VitePress production build: PASS
-NASM/IA-32 classified suite: PASS
-legacy CI interoperability: PASS
-publication branch clean of temporary publisher workflows: PASS
-main modified: NO
-merge to main performed: NO
+GENERATED_SOURCE_TREE_SHA256=e271d0b2ebc8fd1504c9cacc73d4e7a4b0113b633ed7b2ad4cc1a6c73b23f49e
+ASSESSMENT_SOURCE_DIGEST=2e07ee936052ff83b3cba14f5d31950cad87c0e6de3887c6cebe687b49eb3864
+MUTATION_SOURCE_DIGEST=c0ddf7966cdc896f1db003fdc0b58100d34b17fd9e27ce059d7590a63a20b51c
+ADVERSARIAL_SOURCE_DIGEST=075e98888e1eb9b797d6afa567ca0977484d73833a102a5c2b85daf78cbeac18
 ```
+
+## Environment boundary
+
+The local environment could not complete `npm ci` because its internal npm proxy returned `404` for `zwitch@2.0.4`. This is not treated as a project PASS. VitePress, Playwright and IA-32/NASM are therefore required to pass on GitHub Actions for the exact final PR head before the PR can return to Ready for review.
+
+## Required current-head GitHub checks
+
+```text
+Audit course quality
+Validate course
+Course contracts / fast-contracts
+Course contracts / mutation
+Course contracts / docs-asm-visual
+```
+
+The browser job must upload `vitepress-render-evidence`; the artifact must contain 27 cases and zero failures.
 
 ## Release boundary
 
-The implementation is ready for pull-request review. This verdict does not authorize or perform a merge, release, deployment, or modification of `main`.
+This repair may update the dedicated PR branch and review metadata. It does not authorize merge, release, deployment or modification of `main`.

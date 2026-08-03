@@ -1,20 +1,23 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
   "blocks": {
     "examples/04_branchless_abs.asm": {
       "class": "RUN",
       "preconditions": [
         "eax != INT32_MIN"
       ],
-      "golden": "examples/expected/04_branchless_abs.txt"
+      "golden": "examples/expected/04_branchless_abs.txt",
+      "timeout_seconds": 10
     },
     "examples/10_branchless_ceil.asm": {
       "class": "RUN",
-      "golden": "examples/expected/10_branchless_ceil.txt"
+      "golden": "examples/expected/10_branchless_ceil.txt",
+      "timeout_seconds": 10
     },
     "examples/11_idiv_overflow_negative.asm": {
       "class": "NEGATIVE",
-      "expected": "SIGFPE"
+      "expected": "SIGFPE",
+      "timeout_seconds": 10
     },
     "examples/12_callee_saved.asm": {
       "class": "COMPILE",
@@ -25,46 +28,60 @@
     "examples/13_x87_order.asm": {
       "class": "RUN",
       "oracle": "(10-4)/3 = 2",
-      "golden": "examples/expected/13_x87_order.txt"
+      "golden": "examples/expected/13_x87_order.txt",
+      "timeout_seconds": 10
     },
     "examples/14_scanf_call.asm": {
-      "class": "COMPILE",
-      "call_area": 16,
+      "class": "RUN",
+      "golden": "examples/expected/14_scanf_call.txt",
+      "stdin": "42\n",
+      "entry_esp_mod16": 12,
+      "nested_call_esp_mod16": 0,
+      "call_area": 12,
       "address_arguments": [
         "x"
-      ]
+      ],
+      "timeout_seconds": 10
     },
     "examples/01_minimal.asm": {
       "class": "RUN",
-      "golden": "examples/expected/01_minimal.txt"
+      "golden": "examples/expected/01_minimal.txt",
+      "timeout_seconds": 10
     },
     "examples/02_pack_bytes.asm": {
       "class": "RUN",
-      "golden": "examples/expected/02_pack_bytes.txt"
+      "golden": "examples/expected/02_pack_bytes.txt",
+      "timeout_seconds": 10
     },
     "examples/03_masked_merge.asm": {
       "class": "RUN",
-      "golden": "examples/expected/03_masked_merge.txt"
+      "golden": "examples/expected/03_masked_merge.txt",
+      "timeout_seconds": 10
     },
     "examples/05_pandora_year.asm": {
       "class": "RUN",
-      "golden": "examples/expected/05_pandora_year.txt"
+      "golden": "examples/expected/05_pandora_year.txt",
+      "timeout_seconds": 10
     },
     "examples/06_signed_division.asm": {
       "class": "RUN",
-      "golden": "examples/expected/06_signed_division.txt"
+      "golden": "examples/expected/06_signed_division.txt",
+      "timeout_seconds": 10
     },
     "examples/07_jump_table.asm": {
       "class": "RUN",
-      "golden": "examples/expected/07_jump_table.txt"
+      "golden": "examples/expected/07_jump_table.txt",
+      "timeout_seconds": 10
     },
     "examples/08_x87_printf.asm": {
       "class": "RUN",
-      "golden": "examples/expected/08_x87_printf.txt"
+      "golden": "examples/expected/08_x87_printf.txt",
+      "timeout_seconds": 10
     },
     "examples/09_aligned_sum_call.asm": {
       "class": "RUN",
-      "golden": "examples/expected/09_aligned_sum_call.txt"
+      "golden": "examples/expected/09_aligned_sum_call.txt",
+      "timeout_seconds": 10
     }
   }
 }

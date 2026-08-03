@@ -6,65 +6,179 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from typing import Any
 
-ROOT=Path(__file__).resolve().parents[1]
-PY=sys.executable
+from evidence_provenance import digest_paths
 
-MUTATIONS=[
- ('M01-cleanup-16-to-8','examples/14_scanf_call.asm','add esp, 16','add esp, 8','semantics','ASM-CALL-AREA'),
- ('M02-remove-padding','examples/14_scanf_call.asm','    sub esp, 8\n','','semantics','ASM-CALL-AREA'),
- ('M03-remove-cdq','examples/11_idiv_overflow_negative.asm','    cdq\n','','semantics','ASM-IDIV-CDQ'),
- ('M04-reverse-fsubp','examples/13_x87_order.asm','fsubp st1, st0','fsubrp st1, st0','semantics','ASM-X87-SUB'),
- ('M05-reverse-fdivp','examples/13_x87_order.asm','fdivp st1, st0','fdivrp st1, st0','semantics','ASM-X87-DIV'),
- ('M06-remove-restore-esi','examples/12_callee_saved.asm','    pop esi\n','','semantics','ASM-CALLEE-SAVED'),
- ('M07-scanf-value','examples/14_scanf_call.asm','    push x\n','    push dword [x]\n','semantics','ASM-SCANF-ADDRESS'),
- ('M08-idiv-immediate','examples/11_idiv_overflow_negative.asm','    idiv ecx\n','    idiv -1\n','semantics','ASM-IDIV-OPERAND'),
- ('M09-make-10F-core','scripts/assessment_contract.json','"optional_sessions": [\n      "10F"\n    ]','"optional_sessions": []','assessment','ASSESS-DAY10-BONUS'),
- ('M10-include-01-16-in-100','scripts/assessment_contract.json','"included_in_maximum": false','"included_in_maximum": true','assessment','ASSESS-BONUS'),
- ('M11-remove-cp3-loop-evidence','scripts/assessment_contract.json','"mandatory": true,\n          "minimum_evidence": 1,\n          "acceptable_evidence": [\n            {\n              "task": "CP3-LOOP"','"mandatory": true,\n          "minimum_evidence": 1,\n          "acceptable_evidence": [\n            {\n              "task": "CP3-TABLE"','assessment','ASSESS-TASK-SKILL'),
- ('M12-safety-optional','scripts/assessment_contract.json','"memory_safety_boundaries": {\n          "mandatory": true','"memory_safety_boundaries": {\n          "mandatory": false','assessment','ASSESS-MANDATORY'),
- ('M13-remove-refreshers-manifest','scripts/course_manifest.py','    "docs/prerequisite_refreshers.md",\n','','semantics','MANIFEST-STANDALONE'),
- ('M14-answer-in-closed-book','docs/closed_book_workbook.md','# Тетрадь NASM IA-32 без встроенных ответов','# Тетрадь NASM IA-32 без встроенных ответов\n\n## Ответ\nsub esp, 8\npush dword [b]\npush dword [a]\ncall sum\nadd esp, 16','semantics','LEAK-C3'),
- ('M15-transfer-without-key','docs/transfer_workbook.md','`Container* c`','`Holder* c`','semantics','TRANSFER-SYNC'),
- ('M16-change-cp-threshold','scripts/assessment_contract.json','"maximum": 100,\n      "threshold": 80','"maximum": 100,\n      "threshold": 81','semantics','DOCS-ASSESSMENT'),
- ('M17-break-anchor','docs/day_10_learning_path.md','<a id="10b-safe-ceil-machine-model"></a>','<a id="renamed"></a>','semantics','LINK-ANCHOR'),
- ('M18-reverse-startup','docs/instruction_reference.md','exec → loader → _start → runtime startup → main → exit','main → runtime startup → _start → loader → exec','semantics','STARTUP-DIRECTION'),
- ('M19-return-c3-to-day25','docs/day_25.md','\n## Порядок после попытки','\n```asm\nsub esp, 8\npush dword [b]\npush dword [a]\ncall sum\nadd esp, 16\n```\n\n## Порядок после попытки','semantics','LEAK-C3'),
- ('M20-accept-known-false-pass','tests/fixtures/scoring.json','"expected_pass": false','"expected_pass": true','assessment','ASSESS-REGRESSION'),
-]
+ROOT = Path(__file__).resolve().parents[1]
+PYTHON = sys.executable
+CONTRACT_PATH = ROOT / "scripts" / "mutation_contract.json"
+
+
+def load_contract(root: Path = ROOT) -> dict[str, Any]:
+    data = json.loads((root / "scripts" / "mutation_contract.json").read_text(encoding="utf-8"))
+    if data.get("schema_version") != "2.0" or not isinstance(data.get("cases"), list):
+        raise RuntimeError("MUTATION-CONTRACT: invalid schema")
+    ids = [case.get("id") for case in data["cases"]]
+    if len(ids) != len(set(ids)) or any(not item for item in ids):
+        raise RuntimeError("MUTATION-CONTRACT: duplicate or empty mutation id")
+    return data
+
+
+def _resolve_pointer(data: Any, pointer: list[Any]) -> tuple[Any, Any]:
+    current = data
+    for part in pointer[:-1]:
+        current = current[part]
+    return current, pointer[-1]
+
+
+def apply_operation(path: Path, operation: dict[str, Any]) -> None:
+    kind = operation["kind"]
+    if kind == "text_replace":
+        text = path.read_text(encoding="utf-8")
+        old = operation["old"]
+        if old not in text:
+            raise RuntimeError("mutation source fragment not found")
+        path.write_text(text.replace(old, operation["new"], 1), encoding="utf-8")
+        return
+
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if kind == "json_set":
+        parent, key = _resolve_pointer(data, operation["pointer"])
+        parent[key] = operation["value"]
+    elif kind == "json_delete":
+        parent, key = _resolve_pointer(data, operation["pointer"])
+        del parent[key]
+    elif kind == "json_duplicate_first_evidence":
+        skill = data["assessments"][operation["assessment"]]["skills"][operation["skill"]]
+        skill["acceptable_evidence"].append(dict(skill["acceptable_evidence"][0]))
+        skill["minimum_evidence"] = max(2, skill["minimum_evidence"])
+    elif kind == "json_add_asymmetric_evidence":
+        skill = data["assessments"][operation["assessment"]]["skills"][operation["skill"]]
+        skill["acceptable_evidence"].append(
+            {"task": operation["task"], "minimum_score": operation["minimum_score"]}
+        )
+    else:
+        raise RuntimeError(f"unsupported mutation operation: {kind}")
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
 
 def run_owner(root: Path, owner: str) -> subprocess.CompletedProcess[str]:
-    script='validate_assessment.py' if owner=='assessment' else 'validate_semantics.py'
-    return subprocess.run([PY,str(root/'scripts'/script)],cwd=root,text=True,capture_output=True)
+    script = "validate_assessment.py" if owner == "assessment" else "validate_semantics.py"
+    return subprocess.run(
+        [PYTHON, str(root / "scripts" / script)],
+        cwd=root,
+        text=True,
+        capture_output=True,
+        timeout=90,
+        check=False,
+    )
 
-def main()->int:
-    rows=[]
-    for mid,rel,old,new,owner,expected in MUTATIONS:
-        with tempfile.TemporaryDirectory(prefix='nasm-mutation-') as td:
-            dst=Path(td)/'repo'
-            shutil.copytree(ROOT,dst,ignore=shutil.ignore_patterns('node_modules','.git','MUTATION_REPORT.*','ASSESSMENT_PROOF.json','render-evidence'))
-            p=dst/rel
-            text=p.read_text(encoding='utf-8')
-            if old not in text:
-                rows.append({'id':mid,'owner':owner,'expected':expected,'exit_code':99,'message':'mutation source fragment not found','pass':False})
-                continue
-            p.write_text(text.replace(old,new,1),encoding='utf-8')
-            cp=run_owner(dst,owner)
-            out=(cp.stdout+'\n'+cp.stderr).strip()
-            ok=cp.returncode!=0 and expected in out
-            rows.append({'id':mid,'owner':owner,'expected':expected,'exit_code':cp.returncode,'message':out[-1000:],'pass':ok})
-    (ROOT/'MUTATION_REPORT.json').write_text(json.dumps(rows,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-    lines=['# Mutation report','','| ID | Owner | Expected diagnostic | Exit | Result |','|---|---|---|---:|---|']
-    for r in rows: lines.append(f'| {r["id"]} | {r["owner"]} | `{r["expected"]}` | {r["exit_code"]} | {"PASS" if r["pass"] else "FAIL"} |')
-    lines += ['','## Diagnostics']
-    for r in rows: lines += ['',f'### {r["id"]}','```text',r['message'],'```']
-    (ROOT/'MUTATION_REPORT.md').write_text('\n'.join(lines)+'\n',encoding='utf-8')
-    failed=[r for r in rows if not r['pass']]
-    print(f'MUTATIONS_TOTAL={len(rows)}')
-    print(f'MUTATIONS_CAUGHT={len(rows)-len(failed)}')
-    if failed:
-        for r in failed: print(f'MUTATION_FAIL {r["id"]}: {r["message"]}',file=sys.stderr)
+
+def source_digest(contract: dict[str, Any], root: Path = ROOT) -> str:
+    targets = [case["path"] for case in contract["cases"]]
+    owners = [
+        "scripts/mutation_contract.json",
+        "scripts/run_mutations.py",
+        "scripts/validate_semantics.py",
+        "scripts/validate_assessment.py",
+        "scripts/assessment_engine.py",
+        "scripts/content_normalization.py",
+        "scripts/evidence_provenance.py",
+    ]
+    return digest_paths(root, [*targets, *owners])
+
+
+def main() -> int:
+    try:
+        contract = load_contract()
+    except (RuntimeError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        print(str(exc), file=sys.stderr)
         return 1
-    print('MUTATION_SUITE=PASS')
+
+    rows: list[dict[str, Any]] = []
+    for case in contract["cases"]:
+        with tempfile.TemporaryDirectory(prefix="nasm-mutation-") as temp:
+            destination = Path(temp) / "repo"
+            shutil.copytree(
+                ROOT,
+                destination,
+                ignore=shutil.ignore_patterns(
+                    "node_modules",
+                    ".git",
+                    "MUTATION_REPORT.*",
+                    "ASSESSMENT_PROOF.json",
+                    "ADVERSARIAL_REVIEW.*",
+                    "render-evidence",
+                    ".vitepress",
+                ),
+            )
+            path = destination / case["path"]
+            try:
+                apply_operation(path, case["operation"])
+                result = run_owner(destination, case["owner"])
+                output = (result.stdout + "\n" + result.stderr).strip()
+                passed = result.returncode != 0 and case["expected"] in output
+                message = output[-2000:]
+                exit_code = result.returncode
+            except (RuntimeError, KeyError, TypeError, ValueError, OSError, subprocess.TimeoutExpired) as exc:
+                passed = False
+                message = str(exc)
+                exit_code = 99
+            rows.append(
+                {
+                    "id": case["id"],
+                    "path": case["path"],
+                    "owner": case["owner"],
+                    "expected": case["expected"],
+                    "exit_code": exit_code,
+                    "message": message,
+                    "pass": passed,
+                }
+            )
+
+    digest = source_digest(contract)
+    report = {
+        "schema_version": "2.0",
+        "source_digest": digest,
+        "mutation_contract_digest": digest_paths(ROOT, ["scripts/mutation_contract.json"]),
+        "cases": rows,
+    }
+    (ROOT / "MUTATION_REPORT.json").write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    lines = [
+        "# Mutation report",
+        "",
+        f"- Source digest: `{digest}`",
+        f"- Cases: **{len(rows)}**",
+        "",
+        "| ID | Owner | Expected diagnostic | Exit | Result |",
+        "|---|---|---|---:|---|",
+    ]
+    for row in rows:
+        lines.append(
+            f"| {row['id']} | {row['owner']} | `{row['expected']}` | {row['exit_code']} | "
+            f"{'PASS' if row['pass'] else 'FAIL'} |"
+        )
+    lines += ["", "## Diagnostics"]
+    for row in rows:
+        lines += ["", f"### {row['id']}", "```text", row["message"], "```"]
+    (ROOT / "MUTATION_REPORT.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    failed = [row for row in rows if not row["pass"]]
+    print(f"MUTATION_SOURCE_DIGEST={digest}")
+    print(f"MUTATIONS_TOTAL={len(rows)}")
+    print(f"MUTATIONS_CAUGHT={len(rows) - len(failed)}")
+    if failed:
+        for row in failed:
+            print(f"MUTATION_FAIL {row['id']}: {row['message']}", file=sys.stderr)
+        return 1
+    print("MUTATION_SUITE=PASS")
     return 0
-if __name__=='__main__': raise SystemExit(main())
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

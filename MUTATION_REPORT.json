@@ -1,162 +1,241 @@
-[
-  {
-    "id": "M01-cleanup-16-to-8",
-    "owner": "semantics",
-    "expected": "ASM-CALL-AREA",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-CALL-AREA: scanf padding/cleanup mismatch",
-    "pass": true
-  },
-  {
-    "id": "M02-remove-padding",
-    "owner": "semantics",
-    "expected": "ASM-CALL-AREA",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-CALL-AREA: scanf padding/cleanup mismatch",
-    "pass": true
-  },
-  {
-    "id": "M03-remove-cdq",
-    "owner": "semantics",
-    "expected": "ASM-IDIV-CDQ",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-IDIV-CDQ: signed division fixture lost cdq",
-    "pass": true
-  },
-  {
-    "id": "M04-reverse-fsubp",
-    "owner": "semantics",
-    "expected": "ASM-X87-SUB",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-X87-SUB: wrong fsubp direction",
-    "pass": true
-  },
-  {
-    "id": "M05-reverse-fdivp",
-    "owner": "semantics",
-    "expected": "ASM-X87-DIV",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-X87-DIV: wrong fdivp direction",
-    "pass": true
-  },
-  {
-    "id": "M06-remove-restore-esi",
-    "owner": "semantics",
-    "expected": "ASM-CALLEE-SAVED",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-CALLEE-SAVED: esi is not restored on every return path",
-    "pass": true
-  },
-  {
-    "id": "M07-scanf-value",
-    "owner": "semantics",
-    "expected": "ASM-SCANF-ADDRESS",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-SCANF-ADDRESS: scanf must receive x address, not [x] value",
-    "pass": true
-  },
-  {
-    "id": "M08-idiv-immediate",
-    "owner": "semantics",
-    "expected": "ASM-IDIV-OPERAND",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-IDIV-OPERAND: idiv must use r/m operand, not immediate",
-    "pass": true
-  },
-  {
-    "id": "M09-make-10F-core",
-    "owner": "assessment",
-    "expected": "ASSESS-DAY10-BONUS",
-    "exit_code": 1,
-    "message": "ASSESS-DAY10-BONUS: 10F must remain optional",
-    "pass": true
-  },
-  {
-    "id": "M10-include-01-16-in-100",
-    "owner": "assessment",
-    "expected": "ASSESS-BONUS",
-    "exit_code": 1,
-    "message": "ASSESS-BONUS: bonus tasks must not be included in the final maximum",
-    "pass": true
-  },
-  {
-    "id": "M11-remove-cp3-loop-evidence",
-    "owner": "assessment",
-    "expected": "ASSESS-TASK-SKILL",
-    "exit_code": 1,
-    "message": "ASSESS-TASK-SKILL CP3/CP3-LOOP: mapped skill loop_lowering does not accept evidence from this task",
-    "pass": true
-  },
-  {
-    "id": "M12-safety-optional",
-    "owner": "assessment",
-    "expected": "ASSESS-MANDATORY",
-    "exit_code": 1,
-    "message": "ASSESS-MANDATORY CP5/memory_safety_boundaries: outcome is no longer mandatory",
-    "pass": true
-  },
-  {
-    "id": "M13-remove-refreshers-manifest",
-    "owner": "semantics",
-    "expected": "MANIFEST-STANDALONE",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\nVALIDATE_ASM=PASS\n\nMANIFEST-STANDALONE: prerequisite refreshers/final route missing",
-    "pass": true
-  },
-  {
-    "id": "M14-answer-in-closed-book",
-    "owner": "semantics",
-    "expected": "LEAK-C3",
-    "exit_code": 1,
-    "message": "LEAK-C3: docs/closed_book_workbook.md contains protected fingerprint C3-aligned-sum-call: sub esp, 8; push dword [b]; push dword [a]; call sum; add esp, 16",
-    "pass": true
-  },
-  {
-    "id": "M15-transfer-without-key",
-    "owner": "semantics",
-    "expected": "TRANSFER-SYNC",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\n\nTRANSFER-SYNC TR-05: task changed without contract update",
-    "pass": true
-  },
-  {
-    "id": "M16-change-cp-threshold",
-    "owner": "semantics",
-    "expected": "DOCS-ASSESSMENT",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\nVALIDATE_ASM=PASS\nVALIDATE_MANIFEST=PASS\n\nDOCS-ASSESSMENT: day_25 missing synchronized marker **81**",
-    "pass": true
-  },
-  {
-    "id": "M17-break-anchor",
-    "owner": "semantics",
-    "expected": "LINK-ANCHOR",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\n\nLINK-ANCHOR: pedagogy source docs/day_10_learning_path.md#10b-safe-ceil-machine-model missing",
-    "pass": true
-  },
-  {
-    "id": "M18-reverse-startup",
-    "owner": "semantics",
-    "expected": "STARTUP-DIRECTION",
-    "exit_code": 1,
-    "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\nVALIDATE_ASM=PASS\nVALIDATE_MANIFEST=PASS\nVALIDATE_DOCS_CONTRACT=PASS\n\nSTARTUP-DIRECTION: startup/runtime/main direction reversed or missing",
-    "pass": true
-  },
-  {
-    "id": "M19-return-c3-to-day25",
-    "owner": "semantics",
-    "expected": "LEAK-C3",
-    "exit_code": 1,
-    "message": "LEAK-C3: docs/day_25.md contains protected fingerprint C3-aligned-sum-call: sub esp, 8; push dword [b]; push dword [a]; call sum; add esp, 16",
-    "pass": true
-  },
-  {
-    "id": "M20-accept-known-false-pass",
-    "owner": "assessment",
-    "expected": "ASSESS-REGRESSION",
-    "exit_code": 1,
-    "message": "ASSESS-REGRESSION CP2-known-false-pass-ceil-zero: expected True, got False; ('mandatory skill branchless_safe_ceil: evidence 0 < 1',)",
-    "pass": true
-  }
-]
+{
+  "cases": [
+    {
+      "exit_code": 1,
+      "expected": "ASM-CALL-AREA",
+      "id": "M01-cleanup-16-to-8",
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-CALL-AREA: aligned sum/printf padding or cleanup mismatch",
+      "owner": "semantics",
+      "pass": true,
+      "path": "examples/09_aligned_sum_call.asm"
+    },
+    {
+      "exit_code": 1,
+      "expected": "ASM-CALL-AREA",
+      "id": "M02-remove-padding",
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-CALL-AREA: aligned sum/printf padding or cleanup mismatch",
+      "owner": "semantics",
+      "pass": true,
+      "path": "examples/09_aligned_sum_call.asm"
+    },
+    {
+      "exit_code": 1,
+      "expected": "ASM-IDIV-CDQ",
+      "id": "M03-remove-cdq",
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-IDIV-CDQ: signed division fixture lost cdq",
+      "owner": "semantics",
+      "pass": true,
+      "path": "examples/11_idiv_overflow_negative.asm"
+    },
+    {
+      "exit_code": 1,
+      "expected": "ASM-X87-SUB",
+      "id": "M04-reverse-fsubp",
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-X87-SUB: wrong fsubp direction",
+      "owner": "semantics",
+      "pass": true,
+      "path": "examples/13_x87_order.asm"
+    },
+    {
+      "exit_code": 1,
+      "expected": "ASM-X87-DIV",
+      "id": "M05-reverse-fdivp",
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-X87-DIV: wrong fdivp direction",
+      "owner": "semantics",
+      "pass": true,
+      "path": "examples/13_x87_order.asm"
+    },
+    {
+      "exit_code": 1,
+      "expected": "ASM-CALLEE-SAVED",
+      "id": "M06-remove-restore-esi",
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-CALLEE-SAVED: esi is not restored on every return path",
+      "owner": "semantics",
+      "pass": true,
+      "path": "examples/12_callee_saved.asm"
+    },
+    {
+      "exit_code": 1,
+      "expected": "ASM-SCANF-ADDRESS",
+      "id": "M07-scanf-value",
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-SCANF-ADDRESS: scanf must receive x address, not [x] value",
+      "owner": "semantics",
+      "pass": true,
+      "path": "examples/14_scanf_call.asm"
+    },
+    {
+      "exit_code": 1,
+      "expected": "ASM-IDIV-OPERAND",
+      "id": "M08-idiv-immediate",
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-IDIV-OPERAND: idiv must use r/m operand, not immediate",
+      "owner": "semantics",
+      "pass": true,
+      "path": "examples/11_idiv_overflow_negative.asm"
+    },
+    {
+      "exit_code": 1,
+      "expected": "ASSESS-DAY10-BONUS",
+      "id": "M09-make-10F-core",
+      "message": "ASSESS-DAY10-BONUS: 10F must remain optional",
+      "owner": "assessment",
+      "pass": true,
+      "path": "scripts/assessment_contract.json"
+    },
+    {
+      "exit_code": 1,
+      "expected": "ASSESS-BONUS",
+      "id": "M10-include-01-16-in-100",
+      "message": "ASSESS-BONUS: bonus tasks must not be included in the final maximum",
+      "owner": "assessment",
+      "pass": true,
+      "path": "scripts/assessment_contract.json"
+    },
+    {
+      "exit_code": 1,
+      "expected": "ASSESS-EVIDENCE-BIDIRECTIONAL",
+      "id": "M11-remove-cp3-loop-evidence",
+      "message": "ASSESS-EVIDENCE-BIDIRECTIONAL CP3/loop_lowering: CP3-TABLE accepts the skill but task.skills does not declare it",
+      "owner": "assessment",
+      "pass": true,
+      "path": "scripts/assessment_contract.json"
+    },
+    {
+      "exit_code": 1,
+      "expected": "ASSESS-MANDATORY",
+      "id": "M12-safety-optional",
+      "message": "ASSESS-MANDATORY CP5/memory_safety_boundaries: outcome is no longer mandatory",
+      "owner": "assessment",
+      "pass": true,
+      "path": "scripts/assessment_contract.json"
+    },
+    {
+      "exit_code": 1,
+      "expected": "MANIFEST-STANDALONE",
+      "id": "M13-remove-refreshers-manifest",
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\nVALIDATE_ASM=PASS\n\nMANIFEST-STANDALONE: prerequisite refreshers/final route missing",
+      "owner": "semantics",
+      "pass": true,
+      "path": "scripts/course_manifest.py"
+    },
+    {
+      "exit_code": 1,
+      "expected": "LEAK-C3",
+      "id": "M14-answer-in-closed-book",
+      "message": "LEAK-C3: docs/closed_book_workbook.md contains protected fingerprint C3-aligned-sum-call: sub esp, 8; push dword [b]; push dword [a]; call sum; add esp, 16",
+      "owner": "semantics",
+      "pass": true,
+      "path": "docs/closed_book_workbook.md"
+    },
+    {
+      "exit_code": 1,
+      "expected": "TRANSFER-SYNC",
+      "id": "M15-transfer-without-key",
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\n\nTRANSFER-SYNC TR-05: task changed without contract update",
+      "owner": "semantics",
+      "pass": true,
+      "path": "docs/transfer_workbook.md"
+    },
+    {
+      "exit_code": 1,
+      "expected": "DOCS-ASSESSMENT",
+      "id": "M16-change-final-threshold",
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\nVALIDATE_ASM=PASS\nVALIDATE_MANIFEST=PASS\n\nDOCS-ASSESSMENT: day_25 missing synchronized marker **81**",
+      "owner": "semantics",
+      "pass": true,
+      "path": "scripts/assessment_contract.json"
+    },
+    {
+      "exit_code": 1,
+      "expected": "LINK-ANCHOR",
+      "id": "M17-break-anchor",
+      "message": "VALIDATE_LEAKAGE=PASS\n\nLINK-ANCHOR: pedagogy source docs/day_10_learning_path.md#10b-safe-ceil-machine-model missing",
+      "owner": "semantics",
+      "pass": true,
+      "path": "docs/day_10_learning_path.md"
+    },
+    {
+      "exit_code": 1,
+      "expected": "STARTUP-DIRECTION",
+      "id": "M18-reverse-startup",
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\nVALIDATE_ASM=PASS\nVALIDATE_MANIFEST=PASS\nVALIDATE_DOCS_CONTRACT=PASS\n\nSTARTUP-DIRECTION: startup/runtime/main direction reversed or missing",
+      "owner": "semantics",
+      "pass": true,
+      "path": "docs/instruction_reference.md"
+    },
+    {
+      "exit_code": 1,
+      "expected": "LEAK-C3",
+      "id": "M19-return-c3-to-day25",
+      "message": "LEAK-C3: docs/day_25.md contains protected fingerprint C3-aligned-sum-call: sub esp, 8; push dword [b]; push dword [a]; call sum; add esp, 16",
+      "owner": "semantics",
+      "pass": true,
+      "path": "docs/day_25.md"
+    },
+    {
+      "exit_code": 1,
+      "expected": "ASSESS-REGRESSION",
+      "id": "M20-accept-known-false-pass",
+      "message": "ASSESS-REGRESSION CP2-known-false-pass-ceil-zero: expected True, got False; ('mandatory skill branchless_safe_ceil: evidence 0 < 1',)",
+      "owner": "assessment",
+      "pass": true,
+      "path": "tests/fixtures/scoring.json"
+    },
+    {
+      "exit_code": 1,
+      "expected": "LEAK-C3",
+      "id": "M21-html-comment-leak",
+      "message": "LEAK-C3: docs/closed_book_workbook.md contains protected fingerprint C3-aligned-sum-call: sub esp, 8; push dword [b]; push dword [a]; call sum; add esp, 16",
+      "owner": "semantics",
+      "pass": true,
+      "path": "docs/closed_book_workbook.md"
+    },
+    {
+      "exit_code": 1,
+      "expected": "ASSESS-EVIDENCE-DUPLICATE",
+      "id": "M22-duplicate-evidence",
+      "message": "ASSESS-EVIDENCE-DUPLICATE CP1/overlapping_register_trace: duplicate CP1-REG@1",
+      "owner": "assessment",
+      "pass": true,
+      "path": "scripts/assessment_contract.json"
+    },
+    {
+      "exit_code": 1,
+      "expected": "ASSESS-EVIDENCE-BIDIRECTIONAL",
+      "id": "M23-asymmetric-evidence",
+      "message": "ASSESS-EVIDENCE-BIDIRECTIONAL CP1/overlapping_register_trace: CP1-SIZE-R accepts the skill but task.skills does not declare it",
+      "owner": "assessment",
+      "pass": true,
+      "path": "scripts/assessment_contract.json"
+    },
+    {
+      "exit_code": 1,
+      "expected": "ASM-NEGATIVE-EXPECTED",
+      "id": "M24-negative-without-outcome",
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-NEGATIVE-EXPECTED: examples/11_idiv_overflow_negative.asm must declare an exact supported outcome",
+      "owner": "semantics",
+      "pass": true,
+      "path": "scripts/executable_contract.json"
+    },
+    {
+      "exit_code": 1,
+      "expected": "PEDAGOGY-CONTENT",
+      "id": "M25-move-explanation-content",
+      "message": "VALIDATE_LEAKAGE=PASS\n\nPEDAGOGY-CONTENT branchless_safe_ceil/explanation: marker 'mov ecx, edx' missing from exact section docs/day_10_learning_path.md#10b-safe-ceil-machine-model",
+      "owner": "semantics",
+      "pass": true,
+      "path": "docs/day_10_learning_path.md"
+    },
+    {
+      "exit_code": 1,
+      "expected": "ASM-CALL-AREA",
+      "id": "M26-wrong-scanf-padding",
+      "message": "VALIDATE_LEAKAGE=PASS\nVALIDATE_PEDAGOGY=PASS\nVALIDATE_TRANSFERS=PASS\n\nASM-CALL-AREA: scanf padding/cleanup mismatch",
+      "owner": "semantics",
+      "pass": true,
+      "path": "examples/14_scanf_call.asm"
+    }
+  ],
+  "mutation_contract_digest": "68ef62e17061e36fad0d68c26399394bfd34a3b1b5528b95e1062934954fcb33",
+  "schema_version": "2.0",
+  "source_digest": "c0ddf7966cdc896f1db003fdc0b58100d34b17fd9e27ce059d7590a63a20b51c"
+}
