@@ -77,8 +77,12 @@
 }
 
 .vp-doc table {
-  display: table;
+  display: block;
   width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
   font-size: 14px;
 }
 
@@ -116,4 +120,20 @@
   border-radius: 14px;
   padding: 16px;
   background: var(--vp-code-block-bg);
+}
+
+@media (max-width: 420px) {
+  .VPNavBarTitle {
+    min-width: 0;
+    flex-shrink: 1;
+  }
+
+  .VPNavBarTitle .title {
+    display: block;
+    min-width: 0;
+    max-width: calc(100vw - 156px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }

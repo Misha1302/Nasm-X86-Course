@@ -1,3 +1,4 @@
+; BLOCK: RUN
 section .data
     fmt db "%d", 10, 0
 

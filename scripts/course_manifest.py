@@ -30,4 +30,5 @@ GENERATED_RELATIVE_PATHS = (
     "docs/textbook.md",
     "docs/course_migration.md",
     "docs/closed_book_workbook.md",
+    "docs/generated_source_manifest.json",
 )
