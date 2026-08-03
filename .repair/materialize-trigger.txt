@@ -1,2 +1,2 @@
-trigger=merge-event-20260803T1222+0300
+trigger=observable-merge-event-20260803
 artifact_sha256=d8bb9aeea035e1f677c1e12263cfb197c3c9f2fbe663ac340b0b411946176cce
