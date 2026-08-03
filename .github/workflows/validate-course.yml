@@ -35,13 +35,5 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y nasm gcc-multilib libc6-dev-i386
 
-      - name: Build and verify examples
-        run: |
-          set -euo pipefail
-          for file in examples/*.asm; do
-            name="$(basename "$file" .asm)"
-            nasm -f elf32 -g -F dwarf "$file" -o "/tmp/$name.o"
-            gcc -m32 -g -no-pie -Wl,-z,noexecstack "/tmp/$name.o" -o "/tmp/$name"
-            "/tmp/$name" > "/tmp/$name.out"
-            diff -u "examples/expected/$name.txt" "/tmp/$name.out"
-          done
+      - name: Build and verify classified examples
+        run: bash scripts/verify_nasm_examples.sh
