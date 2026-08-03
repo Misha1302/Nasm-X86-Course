@@ -1,0 +1,32 @@
+name: Course contracts
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  fast-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python3 scripts/generate_course_docs.py
+      - run: python3 scripts/validate_semantics.py
+      - run: python3 scripts/validate_assessment.py
+  mutation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python3 scripts/run_mutations.py
+  docs-and-asm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22, cache: npm}
+      - run: sudo apt-get update && sudo apt-get install -y nasm gcc-multilib
+      - run: npm ci --no-audit --no-fund
+      - run: npm run docs:build
+      - run: bash scripts/verify_nasm_examples.sh
