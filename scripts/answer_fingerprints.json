@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.0",
+  "protected_targets": [
+    "docs/day_25.md",
+    "docs/closed_book_workbook.md"
+  ],
+  "fingerprints": [
+    {
+      "id": "C3-aligned-sum-call",
+      "task": "C3",
+      "kind": "asm_sequence",
+      "fragment": "sub esp, 8; push dword [b]; push dword [a]; call sum; add esp, 16",
+      "protected_targets": [
+        "docs/day_25.md",
+        "docs/closed_book_workbook.md"
+      ]
+    },
+    {
+      "id": "C3-call-area-values",
+      "task": "C3",
+      "kind": "formula",
+      "fragment": "argument_bytes=8 padding=8 cleanup=16",
+      "protected_targets": [
+        "docs/day_25.md",
+        "docs/closed_book_workbook.md"
+      ]
+    },
+    {
+      "id": "A2-safe-ceil-complete",
+      "task": "A2",
+      "kind": "formula",
+      "fragment": "q=a/b r=a%b ceil=q+(r!=0)",
+      "protected_targets": [
+        "docs/day_25.md",
+        "docs/closed_book_workbook.md"
+      ]
+    },
+    {
+      "id": "A4-bit-magnitude-complete",
+      "task": "A4",
+      "kind": "formula",
+      "fragment": "ux=(uint32_t)det mask=0-(ux>>31) absDet=(ux^mask)-mask",
+      "protected_targets": [
+        "docs/day_25.md",
+        "docs/closed_book_workbook.md"
+      ]
+    },
+    {
+      "id": "D1-listing",
+      "task": "D1",
+      "kind": "asm_sequence",
+      "fragment": "push ebp; mov ebp,esp; mov eax,[ebp+8]; add eax,[ebp+12]; pop ebp; ret",
+      "protected_targets": [
+        "docs/day_25.md"
+      ]
+    },
+    {
+      "id": "D2-listing",
+      "task": "D2",
+      "kind": "asm_sequence",
+      "fragment": "push ebp; mov ebp,esp; mov eax,[ebp+8]; mov edx,[ebp+12]; mov [eax],edx; pop ebp; ret",
+      "protected_targets": [
+        "docs/day_25.md"
+      ]
+    },
+    {
+      "id": "D3-listing",
+      "task": "D3",
+      "kind": "asm_sequence",
+      "fragment": "push ebp; mov ebp,esp; mov edx,[ebp+8]; movsx eax,byte [edx]; pop ebp; ret",
+      "protected_targets": [
+        "docs/day_25.md"
+      ]
+    }
+  ],
+  "solution_container_patterns": [
+    "<details",
+    "::: details",
+    "::: solution",
+    "## ответ",
+    "### ответ",
+    "полное решение"
+  ]
+}

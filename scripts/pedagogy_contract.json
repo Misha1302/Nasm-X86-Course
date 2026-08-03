@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "ordering_rule": "first_explanation < first_required_use < first_assessment",
+  "events": {
+    "branchless_safe_ceil": {
+      "mandatory": true,
+      "explanation": {
+        "order": 10020,
+        "source": "docs/day_10_learning_path.md#10b-safe-ceil-machine-model"
+      },
+      "required_use": {
+        "order": 10030,
+        "source": "docs/tasks/spring-01/01-14-garden.md#required-solution"
+      },
+      "assessment": {
+        "order": 10040,
+        "source": "docs/checkpoints.md#cp2-ceil"
+      },
+      "forbidden_future_dependencies": [
+        "setcc",
+        "test-as-condition",
+        "conditional-jump",
+        "cmov"
+      ]
+    },
+    "signed_division_overflow": {
+      "mandatory": true,
+      "explanation": {
+        "order": 9000,
+        "source": "docs/day_09.md#idiv-overflow"
+      },
+      "required_use": {
+        "order": 9010,
+        "source": "docs/day_09.md#negative-fixture"
+      },
+      "assessment": {
+        "order": 10040,
+        "source": "docs/checkpoints.md#cp2-idiv-overflow"
+      }
+    },
+    "callee_saved_all_returns": {
+      "mandatory": true,
+      "explanation": {
+        "order": 17000,
+        "source": "docs/instruction_reference.md#callee-saved"
+      },
+      "required_use": {
+        "order": 17010,
+        "source": "docs/transfer_workbook.md#tr-17"
+      },
+      "assessment": {
+        "order": 19000,
+        "source": "docs/checkpoints.md#cp4-ebx"
+      }
+    }
+  }
+}

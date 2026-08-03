@@ -1,3 +1,4 @@
+; BLOCK: RUN
 section .text
 global main
 

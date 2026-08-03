@@ -5,12 +5,17 @@
   "type": "module",
   "scripts": {
     "docs:generate": "python3 scripts/generate_course_docs.py",
-    "course:validate": "python3 scripts/validate_course.py",
-    "course:pedagogy": "python3 scripts/validate_pedagogy.py",
-    "docs:dev": "npm run docs:generate && npm run course:validate && npm run course:pedagogy && vitepress dev docs --host 0.0.0.0",
+    "course:validate": "python3 scripts/run_course_validation.py validate",
+    "course:pedagogy": "python3 scripts/run_course_validation.py pedagogy",
+    "course:assessment": "python3 scripts/validate_assessment.py",
+    "course:mutation": "python3 scripts/run_mutations.py",
+    "course:visual": "python3 scripts/render_critical_pages.py",
+    "course:environment": "bash scripts/verify_environment.sh",
     "docs:build": "npm run docs:generate && npm run course:validate && npm run course:pedagogy && vitepress build docs",
     "docs:preview": "vitepress preview docs --host 0.0.0.0",
-    "docs:clean": "rm -rf docs/.vitepress/cache docs/.vitepress/dist docs/textbook.md docs/course_migration.md docs/closed_book_workbook.md"
+    "course:asm": "bash scripts/verify_nasm_examples.sh",
+    "docs:clean": "rm -rf docs/.vitepress/cache docs/.vitepress/dist docs/textbook.md docs/course_migration.md docs/closed_book_workbook.md docs/generated_source_manifest.json",
+    "course:visual:vitepress": "python3 scripts/render_vitepress_pages.py --base-url http://127.0.0.1:4173/Nasm-X86-Course/"
   },
   "devDependencies": {
     "vitepress": "1.6.4"

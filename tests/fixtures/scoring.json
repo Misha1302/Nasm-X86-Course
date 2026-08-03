@@ -1,0 +1,441 @@
+[
+  {
+    "id": "CP2-known-false-pass-ceil-zero",
+    "assessment": "CP2",
+    "scores": {
+      "CP2-DIV": 2,
+      "CP2-SCANF": 2,
+      "CP2-MASK": 2,
+      "CP2-IDIV-BUG": 2,
+      "CP2-IDIV-OVERFLOW": 2,
+      "CP2-GARDEN": 2,
+      "CP2-AREA": 2,
+      "CP2-SIGNMASK-BUG": 1,
+      "CP2-CEIL": 0
+    },
+    "new_variants": [
+      "CP2-SIGNMASK-BUG",
+      "CP2-IDIV-OVERFLOW"
+    ],
+    "expected_pass": false,
+    "expected_missing_skill": "branchless_safe_ceil"
+  },
+  {
+    "id": "CP3-known-false-pass-bit-zero",
+    "assessment": "CP3",
+    "scores": {
+      "CP3-CMP": 2,
+      "CP3-TABLE": 2,
+      "CP3-LOOP": 2,
+      "CP3-FLAGS": 2,
+      "CP3-TRANSFER": 2,
+      "CP3-BIT": 0
+    },
+    "expected_pass": false,
+    "expected_missing_skill": "single_bit_test"
+  },
+  {
+    "id": "CP5-known-false-pass-nan-zero",
+    "assessment": "CP5",
+    "scores": {
+      "CP5-FP-BINARY": 2,
+      "CP5-FP-REPR": 2,
+      "CP5-X87": 2,
+      "CP5-VARARGS": 2,
+      "CP5-STARTUP": 2,
+      "CP5-SAFETY": 2,
+      "CP5-NAN": 0,
+      "CP5-X87-TRANSFER": 2
+    },
+    "expected_pass": false,
+    "expected_missing_skill": "nan_model"
+  },
+  {
+    "id": "CP6-known-false-pass-cp6-this-zero",
+    "assessment": "CP6",
+    "scores": {
+      "CP6-THIS": 0,
+      "CP6-VCALL": 2,
+      "CP6-OBJECT": 2,
+      "CP6-ABI": 2,
+      "CP6-CALLS": 2
+    },
+    "expected_pass": false,
+    "expected_missing_skill": "this_pointer_machine_facts"
+  },
+  {
+    "id": "CP6-known-false-pass-cp6-object-zero",
+    "assessment": "CP6",
+    "scores": {
+      "CP6-THIS": 2,
+      "CP6-VCALL": 2,
+      "CP6-OBJECT": 0,
+      "CP6-ABI": 2,
+      "CP6-CALLS": 2
+    },
+    "expected_pass": false,
+    "expected_missing_skill": "object_layout_boundaries"
+  },
+  {
+    "id": "FINAL-known-false-pass-E1-zero",
+    "assessment": "FINAL",
+    "scores": {
+      "A1": 5,
+      "A2": 5,
+      "A3": 5,
+      "A4": 5,
+      "B1": 5,
+      "B2": 5,
+      "B3": 5,
+      "B4": 5,
+      "C1": 8,
+      "C2": 8,
+      "C3": 8,
+      "D1": 7,
+      "D2": 7,
+      "D3": 7,
+      "E1": 0,
+      "E2": 5,
+      "E3": 5
+    },
+    "new_variants": [
+      "A1",
+      "A2",
+      "A3",
+      "A4",
+      "B1",
+      "B2",
+      "B3",
+      "B4",
+      "C1",
+      "C2",
+      "C3",
+      "D1",
+      "D2",
+      "D3",
+      "E1",
+      "E2",
+      "E3"
+    ],
+    "readiness": true,
+    "expected_pass": false,
+    "expected_missing_skill": "memory_safety_model"
+  },
+  {
+    "id": "FINAL-known-false-pass-E3-zero",
+    "assessment": "FINAL",
+    "scores": {
+      "A1": 5,
+      "A2": 5,
+      "A3": 5,
+      "A4": 5,
+      "B1": 5,
+      "B2": 5,
+      "B3": 5,
+      "B4": 5,
+      "C1": 8,
+      "C2": 8,
+      "C3": 8,
+      "D1": 7,
+      "D2": 7,
+      "D3": 7,
+      "E1": 5,
+      "E2": 5,
+      "E3": 0
+    },
+    "new_variants": [
+      "A1",
+      "A2",
+      "A3",
+      "A4",
+      "B1",
+      "B2",
+      "B3",
+      "B4",
+      "C1",
+      "C2",
+      "C3",
+      "D1",
+      "D2",
+      "D3",
+      "E1",
+      "E2",
+      "E3"
+    ],
+    "readiness": true,
+    "expected_pass": false,
+    "expected_missing_skill": "object_model_hypothesis_boundary"
+  },
+  {
+    "id": "FINAL-known-false-pass-C2-zero",
+    "assessment": "FINAL",
+    "scores": {
+      "A1": 5,
+      "A2": 5,
+      "A3": 5,
+      "A4": 5,
+      "B1": 5,
+      "B2": 5,
+      "B3": 5,
+      "B4": 5,
+      "C1": 8,
+      "C2": 0,
+      "C3": 8,
+      "D1": 7,
+      "D2": 7,
+      "D3": 7,
+      "E1": 5,
+      "E2": 5,
+      "E3": 5
+    },
+    "new_variants": [
+      "A1",
+      "A2",
+      "A3",
+      "A4",
+      "B1",
+      "B2",
+      "B3",
+      "B4",
+      "C1",
+      "C2",
+      "C3",
+      "D1",
+      "D2",
+      "D3",
+      "E1",
+      "E2",
+      "E3"
+    ],
+    "readiness": true,
+    "expected_pass": false,
+    "expected_missing_skill": "write_cdecl_function"
+  },
+  {
+    "id": "FINAL-known-false-pass-A4-zero",
+    "assessment": "FINAL",
+    "scores": {
+      "A1": 5,
+      "A2": 5,
+      "A3": 5,
+      "A4": 0,
+      "B1": 5,
+      "B2": 5,
+      "B3": 5,
+      "B4": 5,
+      "C1": 8,
+      "C2": 8,
+      "C3": 8,
+      "D1": 7,
+      "D2": 7,
+      "D3": 7,
+      "E1": 5,
+      "E2": 5,
+      "E3": 5
+    },
+    "new_variants": [
+      "A1",
+      "A2",
+      "A3",
+      "A4",
+      "B1",
+      "B2",
+      "B3",
+      "B4",
+      "C1",
+      "C2",
+      "C3",
+      "D1",
+      "D2",
+      "D3",
+      "E1",
+      "E2",
+      "E3"
+    ],
+    "readiness": true,
+    "expected_pass": false,
+    "expected_missing_skill": "arithmetic_abs_area_boundary"
+  },
+  {
+    "id": "CP1-positive-all-full",
+    "assessment": "CP1",
+    "scores": {
+      "CP1-REG": 2,
+      "CP1-SIZE-R": 2,
+      "CP1-SIZE-W": 2,
+      "CP1-SIGNED": 2,
+      "CP1-ZERO": 2,
+      "CP1-TRANSFER": 2
+    },
+    "new_variants": [
+      "CP1-REG",
+      "CP1-SIZE-R",
+      "CP1-SIZE-W",
+      "CP1-SIGNED",
+      "CP1-ZERO",
+      "CP1-TRANSFER"
+    ],
+    "readiness": false,
+    "expected_pass": true
+  },
+  {
+    "id": "CP2-positive-all-full",
+    "assessment": "CP2",
+    "scores": {
+      "CP2-DIV": 2,
+      "CP2-SCANF": 2,
+      "CP2-MASK": 2,
+      "CP2-SIGNMASK-BUG": 2,
+      "CP2-IDIV-BUG": 2,
+      "CP2-IDIV-OVERFLOW": 2,
+      "CP2-CEIL": 2,
+      "CP2-GARDEN": 2,
+      "CP2-AREA": 2
+    },
+    "new_variants": [
+      "CP2-DIV",
+      "CP2-SCANF",
+      "CP2-MASK",
+      "CP2-SIGNMASK-BUG",
+      "CP2-IDIV-BUG",
+      "CP2-IDIV-OVERFLOW",
+      "CP2-CEIL",
+      "CP2-GARDEN",
+      "CP2-AREA"
+    ],
+    "readiness": false,
+    "expected_pass": true
+  },
+  {
+    "id": "CP3-positive-all-full",
+    "assessment": "CP3",
+    "scores": {
+      "CP3-CMP": 2,
+      "CP3-BIT": 2,
+      "CP3-TABLE": 2,
+      "CP3-LOOP": 2,
+      "CP3-FLAGS": 2,
+      "CP3-TRANSFER": 2
+    },
+    "new_variants": [
+      "CP3-CMP",
+      "CP3-BIT",
+      "CP3-TABLE",
+      "CP3-LOOP",
+      "CP3-FLAGS",
+      "CP3-TRANSFER"
+    ],
+    "readiness": false,
+    "expected_pass": true
+  },
+  {
+    "id": "CP4-positive-all-full",
+    "assessment": "CP4",
+    "scores": {
+      "CP4-STACK": 2,
+      "CP4-FRAME": 2,
+      "CP4-STRUCT": 2,
+      "CP4-EBX": 2,
+      "CP4-TRANSFER": 2
+    },
+    "new_variants": [
+      "CP4-STACK",
+      "CP4-FRAME",
+      "CP4-STRUCT",
+      "CP4-EBX",
+      "CP4-TRANSFER"
+    ],
+    "readiness": false,
+    "expected_pass": true
+  },
+  {
+    "id": "CP5-positive-all-full",
+    "assessment": "CP5",
+    "scores": {
+      "CP5-FP-BINARY": 2,
+      "CP5-FP-REPR": 2,
+      "CP5-X87": 2,
+      "CP5-VARARGS": 2,
+      "CP5-STARTUP": 2,
+      "CP5-SAFETY": 2,
+      "CP5-NAN": 2,
+      "CP5-X87-TRANSFER": 2
+    },
+    "new_variants": [
+      "CP5-FP-BINARY",
+      "CP5-FP-REPR",
+      "CP5-X87",
+      "CP5-VARARGS",
+      "CP5-STARTUP",
+      "CP5-SAFETY",
+      "CP5-NAN",
+      "CP5-X87-TRANSFER"
+    ],
+    "readiness": false,
+    "expected_pass": true
+  },
+  {
+    "id": "CP6-positive-all-full",
+    "assessment": "CP6",
+    "scores": {
+      "CP6-THIS": 2,
+      "CP6-VCALL": 2,
+      "CP6-OBJECT": 2,
+      "CP6-ABI": 2,
+      "CP6-CALLS": 2
+    },
+    "new_variants": [
+      "CP6-THIS",
+      "CP6-VCALL",
+      "CP6-OBJECT",
+      "CP6-ABI",
+      "CP6-CALLS"
+    ],
+    "readiness": false,
+    "expected_pass": true
+  },
+  {
+    "id": "FINAL-positive-all-full",
+    "assessment": "FINAL",
+    "scores": {
+      "A1": 5,
+      "A2": 5,
+      "A3": 5,
+      "A4": 5,
+      "B1": 5,
+      "B2": 5,
+      "B3": 5,
+      "B4": 5,
+      "C1": 8,
+      "C2": 8,
+      "C3": 8,
+      "D1": 7,
+      "D2": 7,
+      "D3": 7,
+      "E1": 5,
+      "E2": 5,
+      "E3": 5
+    },
+    "new_variants": [
+      "A1",
+      "A2",
+      "A3",
+      "A4",
+      "B1",
+      "B2",
+      "B3",
+      "B4",
+      "C1",
+      "C2",
+      "C3",
+      "D1",
+      "D2",
+      "D3",
+      "E1",
+      "E2",
+      "E3"
+    ],
+    "readiness": true,
+    "expected_pass": true
+  }
+]
