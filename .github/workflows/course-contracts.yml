@@ -13,12 +13,14 @@ jobs:
       - run: python3 scripts/generate_course_docs.py
       - run: python3 scripts/validate_semantics.py
       - run: python3 scripts/validate_assessment.py
+      - run: python3 scripts/run_adversarial_review.py
   mutation:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
+      - run: python3 scripts/generate_course_docs.py
       - run: python3 scripts/run_mutations.py
   docs-and-asm:
     runs-on: ubuntu-latest
