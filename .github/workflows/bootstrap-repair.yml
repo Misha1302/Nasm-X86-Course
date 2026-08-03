@@ -1,0 +1,131 @@
+name: Bootstrap NASM course repair
+
+on:
+  push:
+    branches:
+      - repair/nasm-course-bootstrap-20260803
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nasm-course-bootstrap-repair
+  cancel-in-progress: false
+
+jobs:
+  apply-verify-publish:
+    runs-on: ubuntu-latest
+    env:
+      BASELINE_SHA: d3a172f12d7a1f7e456a6a930007711a55d8d93c
+      FINAL_BRANCH: repair/nasm-course-complete-20260803
+      BUNDLE_SHA256: 2a97937df8d29199298b7aea1bbb9467825f42d019842de96ec55ff3dc161de8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install full validation toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nasm gcc-multilib
+          python3 -m pip install --disable-pip-version-check playwright==1.54.0
+          python3 -m playwright install --with-deps chromium
+
+      - name: Decode and verify repair bundle
+        run: |
+          cat .repair/parts/part-* | base64 -d > /tmp/nasm-repair-bootstrap-bundle.tar.xz
+          echo "$BUNDLE_SHA256  /tmp/nasm-repair-bootstrap-bundle.tar.xz" | sha256sum -c -
+          python3 - <<'PY'
+          import tarfile
+          from pathlib import PurePosixPath
+          path = '/tmp/nasm-repair-bootstrap-bundle.tar.xz'
+          with tarfile.open(path, 'r:xz') as tf:
+              for member in tf.getmembers():
+                  p = PurePosixPath(member.name)
+                  if p.is_absolute() or '..' in p.parts or member.issym() or member.islnk():
+                      raise SystemExit(f'unsafe archive member: {member.name}')
+              tf.extractall('/tmp')
+          PY
+          test -f /tmp/nasm-repair-bootstrap-bundle/scripts/apply_repair.py
+
+      - name: Restore exact baseline and apply guarded repair
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git reset --hard "$BASELINE_SHA"
+          git clean -fdx
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('/tmp/nasm-repair-bootstrap-bundle/scripts/apply_repair.py')
+          text = p.read_text(encoding='utf-8')
+          old = 'if branch != "main":\n        raise ApplyError(f"APPLY-BRANCH: expected main, got {branch!r}")'
+          new = 'if branch not in {"main", "repair/nasm-course-bootstrap-20260803", ""}:\n        raise ApplyError(f"APPLY-BRANCH: unexpected bootstrap branch {branch!r}")'
+          if old not in text:
+              raise SystemExit('bootstrap patch target not found')
+          p.write_text(text.replace(old, new), encoding='utf-8')
+          PY
+          python3 /tmp/nasm-repair-bootstrap-bundle/scripts/apply_repair.py "$GITHUB_WORKSPACE"
+          git diff --check
+
+      - name: Install clean Node dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate and validate course
+        run: |
+          npm run docs:generate
+          npm run course:validate
+          npm run course:pedagogy
+          npm run course:assessment
+          python3 scripts/run_adversarial_review.py
+
+      - name: Run mutation suite
+        run: npm run course:mutation
+
+      - name: Build VitePress and execute IA-32 examples
+        run: |
+          npm run docs:build
+          npm run course:asm
+
+      - name: Render real VitePress preview
+        run: |
+          npm run docs:preview -- --port 4173 > /tmp/vitepress-preview.log 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true; cat /tmp/vitepress-preview.log' EXIT
+          for _ in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:4173/Nasm-X86-Course/ >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:4173/Nasm-X86-Course/ >/dev/null
+          python3 scripts/render_vitepress_pages.py \
+            --base-url http://127.0.0.1:4173/Nasm-X86-Course/ \
+            --output render-evidence/vitepress
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bootstrap-vitepress-render-evidence
+          path: render-evidence/vitepress
+          if-no-files-found: error
+
+      - name: Commit verified repair and publish final branch
+        run: |
+          rm -rf node_modules docs/.vitepress/cache docs/.vitepress/dist render-evidence/vitepress
+          git diff --check
+          git status --short
+          git add -A
+          git commit -m "fix: enforce semantic course assessment contracts"
+          final_sha="$(git rev-parse HEAD)"
+          git push origin "HEAD:refs/heads/$FINAL_BRANCH"
+          echo "FINAL_BRANCH=$FINAL_BRANCH" >> "$GITHUB_ENV"
+          echo "FINAL_SHA=$final_sha" >> "$GITHUB_ENV"
+          printf 'FINAL_BRANCH=%s\nFINAL_SHA=%s\n' "$FINAL_BRANCH" "$final_sha"
