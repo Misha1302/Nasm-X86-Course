@@ -112,33 +112,57 @@ jobs:
           npm run course:asm
 
       - name: Render real VitePress build
+        id: visual
         run: |
+          mkdir -p render-evidence/vitepress/diagnostics
+          find docs/.vitepress/dist -maxdepth 2 -type f -printf '%P\n' | sort \
+            > render-evidence/vitepress/diagnostics/dist-files.txt
           python3 scripts/serve_built_site.py \
             --root docs/.vitepress/dist \
             --base /Nasm-X86-Course/ \
             --host 127.0.0.1 --port 4173 \
             > /tmp/vitepress-static.log 2>&1 &
           server_pid=$!
-          trap 'kill "$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || true; cat /tmp/vitepress-static.log' EXIT
+          trap 'kill "$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || true' EXIT
+          ready=0
           for _ in $(seq 1 60); do
             if ! kill -0 "$server_pid" 2>/dev/null; then
-              echo "Built-site server exited before readiness" >&2
-              exit 1
+              echo "Built-site server exited before readiness" | tee -a /tmp/render.log >&2
+              break
             fi
             if curl -fsS http://127.0.0.1:4173/Nasm-X86-Course/day_25 >/dev/null; then
+              ready=1
               break
             fi
             sleep 1
           done
-          kill -0 "$server_pid"
-          curl -fsS http://127.0.0.1:4173/Nasm-X86-Course/final_exam >/dev/null
+          printf 'SERVER_READY=%s\n' "$ready" | tee -a /tmp/render.log
+          routes='day_25 final_exam final_exam_keys checkpoints checkpoint_keys transfer_workbook closed_book_workbook day_10 day_10_learning_path'
+          for route in $routes; do
+            curl -sS -o /tmp/route-body -w "$route HTTP=%{http_code} TYPE=%{content_type} SIZE=%{size_download}\n" \
+              "http://127.0.0.1:4173/Nasm-X86-Course/$route" \
+              >> render-evidence/vitepress/diagnostics/routes.txt || true
+          done
+          cp /tmp/vitepress-static.log render-evidence/vitepress/diagnostics/server.log || true
+          set +e
           python3 scripts/render_vitepress_pages.py \
             --base-url http://127.0.0.1:4173/Nasm-X86-Course/ \
-            --output render-evidence/vitepress
+            --output render-evidence/vitepress \
+            > /tmp/render.log 2>&1
+          render_rc=$?
+          set -e
+          cp /tmp/render.log render-evidence/vitepress/diagnostics/renderer.log || true
+          cp /tmp/vitepress-static.log render-evidence/vitepress/diagnostics/server.log || true
+          printf 'RENDER_RC=%s\n' "$render_rc" | tee -a render-evidence/vitepress/diagnostics/renderer.log
+          cat render-evidence/vitepress/diagnostics/routes.txt
+          cat render-evidence/vitepress/diagnostics/renderer.log
+          cat render-evidence/vitepress/diagnostics/server.log
+          exit "$render_rc"
 
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: bootstrap-vitepress-render-evidence
+          name: bootstrap-vitepress-render-diagnostics
           path: render-evidence/vitepress
           if-no-files-found: error
 
