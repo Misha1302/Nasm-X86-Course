@@ -107,12 +107,15 @@ jobs:
           if-no-files-found: error
 
       - name: Publish final source branch
+        env:
+          PUSH_TOKEN: ${{ github.token }}
         run: |
           rm -rf node_modules docs/.vitepress/cache docs/.vitepress/dist render-evidence/vitepress
           git diff --check
-          git switch -C "$FINAL_BRANCH"
+          git checkout -B "$FINAL_BRANCH"
           git add -A
           git commit -m "fix: enforce semantic course assessment contracts"
           final_sha="$(git rev-parse HEAD)"
-          git push origin "HEAD:refs/heads/$FINAL_BRANCH"
+          remote="https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push "$remote" "HEAD:refs/heads/$FINAL_BRANCH"
           printf 'FINAL_BRANCH=%s\nFINAL_SHA=%s\n' "$FINAL_BRANCH" "$final_sha"
