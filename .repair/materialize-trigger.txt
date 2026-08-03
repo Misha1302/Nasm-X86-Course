@@ -1,2 +1,0 @@
-trigger=expose-clean-tree-20260803
-probe_head=6c9eb5c035e257ea7a0c781604fee61b28136599
