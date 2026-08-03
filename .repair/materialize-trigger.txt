@@ -1,2 +1,2 @@
-trigger=atomic-publisher-20260803
-artifact_sha256=d8bb9aeea035e1f677c1e12263cfb197c3c9f2fbe663ac340b0b411946176cce
+trigger=expose-clean-tree-20260803
+probe_head=6c9eb5c035e257ea7a0c781604fee61b28136599
