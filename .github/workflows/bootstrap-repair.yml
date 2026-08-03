@@ -11,10 +11,6 @@ on:
 permissions:
   contents: write
 
-concurrency:
-  group: nasm-course-bootstrap-repair
-  cancel-in-progress: false
-
 jobs:
   apply-verify-publish:
     runs-on: ubuntu-latest
