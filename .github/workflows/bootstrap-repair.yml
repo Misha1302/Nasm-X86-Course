@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - repair/nasm-course-bootstrap-20260803
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
