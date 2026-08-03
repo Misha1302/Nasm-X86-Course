@@ -1,23 +1,1880 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "2.0",
+  "canonical_owner": "scripts/assessment_contract.json",
+  "evidence_scale": {
+    "checkpoint": {
+      "0": "absent/incorrect central model",
+      "1": "central model present with local defect",
+      "2": "correct and invariant explained"
+    },
+    "final": "integer rubric points"
+  },
+  "declared_outcomes": {
+    "overlapping_register_trace": {
+      "mandatory": true,
+      "owner_assessment": "CP1"
+    },
+    "memory_read_width": {
+      "mandatory": true,
+      "owner_assessment": "CP1"
+    },
+    "memory_write_width": {
+      "mandatory": true,
+      "owner_assessment": "CP1"
+    },
+    "signed_unsigned_interpretation": {
+      "mandatory": true,
+      "owner_assessment": "CP1"
+    },
+    "partial_register_write": {
+      "mandatory": true,
+      "owner_assessment": "CP1"
+    },
+    "register_transfer": {
+      "mandatory": true,
+      "owner_assessment": "CP1"
+    },
+    "signed_division_state": {
+      "mandatory": true,
+      "owner_assessment": "CP2"
+    },
+    "address_vs_value_and_call_area": {
+      "mandatory": true,
+      "owner_assessment": "CP2"
+    },
+    "word_mask_selection": {
+      "mandatory": true,
+      "owner_assessment": "CP2"
+    },
+    "full_width_sign_mask": {
+      "mandatory": true,
+      "owner_assessment": "CP2"
+    },
+    "signed_dividend_extension": {
+      "mandatory": true,
+      "owner_assessment": "CP2"
+    },
+    "branchless_safe_ceil": {
+      "mandatory": true,
+      "owner_assessment": "CP2"
+    },
+    "garden_model_transfer": {
+      "mandatory": true,
+      "owner_assessment": "CP2"
+    },
+    "integer_area_and_int32_min_boundary": {
+      "mandatory": true,
+      "owner_assessment": "CP2"
+    },
+    "signed_unsigned_condition_codes": {
+      "mandatory": true,
+      "owner_assessment": "CP3"
+    },
+    "single_bit_test": {
+      "mandatory": true,
+      "owner_assessment": "CP3"
+    },
+    "bounded_jump_table": {
+      "mandatory": true,
+      "owner_assessment": "CP3"
+    },
+    "loop_lowering": {
+      "mandatory": true,
+      "owner_assessment": "CP3"
+    },
+    "flags_producer_ownership": {
+      "mandatory": true,
+      "owner_assessment": "CP3"
+    },
+    "switch_range_transfer": {
+      "mandatory": true,
+      "owner_assessment": "CP3"
+    },
+    "call_ret_stack_mechanics": {
+      "mandatory": true,
+      "owner_assessment": "CP4"
+    },
+    "cdecl_stack_frame": {
+      "mandatory": true,
+      "owner_assessment": "CP4"
+    },
+    "structure_field_addressing": {
+      "mandatory": true,
+      "owner_assessment": "CP4"
+    },
+    "callee_saved_all_returns": {
+      "mandatory": true,
+      "owner_assessment": "CP4"
+    },
+    "fact_hypothesis_boundary": {
+      "mandatory": true,
+      "owner_assessment": "CP4"
+    },
+    "binary_fraction": {
+      "mandatory": true,
+      "owner_assessment": "CP5"
+    },
+    "floating_approximation": {
+      "mandatory": true,
+      "owner_assessment": "CP5"
+    },
+    "x87_stack_depth": {
+      "mandatory": true,
+      "owner_assessment": "CP5"
+    },
+    "double_varargs_call": {
+      "mandatory": true,
+      "owner_assessment": "CP5"
+    },
+    "startup_runtime_direction": {
+      "mandatory": true,
+      "owner_assessment": "CP5"
+    },
+    "memory_safety_boundaries": {
+      "mandatory": true,
+      "owner_assessment": "CP5"
+    },
+    "nan_model": {
+      "mandatory": true,
+      "owner_assessment": "CP5"
+    },
+    "x87_operand_order_transfer": {
+      "mandatory": true,
+      "owner_assessment": "CP5"
+    },
+    "this_pointer_machine_facts": {
+      "mandatory": true,
+      "owner_assessment": "CP6"
+    },
+    "indirect_virtual_call_shape": {
+      "mandatory": true,
+      "owner_assessment": "CP6"
+    },
+    "object_layout_boundaries": {
+      "mandatory": true,
+      "owner_assessment": "CP6"
+    },
+    "abi_dependent_hypotheses": {
+      "mandatory": true,
+      "owner_assessment": "CP6"
+    },
+    "indirect_call_evidence": {
+      "mandatory": true,
+      "owner_assessment": "CP6"
+    },
+    "final.scanf_call_contract": {
+      "mandatory": true,
+      "owner_assessment": "FINAL"
+    },
+    "final.safe_ceil_model": {
+      "mandatory": true,
+      "owner_assessment": "FINAL"
+    },
+    "final.garden_model": {
+      "mandatory": true,
+      "owner_assessment": "FINAL"
+    },
+    "final.arithmetic_abs_area_boundary": {
+      "mandatory": true,
+      "owner_assessment": "FINAL"
+    },
+    "final.signed_division_trace": {
+      "mandatory": true,
+      "owner_assessment": "FINAL"
+    },
+    "final.register_overlap_trace": {
+      "mandatory": true,
+      "owner_assessment": "FINAL"
+    },
+    "final.condition_code_interpretation": {
+      "mandatory": true,
+      "owner_assessment": "FINAL"
+    },
+    "final.effective_address_vs_load": {
+      "mandatory": true,
+      "owner_assessment": "FINAL"
+    },
+    "final.stack_frame_model": {
+      "mandatory": true,
+      "owner_assessment": "FINAL"
+    },
+    "final.write_cdecl_function": {
+      "mandatory": true,
+      "owner_assessment": "FINAL"
+    },
+    "final.aligned_cdecl_call": {
+      "mandatory": true,
+      "owner_assessment": "FINAL"
+    },
+    "final.machine_fact_analysis_add": {
+      "mandatory": true,
+      "owner_assessment": "FINAL"
+    },
+    "final.machine_fact_analysis_store": {
+      "mandatory": true,
+      "owner_assessment": "FINAL"
+    },
+    "final.machine_fact_analysis_signed_byte": {
+      "mandatory": true,
+      "owner_assessment": "FINAL"
+    },
+    "final.memory_safety_model": {
+      "mandatory": true,
+      "owner_assessment": "FINAL"
+    },
+    "final.x87_and_varargs": {
+      "mandatory": true,
+      "owner_assessment": "FINAL"
+    },
+    "final.object_model_hypothesis_boundary": {
+      "mandatory": true,
+      "owner_assessment": "FINAL"
+    },
+    "signed_division_overflow": {
+      "mandatory": true,
+      "owner_assessment": "CP2"
+    }
+  },
+  "assessments": {
+    "CP1": {
+      "kind": "checkpoint",
+      "score_domain": [
+        0,
+        1,
+        2
+      ],
+      "maximum": 12,
+      "threshold": 10,
+      "tasks": {
+        "CP1-REG": {
+          "maximum": 2,
+          "block_membership": [
+            "registers"
+          ],
+          "skills": [
+            "overlapping_register_trace"
+          ]
+        },
+        "CP1-SIZE-R": {
+          "maximum": 2,
+          "block_membership": [
+            "memory_width"
+          ],
+          "skills": [
+            "memory_read_width"
+          ]
+        },
+        "CP1-SIZE-W": {
+          "maximum": 2,
+          "block_membership": [
+            "memory_width"
+          ],
+          "skills": [
+            "memory_write_width"
+          ]
+        },
+        "CP1-SIGNED": {
+          "maximum": 2,
+          "block_membership": [
+            "interpretation"
+          ],
+          "skills": [
+            "signed_unsigned_interpretation"
+          ]
+        },
+        "CP1-ZERO": {
+          "maximum": 2,
+          "block_membership": [
+            "registers"
+          ],
+          "skills": [
+            "partial_register_write"
+          ]
+        },
+        "CP1-TRANSFER": {
+          "maximum": 2,
+          "block_membership": [
+            "registers"
+          ],
+          "skills": [
+            "register_transfer"
+          ]
+        }
+      },
+      "skills": {
+        "overlapping_register_trace": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP1-REG",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "memory_read_width": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP1-SIZE-R",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "memory_write_width": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP1-SIZE-W",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "signed_unsigned_interpretation": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP1-SIGNED",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "partial_register_write": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP1-ZERO",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "register_transfer": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP1-TRANSFER",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        }
+      },
+      "block_minimums": {
+        "registers": {
+          "tasks": [
+            "CP1-REG",
+            "CP1-ZERO",
+            "CP1-TRANSFER"
+          ],
+          "minimum": 4
+        },
+        "memory_width": {
+          "tasks": [
+            "CP1-SIZE-R",
+            "CP1-SIZE-W"
+          ],
+          "minimum": 3
+        },
+        "interpretation": {
+          "tasks": [
+            "CP1-SIGNED"
+          ],
+          "minimum": 1
+        }
+      },
+      "critical_task_rules": [
+        {
+          "task": "CP1-REG",
+          "minimum_score": 1
+        },
+        {
+          "task": "CP1-SIZE-R",
+          "minimum_score": 1
+        },
+        {
+          "task": "CP1-SIZE-W",
+          "minimum_score": 1
+        }
+      ],
+      "bonus_rules": {
+        "bonus_tasks": [],
+        "bonus_can_compensate_mandatory": false
+      },
+      "partial_error_rule": {
+        "score": 1,
+        "requires_new_variant": true
+      }
+    },
+    "CP2": {
+      "kind": "checkpoint",
+      "score_domain": [
+        0,
+        1,
+        2
+      ],
+      "maximum": 18,
+      "threshold": 15,
+      "tasks": {
+        "CP2-DIV": {
+          "maximum": 2,
+          "block_membership": [
+            "division"
+          ],
+          "skills": [
+            "signed_division_state"
+          ]
+        },
+        "CP2-SCANF": {
+          "maximum": 2,
+          "block_membership": [
+            "address_abi"
+          ],
+          "skills": [
+            "address_vs_value_and_call_area"
+          ]
+        },
+        "CP2-MASK": {
+          "maximum": 2,
+          "block_membership": [
+            "masks"
+          ],
+          "skills": [
+            "word_mask_selection"
+          ]
+        },
+        "CP2-SIGNMASK-BUG": {
+          "maximum": 2,
+          "block_membership": [
+            "masks"
+          ],
+          "skills": [
+            "full_width_sign_mask"
+          ]
+        },
+        "CP2-IDIV-BUG": {
+          "maximum": 2,
+          "block_membership": [
+            "division"
+          ],
+          "skills": [
+            "signed_dividend_extension"
+          ]
+        },
+        "CP2-IDIV-OVERFLOW": {
+          "maximum": 2,
+          "block_membership": [
+            "division"
+          ],
+          "skills": [
+            "signed_division_overflow"
+          ]
+        },
+        "CP2-CEIL": {
+          "maximum": 2,
+          "block_membership": [
+            "division"
+          ],
+          "skills": [
+            "branchless_safe_ceil"
+          ]
+        },
+        "CP2-GARDEN": {
+          "maximum": 2,
+          "block_membership": [
+            "transfer"
+          ],
+          "skills": [
+            "garden_model_transfer"
+          ]
+        },
+        "CP2-AREA": {
+          "maximum": 2,
+          "block_membership": [
+            "transfer"
+          ],
+          "skills": [
+            "integer_area_and_int32_min_boundary"
+          ]
+        }
+      },
+      "skills": {
+        "signed_division_state": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP2-DIV",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "address_vs_value_and_call_area": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP2-SCANF",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "word_mask_selection": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP2-MASK",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "full_width_sign_mask": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP2-SIGNMASK-BUG",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "signed_dividend_extension": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP2-IDIV-BUG",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "branchless_safe_ceil": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP2-CEIL",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "garden_model_transfer": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP2-GARDEN",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "integer_area_and_int32_min_boundary": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP2-AREA",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "signed_division_overflow": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP2-IDIV-OVERFLOW",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        }
+      },
+      "block_minimums": {
+        "division": {
+          "tasks": [
+            "CP2-DIV",
+            "CP2-IDIV-BUG",
+            "CP2-IDIV-OVERFLOW",
+            "CP2-CEIL"
+          ],
+          "minimum": 5
+        },
+        "address_abi": {
+          "tasks": [
+            "CP2-SCANF"
+          ],
+          "minimum": 1
+        },
+        "masks": {
+          "tasks": [
+            "CP2-MASK",
+            "CP2-SIGNMASK-BUG"
+          ],
+          "minimum": 3
+        },
+        "transfer": {
+          "tasks": [
+            "CP2-GARDEN",
+            "CP2-AREA"
+          ],
+          "minimum": 2
+        }
+      },
+      "critical_task_rules": [
+        {
+          "task": "CP2-DIV",
+          "minimum_score": 1
+        },
+        {
+          "task": "CP2-SCANF",
+          "minimum_score": 1
+        },
+        {
+          "task": "CP2-MASK",
+          "minimum_score": 1
+        },
+        {
+          "task": "CP2-IDIV-BUG",
+          "minimum_score": 1
+        },
+        {
+          "task": "CP2-IDIV-OVERFLOW",
+          "minimum_score": 1
+        },
+        {
+          "task": "CP2-GARDEN",
+          "minimum_score": 1
+        },
+        {
+          "task": "CP2-AREA",
+          "minimum_score": 1
+        }
+      ],
+      "bonus_rules": {
+        "bonus_tasks": [],
+        "bonus_can_compensate_mandatory": false
+      },
+      "partial_error_rule": {
+        "score": 1,
+        "requires_new_variant": true
+      }
+    },
+    "CP3": {
+      "kind": "checkpoint",
+      "score_domain": [
+        0,
+        1,
+        2
+      ],
+      "maximum": 12,
+      "threshold": 10,
+      "tasks": {
+        "CP3-CMP": {
+          "maximum": 2,
+          "block_membership": [
+            "comparisons"
+          ],
+          "skills": [
+            "signed_unsigned_condition_codes"
+          ]
+        },
+        "CP3-BIT": {
+          "maximum": 2,
+          "block_membership": [
+            "comparisons"
+          ],
+          "skills": [
+            "single_bit_test"
+          ]
+        },
+        "CP3-TABLE": {
+          "maximum": 2,
+          "block_membership": [
+            "control_flow"
+          ],
+          "skills": [
+            "bounded_jump_table"
+          ]
+        },
+        "CP3-LOOP": {
+          "maximum": 2,
+          "block_membership": [
+            "control_flow"
+          ],
+          "skills": [
+            "loop_lowering"
+          ]
+        },
+        "CP3-FLAGS": {
+          "maximum": 2,
+          "block_membership": [
+            "flags_owner"
+          ],
+          "skills": [
+            "flags_producer_ownership"
+          ]
+        },
+        "CP3-TRANSFER": {
+          "maximum": 2,
+          "block_membership": [
+            "control_flow"
+          ],
+          "skills": [
+            "switch_range_transfer"
+          ]
+        }
+      },
+      "skills": {
+        "signed_unsigned_condition_codes": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP3-CMP",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "single_bit_test": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP3-BIT",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "bounded_jump_table": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP3-TABLE",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "loop_lowering": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP3-LOOP",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "flags_producer_ownership": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP3-FLAGS",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "switch_range_transfer": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP3-TRANSFER",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        }
+      },
+      "block_minimums": {
+        "comparisons": {
+          "tasks": [
+            "CP3-CMP",
+            "CP3-BIT"
+          ],
+          "minimum": 2
+        },
+        "control_flow": {
+          "tasks": [
+            "CP3-TABLE",
+            "CP3-LOOP",
+            "CP3-TRANSFER"
+          ],
+          "minimum": 4
+        },
+        "flags_owner": {
+          "tasks": [
+            "CP3-FLAGS"
+          ],
+          "minimum": 1
+        }
+      },
+      "critical_task_rules": [
+        {
+          "task": "CP3-CMP",
+          "minimum_score": 1
+        },
+        {
+          "task": "CP3-TABLE",
+          "minimum_score": 1
+        },
+        {
+          "task": "CP3-LOOP",
+          "minimum_score": 1
+        },
+        {
+          "task": "CP3-FLAGS",
+          "minimum_score": 1
+        }
+      ],
+      "bonus_rules": {
+        "bonus_tasks": [],
+        "bonus_can_compensate_mandatory": false
+      },
+      "partial_error_rule": {
+        "score": 1,
+        "requires_new_variant": true
+      }
+    },
+    "CP4": {
+      "kind": "checkpoint",
+      "score_domain": [
+        0,
+        1,
+        2
+      ],
+      "maximum": 10,
+      "threshold": 8,
+      "tasks": {
+        "CP4-STACK": {
+          "maximum": 2,
+          "block_membership": [
+            "stack_cdecl"
+          ],
+          "skills": [
+            "call_ret_stack_mechanics"
+          ]
+        },
+        "CP4-FRAME": {
+          "maximum": 2,
+          "block_membership": [
+            "stack_cdecl"
+          ],
+          "skills": [
+            "cdecl_stack_frame"
+          ]
+        },
+        "CP4-STRUCT": {
+          "maximum": 2,
+          "block_membership": [
+            "data_analysis"
+          ],
+          "skills": [
+            "structure_field_addressing"
+          ]
+        },
+        "CP4-EBX": {
+          "maximum": 2,
+          "block_membership": [
+            "stack_cdecl"
+          ],
+          "skills": [
+            "callee_saved_all_returns"
+          ]
+        },
+        "CP4-TRANSFER": {
+          "maximum": 2,
+          "block_membership": [
+            "data_analysis"
+          ],
+          "skills": [
+            "fact_hypothesis_boundary"
+          ]
+        }
+      },
+      "skills": {
+        "call_ret_stack_mechanics": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP4-STACK",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "cdecl_stack_frame": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP4-FRAME",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "structure_field_addressing": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP4-STRUCT",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "callee_saved_all_returns": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP4-EBX",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "fact_hypothesis_boundary": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP4-TRANSFER",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        }
+      },
+      "block_minimums": {
+        "stack_cdecl": {
+          "tasks": [
+            "CP4-STACK",
+            "CP4-FRAME",
+            "CP4-EBX"
+          ],
+          "minimum": 4
+        },
+        "data_analysis": {
+          "tasks": [
+            "CP4-STRUCT",
+            "CP4-TRANSFER"
+          ],
+          "minimum": 2
+        }
+      },
+      "critical_task_rules": [
+        {
+          "task": "CP4-STACK",
+          "minimum_score": 1
+        },
+        {
+          "task": "CP4-FRAME",
+          "minimum_score": 1
+        },
+        {
+          "task": "CP4-STRUCT",
+          "minimum_score": 1
+        },
+        {
+          "task": "CP4-EBX",
+          "minimum_score": 1
+        },
+        {
+          "task": "CP4-TRANSFER",
+          "minimum_score": 1
+        }
+      ],
+      "bonus_rules": {
+        "bonus_tasks": [],
+        "bonus_can_compensate_mandatory": false
+      },
+      "partial_error_rule": {
+        "score": 1,
+        "requires_new_variant": true
+      }
+    },
+    "CP5": {
+      "kind": "checkpoint",
+      "score_domain": [
+        0,
+        1,
+        2
+      ],
+      "maximum": 16,
+      "threshold": 13,
+      "tasks": {
+        "CP5-FP-BINARY": {
+          "maximum": 2,
+          "block_membership": [
+            "representation"
+          ],
+          "skills": [
+            "binary_fraction"
+          ]
+        },
+        "CP5-FP-REPR": {
+          "maximum": 2,
+          "block_membership": [
+            "representation"
+          ],
+          "skills": [
+            "floating_approximation"
+          ]
+        },
+        "CP5-X87": {
+          "maximum": 2,
+          "block_membership": [
+            "x87_abi"
+          ],
+          "skills": [
+            "x87_stack_depth"
+          ]
+        },
+        "CP5-VARARGS": {
+          "maximum": 2,
+          "block_membership": [
+            "x87_abi"
+          ],
+          "skills": [
+            "double_varargs_call"
+          ]
+        },
+        "CP5-STARTUP": {
+          "maximum": 2,
+          "block_membership": [
+            "startup"
+          ],
+          "skills": [
+            "startup_runtime_direction"
+          ]
+        },
+        "CP5-SAFETY": {
+          "maximum": 2,
+          "block_membership": [
+            "safety"
+          ],
+          "skills": [
+            "memory_safety_boundaries"
+          ]
+        },
+        "CP5-NAN": {
+          "maximum": 2,
+          "block_membership": [
+            "representation"
+          ],
+          "skills": [
+            "nan_model"
+          ]
+        },
+        "CP5-X87-TRANSFER": {
+          "maximum": 2,
+          "block_membership": [
+            "x87_abi"
+          ],
+          "skills": [
+            "x87_operand_order_transfer"
+          ]
+        }
+      },
+      "skills": {
+        "binary_fraction": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP5-FP-BINARY",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "floating_approximation": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP5-FP-REPR",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "x87_stack_depth": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP5-X87",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "double_varargs_call": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP5-VARARGS",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "startup_runtime_direction": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP5-STARTUP",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "memory_safety_boundaries": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP5-SAFETY",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "nan_model": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP5-NAN",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "x87_operand_order_transfer": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP5-X87-TRANSFER",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        }
+      },
+      "block_minimums": {
+        "startup": {
+          "tasks": [
+            "CP5-STARTUP"
+          ],
+          "minimum": 1
+        },
+        "safety": {
+          "tasks": [
+            "CP5-SAFETY"
+          ],
+          "minimum": 1
+        },
+        "representation": {
+          "tasks": [
+            "CP5-FP-BINARY",
+            "CP5-FP-REPR",
+            "CP5-NAN"
+          ],
+          "minimum": 3
+        },
+        "x87_abi": {
+          "tasks": [
+            "CP5-X87",
+            "CP5-VARARGS",
+            "CP5-X87-TRANSFER"
+          ],
+          "minimum": 4
+        }
+      },
+      "critical_task_rules": [
+        {
+          "task": "CP5-X87",
+          "minimum_score": 1
+        },
+        {
+          "task": "CP5-VARARGS",
+          "minimum_score": 1
+        },
+        {
+          "task": "CP5-STARTUP",
+          "minimum_score": 1
+        },
+        {
+          "task": "CP5-SAFETY",
+          "minimum_score": 1
+        },
+        {
+          "task": "CP5-X87-TRANSFER",
+          "minimum_score": 1
+        }
+      ],
+      "bonus_rules": {
+        "bonus_tasks": [],
+        "bonus_can_compensate_mandatory": false
+      },
+      "partial_error_rule": {
+        "score": 1,
+        "requires_new_variant": true
+      }
+    },
+    "CP6": {
+      "kind": "checkpoint",
+      "score_domain": [
+        0,
+        1,
+        2
+      ],
+      "maximum": 10,
+      "threshold": 8,
+      "tasks": {
+        "CP6-THIS": {
+          "maximum": 2,
+          "block_membership": [
+            "object_fields"
+          ],
+          "skills": [
+            "this_pointer_machine_facts"
+          ]
+        },
+        "CP6-VCALL": {
+          "maximum": 2,
+          "block_membership": [
+            "indirect_calls"
+          ],
+          "skills": [
+            "indirect_virtual_call_shape"
+          ]
+        },
+        "CP6-OBJECT": {
+          "maximum": 2,
+          "block_membership": [
+            "object_fields"
+          ],
+          "skills": [
+            "object_layout_boundaries"
+          ]
+        },
+        "CP6-ABI": {
+          "maximum": 2,
+          "block_membership": [
+            "indirect_calls"
+          ],
+          "skills": [
+            "abi_dependent_hypotheses"
+          ]
+        },
+        "CP6-CALLS": {
+          "maximum": 2,
+          "block_membership": [
+            "indirect_calls"
+          ],
+          "skills": [
+            "indirect_call_evidence"
+          ]
+        }
+      },
+      "skills": {
+        "this_pointer_machine_facts": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP6-THIS",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "indirect_virtual_call_shape": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP6-VCALL",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "object_layout_boundaries": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP6-OBJECT",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "abi_dependent_hypotheses": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP6-ABI",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "indirect_call_evidence": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "CP6-CALLS",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        }
+      },
+      "block_minimums": {
+        "object_fields": {
+          "tasks": [
+            "CP6-THIS",
+            "CP6-OBJECT"
+          ],
+          "minimum": 2
+        },
+        "indirect_calls": {
+          "tasks": [
+            "CP6-VCALL",
+            "CP6-ABI",
+            "CP6-CALLS"
+          ],
+          "minimum": 4
+        }
+      },
+      "critical_task_rules": [
+        {
+          "task": "CP6-VCALL",
+          "minimum_score": 1
+        },
+        {
+          "task": "CP6-ABI",
+          "minimum_score": 1
+        },
+        {
+          "task": "CP6-CALLS",
+          "minimum_score": 1
+        }
+      ],
+      "bonus_rules": {
+        "bonus_tasks": [],
+        "bonus_can_compensate_mandatory": false
+      },
+      "partial_error_rule": {
+        "score": 1,
+        "requires_new_variant": true
+      }
+    },
+    "FINAL": {
+      "kind": "final_exam",
+      "score_domain": "integer_0_to_task_maximum",
+      "maximum": 100,
+      "threshold": 80,
+      "duration_minutes": 90,
+      "tasks": {
+        "A1": {
+          "maximum": 5,
+          "block_membership": [
+            "A"
+          ],
+          "skills": [
+            "scanf_call_contract"
+          ]
+        },
+        "A2": {
+          "maximum": 5,
+          "block_membership": [
+            "A"
+          ],
+          "skills": [
+            "safe_ceil_model"
+          ]
+        },
+        "A3": {
+          "maximum": 5,
+          "block_membership": [
+            "A"
+          ],
+          "skills": [
+            "garden_model"
+          ]
+        },
+        "A4": {
+          "maximum": 5,
+          "block_membership": [
+            "A"
+          ],
+          "skills": [
+            "arithmetic_abs_area_boundary"
+          ]
+        },
+        "B1": {
+          "maximum": 5,
+          "block_membership": [
+            "B"
+          ],
+          "skills": [
+            "signed_division_trace"
+          ]
+        },
+        "B2": {
+          "maximum": 5,
+          "block_membership": [
+            "B"
+          ],
+          "skills": [
+            "register_overlap_trace"
+          ]
+        },
+        "B3": {
+          "maximum": 5,
+          "block_membership": [
+            "B"
+          ],
+          "skills": [
+            "condition_code_interpretation"
+          ]
+        },
+        "B4": {
+          "maximum": 5,
+          "block_membership": [
+            "B"
+          ],
+          "skills": [
+            "effective_address_vs_load"
+          ]
+        },
+        "C1": {
+          "maximum": 8,
+          "block_membership": [
+            "C"
+          ],
+          "skills": [
+            "stack_frame_model"
+          ]
+        },
+        "C2": {
+          "maximum": 8,
+          "block_membership": [
+            "C"
+          ],
+          "skills": [
+            "write_cdecl_function"
+          ]
+        },
+        "C3": {
+          "maximum": 8,
+          "block_membership": [
+            "C"
+          ],
+          "skills": [
+            "aligned_cdecl_call"
+          ]
+        },
+        "D1": {
+          "maximum": 7,
+          "block_membership": [
+            "D"
+          ],
+          "skills": [
+            "machine_fact_analysis_add"
+          ]
+        },
+        "D2": {
+          "maximum": 7,
+          "block_membership": [
+            "D"
+          ],
+          "skills": [
+            "machine_fact_analysis_store"
+          ]
+        },
+        "D3": {
+          "maximum": 7,
+          "block_membership": [
+            "D"
+          ],
+          "skills": [
+            "machine_fact_analysis_signed_byte"
+          ]
+        },
+        "E1": {
+          "maximum": 5,
+          "block_membership": [
+            "E"
+          ],
+          "skills": [
+            "memory_safety_model"
+          ]
+        },
+        "E2": {
+          "maximum": 5,
+          "block_membership": [
+            "E"
+          ],
+          "skills": [
+            "x87_and_varargs"
+          ]
+        },
+        "E3": {
+          "maximum": 5,
+          "block_membership": [
+            "E"
+          ],
+          "skills": [
+            "object_model_hypothesis_boundary"
+          ]
+        }
+      },
+      "skills": {
+        "scanf_call_contract": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "A1",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "safe_ceil_model": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "A2",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "garden_model": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "A3",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "arithmetic_abs_area_boundary": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "A4",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "signed_division_trace": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "B1",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "register_overlap_trace": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "B2",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "condition_code_interpretation": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "B3",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "effective_address_vs_load": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "B4",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "stack_frame_model": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "C1",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "write_cdecl_function": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "C2",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "aligned_cdecl_call": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "C3",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "machine_fact_analysis_add": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "D1",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "machine_fact_analysis_store": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "D2",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "machine_fact_analysis_signed_byte": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "D3",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "memory_safety_model": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "E1",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "x87_and_varargs": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "E2",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        },
+        "object_model_hypothesis_boundary": {
+          "mandatory": true,
+          "minimum_evidence": 1,
+          "acceptable_evidence": [
+            {
+              "task": "E3",
+              "minimum_score": 1
+            }
+          ],
+          "new_variant_required_after_partial": true
+        }
+      },
+      "block_minimums": {
+        "A": {
+          "tasks": [
+            "A1",
+            "A2",
+            "A3",
+            "A4"
+          ],
+          "minimum": 12
+        },
+        "B": {
+          "tasks": [
+            "B1",
+            "B2",
+            "B3",
+            "B4"
+          ],
+          "minimum": 12
+        },
+        "C": {
+          "tasks": [
+            "C1",
+            "C2",
+            "C3"
+          ],
+          "minimum": 16
+        },
+        "D": {
+          "tasks": [
+            "D1",
+            "D2",
+            "D3"
+          ],
+          "minimum": 13
+        },
+        "E": {
+          "tasks": [
+            "E1",
+            "E2",
+            "E3"
+          ],
+          "minimum": 9
+        }
+      },
+      "critical_task_rules": [
+        {
+          "task": "A1",
+          "minimum_score": 1
+        },
+        {
+          "task": "A2",
+          "minimum_score": 1
+        },
+        {
+          "task": "B1",
+          "minimum_score": 1
+        },
+        {
+          "task": "C1",
+          "minimum_score": 1
+        },
+        {
+          "task": "C3",
+          "minimum_score": 1
+        },
+        {
+          "task": "D1",
+          "minimum_score": 1
+        },
+        {
+          "task": "E2",
+          "minimum_score": 1
+        }
+      ],
+      "bonus_rules": {
+        "bonus_tasks": [
+          "10F",
+          "01-16"
+        ],
+        "included_in_maximum": false,
+        "bonus_can_compensate_mandatory": false
+      },
+      "partial_error_rule": {
+        "condition": "0 < score < task.maximum",
+        "requires_new_variant_for_full_readiness": true
+      }
+    }
+  },
+  "course_readiness": {
+    "operator": "all",
+    "required_assessments": [
+      "CP1",
+      "CP2",
+      "CP3",
+      "CP4",
+      "CP5",
+      "CP6",
+      "FINAL"
+    ],
+    "statement": "Final 100 points prove only the final rubric; course readiness requires all six checkpoint skill sets plus the final exam."
+  },
   "day10": {
-    "mandatory_sessions": ["10A", "10B", "10C", "10D", "10E"],
-    "optional_sessions": ["10F"],
-    "checkpoint2_required": ["CP2-MASK", "CP2-SIGNMASK-BUG", "CP2-CEIL", "CP2-GARDEN", "CP2-AREA"],
-    "final_bonus_only": ["10F", "01-16"]
-  },
-  "checkpoints": {
-    "1": {"maximum": 12, "threshold": 10, "critical": ["CP1-REG", "CP1-SIZE-R", "CP1-SIZE-W"]},
-    "2": {"maximum": 16, "threshold": 13, "critical": ["CP2-DIV", "CP2-SCANF", "CP2-MASK", "CP2-IDIV-BUG", "CP2-GARDEN", "CP2-AREA"]},
-    "3": {"maximum": 12, "threshold": 10, "critical": ["CP3-CMP", "CP3-TABLE", "CP3-LOOP", "CP3-FLAGS"]},
-    "4": {"maximum": 10, "threshold": 8, "critical": ["CP4-STACK", "CP4-FRAME", "CP4-STRUCT", "CP4-EBX", "CP4-TRANSFER"]},
-    "5": {"maximum": 16, "threshold": 13, "critical": ["CP5-X87", "CP5-VARARGS", "CP5-STARTUP", "CP5-SAFETY", "CP5-X87-TRANSFER"]},
-    "6": {"maximum": 10, "threshold": 8, "critical": ["CP6-VCALL", "CP6-ABI", "CP6-CALLS"]}
-  },
-  "final_exam": {
-    "maximum": 100,
-    "threshold": 80,
-    "block_minimums": {"A": 12, "B": 12, "C": 16, "D": 13, "E": 9},
-    "critical": ["A1", "A2", "B1", "C1", "C3", "D1", "E2"]
+    "mandatory_sessions": [
+      "10A",
+      "10B",
+      "10C",
+      "10D",
+      "10E"
+    ],
+    "optional_sessions": [
+      "10F"
+    ],
+    "bonus_only": [
+      "10F",
+      "01-16"
+    ],
+    "ordering_skill": "branchless_safe_ceil"
   }
 }

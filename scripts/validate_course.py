@@ -386,10 +386,45 @@ if popular.is_file():
 lock = (ROOT / "package-lock.json").read_text(encoding="utf-8")
 if "applied-caas-gateway" in lock or "internal.api.openai.org" in lock:
     errors.append("package-lock.json contains a private registry URL")
-asm_stems = {path.stem for path in (ROOT / "examples").glob("*.asm")}
+asm_paths = {str(path.relative_to(ROOT)) for path in (ROOT / "examples").glob("*.asm")}
 expected_stems = {path.stem for path in (ROOT / "examples" / "expected").glob("*.txt")}
-if asm_stems != expected_stems:
-    errors.append(f"example/expected mismatch: asm={sorted(asm_stems)}, expected={sorted(expected_stems)}")
+try:
+    executable_contract = json.loads((ROOT / "scripts" / "executable_contract.json").read_text(encoding="utf-8"))
+except (OSError, json.JSONDecodeError) as exc:
+    errors.append(f"invalid executable contract: {exc}")
+else:
+    blocks = executable_contract.get("blocks", {})
+    if set(blocks) != asm_paths:
+        errors.append(
+            "executable contract coverage mismatch: "
+            f"asm={sorted(asm_paths)}, contract={sorted(blocks)}"
+        )
+    run_stems: set[str] = set()
+    allowed_expected_stems: set[str] = set()
+    for rel, data in blocks.items():
+        block_class = data.get("class")
+        stem = Path(rel).stem
+        if block_class == "RUN":
+            run_stems.add(stem)
+            golden = data.get("golden")
+            if not golden or not (ROOT / golden).is_file():
+                errors.append(f"RUN example lacks a real golden output: {rel}")
+            elif Path(golden).stem != stem:
+                errors.append(f"RUN example golden stem mismatch: {rel} -> {golden}")
+            allowed_expected_stems.add(stem)
+        elif block_class == "NEGATIVE":
+            if not data.get("expected"):
+                errors.append(f"NEGATIVE example lacks expected failure contract: {rel}")
+            allowed_expected_stems.add(stem)
+        elif block_class not in {"TRACE_ONLY", "FRAGMENT", "COMPILE", "PSEUDOCODE"}:
+            errors.append(f"unknown ASM block class {block_class!r}: {rel}")
+    if not run_stems <= expected_stems:
+        errors.append(f"RUN examples missing golden files: {sorted(run_stems - expected_stems)}")
+    if not expected_stems <= allowed_expected_stems:
+        errors.append(
+            "expected output exists for a non-executable block: "
+            f"{sorted(expected_stems - allowed_expected_stems)}"
+        )
 for path in (ROOT / "examples").glob("*.asm"):
     if ".note.GNU-stack" not in path.read_text(encoding="utf-8"):
         errors.append(f"missing non-executable-stack marker: {path.relative_to(ROOT)}")
@@ -397,7 +432,7 @@ for path in (ROOT / "examples").glob("*.asm"):
 
 # Decision-critical technical boundaries.
 required_markers = {
-    "docs/day_25.md": ("uint32_t mask = 0u - (ux >> 31);", "INT32_MIN", "**100**", "**90 мин**"),
+    "docs/day_25.md": ("**100**", "**80**", "**90 минут**", "CP1 + CP2 + CP3 + CP4 + CP5 + CP6 + FINAL"),
     "docs/day_10.md": ("может переполниться", "INT32_MIN"),
     "docs/patterns/branchless.md": ("INT32_MIN",),
     "docs/tasks/spring-01/01-14-garden.md": ("может переполниться",),
@@ -416,23 +451,21 @@ if re.search(r"`?main`?\s+вызывает\s+runtime", startup_text, flags=re.I)
     errors.append("day_20.md reverses the startup direction: runtime calls main")
 
 day25 = (DOCS / "day_25.md").read_text(encoding="utf-8")
-reverse_section_match = re.search(r"### Часть D\. Анализ машинного кода(.*?)---\n\n### Часть E", day25, flags=re.S)
-if reverse_section_match is None:
-    errors.append("в day_25.md отсутствует ограниченный раздел анализа машинного кода")
-else:
-    reverse_section = reverse_section_match.group(1)
-    if reverse_section.count("push ebp") != 3 or reverse_section.count("pop ebp") != 3:
-        errors.append("все три листинга для анализа должны содержать согласованные полные кадры стека")
+if re.search(r"```(?:asm|nasm)\b", day25, flags=re.I):
+    errors.append("day_25.md must not contain executable answer listings")
+for route in ("/final_exam", "/final_exam_keys", "/final_remediation"):
+    if f"]({route})" not in day25:
+        errors.append(f"day_25.md lacks required closed-attempt route {route}")
 score_rows = re.findall(
-    r"^\| [A-E]\. .*?\| .*?\| (\d+) \| (\d+) \| (\d+) мин \|$",
+    r"^\| ([A-E]) \| [^|]+ \| [^|]+ \| (\d+) \| (\d+) \| (\d+) мин \|$",
     day25,
     flags=re.M,
 )
 if len(score_rows) != 5:
-    errors.append("day_25.md scoring rubric must contain five parseable block rows")
+    errors.append("day_25.md scoring rubric must contain five parseable answer-free block rows")
 else:
     total_points = sum(int(row[1]) for row in score_rows)
-    total_minutes = sum(int(row[2]) for row in score_rows)
+    total_minutes = sum(int(row[3]) for row in score_rows)
     if total_points != 100:
         errors.append(f"day_25.md block points sum to {total_points}, expected 100")
     if total_minutes != 90:
@@ -548,10 +581,21 @@ def transfer_sections(text: str) -> dict[str, str]:
 
 _task_sections = transfer_sections(workbook)
 _key_sections = transfer_sections(keys)
-for transfer_id in expected_transfer_ids:
-    digest = hashlib.sha256(normalized_contract(_task_sections[transfer_id]).encode("utf-8")).hexdigest()
-    if f"<!-- task-sha256: {digest} -->" not in _key_sections[transfer_id]:
-        errors.append(f"{transfer_id} key fingerprint does not match current task")
+try:
+    from validate_semantics import exact_anchor_section as semantic_anchor_section, norm as semantic_norm
+    transfer_contract = json.loads((ROOT / "scripts" / "transfer_contract.json").read_text(encoding="utf-8"))
+except (ImportError, OSError, json.JSONDecodeError) as exc:
+    errors.append(f"invalid transfer fingerprint owner: {exc}")
+else:
+    for transfer_id, data in transfer_contract.get("tasks", {}).items():
+        task_section = semantic_anchor_section(workbook, transfer_id.lower())
+        key_section = semantic_anchor_section(keys, "key-" + transfer_id.lower())
+        task_digest = hashlib.sha256(semantic_norm(task_section).encode("utf-8")).hexdigest()
+        key_digest = hashlib.sha256(semantic_norm(key_section).encode("utf-8")).hexdigest()
+        if task_digest != data.get("task_fingerprint"):
+            errors.append(f"{transfer_id} task fingerprint does not match canonical contract")
+        if key_digest != data.get("key_fingerprint"):
+            errors.append(f"{transfer_id} key fingerprint does not match canonical contract")
 
 
 def x87_program(section: str) -> list[str]:
@@ -581,7 +625,7 @@ def simulate_x87(lines: list[str], values: dict[str, float]) -> list[float]:
     return stack
 
 for label, section, values, expected in (
-    ("TR-23", _key_sections["TR-23"], {"a": 10.0, "b": 4.0, "c": 1.0, "d": 2.0}, 2.0),
+    ("TR-23", _key_sections["TR-23"], {"a": 2.0, "b": 3.0, "c": 10.0, "d": 4.0, "e": 1.0, "f": 2.0}, 10.0),
     (
         "CP5-X87-TRANSFER",
         section_text(checkpoint_keys, headings_outside_fences(checkpoint_keys), "CP5-X87-TRANSFER"),
