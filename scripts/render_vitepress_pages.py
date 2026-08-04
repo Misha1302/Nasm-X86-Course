@@ -107,18 +107,74 @@ def main() -> int:
                     )
                     computed_zoom = float(metrics["computedZoom"])
                     zoom_applied = abs(computed_zoom - zoom_factor) < 0.01
-                    overflow = int(metrics["scrollWidth"]) > int(metrics["clientWidth"]) + 1
+                    root_scroll_overflow = int(metrics["scrollWidth"]) > int(metrics["clientWidth"]) + 1
                     max_y = max(0, int(metrics["scrollHeight"]) - height)
                     positions = [("top", 0)]
                     if max_y:
                         positions.extend([("middle", max_y // 2), ("bottom", max_y)])
                     screenshot_paths: list[str] = []
+                    overflow_observations: list[dict[str, object]] = []
                     for position, y in positions:
                         page.evaluate("y => window.scrollTo(0, y)", y)
                         page.wait_for_timeout(80)
+                        visible_overflow = page.evaluate(
+                            """() => {
+                              const viewportWidth = window.visualViewport?.width || window.innerWidth;
+                              const viewportHeight = window.visualViewport?.height || window.innerHeight;
+                              const selector = element => {
+                                if (element.id) return `${element.tagName.toLowerCase()}#${element.id}`;
+                                const classes = [...element.classList].slice(0, 3).join('.');
+                                return element.tagName.toLowerCase() + (classes ? `.${classes}` : '');
+                              };
+                              const insideHorizontalScroller = element => {
+                                for (let ancestor = element.parentElement; ancestor; ancestor = ancestor.parentElement) {
+                                  const style = getComputedStyle(ancestor);
+                                  if ((style.overflowX === 'auto' || style.overflowX === 'scroll') &&
+                                      ancestor.scrollWidth > ancestor.clientWidth + 1) {
+                                    return true;
+                                  }
+                                }
+                                return false;
+                              };
+                              const offenders = [];
+                              for (const element of document.body.querySelectorAll('*')) {
+                                if (element.closest('[hidden], [inert], [aria-hidden="true"]')) continue;
+                                const style = getComputedStyle(element);
+                                if (style.display === 'none' || style.visibility === 'hidden' ||
+                                    Number.parseFloat(style.opacity || '1') === 0) continue;
+                                const rect = element.getBoundingClientRect();
+                                if (rect.width <= 1 || rect.height <= 1) continue;
+                                if (rect.bottom <= 0 || rect.top >= viewportHeight ||
+                                    rect.right <= 0 || rect.left >= viewportWidth) continue;
+                                if (insideHorizontalScroller(element)) continue;
+                                if (rect.left < -1 || rect.right > viewportWidth + 1) {
+                                  offenders.push({
+                                    selector: selector(element),
+                                    left: Math.round(rect.left * 100) / 100,
+                                    right: Math.round(rect.right * 100) / 100,
+                                    width: Math.round(rect.width * 100) / 100,
+                                    position: style.position,
+                                    overflowX: style.overflowX
+                                  });
+                                  if (offenders.length >= 20) break;
+                                }
+                              }
+                              return { viewportWidth, viewportHeight, offenders };
+                            }"""
+                        )
+                        overflow_observations.append(
+                            {
+                                "position": position,
+                                "scroll_y": y,
+                                "viewport_width": float(visible_overflow["viewportWidth"]),
+                                "viewport_height": float(visible_overflow["viewportHeight"]),
+                                "offenders": visible_overflow["offenders"],
+                            }
+                        )
                         target = shots / f"{page_name}-{label}-{position}.png"
                         page.screenshot(path=str(target), full_page=False, animations="disabled")
                         screenshot_paths.append(str(target.relative_to(output)))
+                    overflow = any(observation["offenders"] for observation in overflow_observations)
 
                     item = {
                         "renderer": "vitepress-build-playwright",
@@ -139,7 +195,9 @@ def main() -> int:
                         "vp_doc": bool(metrics["doc"]),
                         "vp_nav": bool(metrics["nav"]),
                         "vp_sidebar": bool(metrics["sidebar"]),
+                        "root_scroll_overflow": root_scroll_overflow,
                         "horizontal_overflow": overflow,
+                        "visible_overflow_observations": overflow_observations,
                         "tables": int(metrics["tables"]),
                         "code_blocks": int(metrics["codeBlocks"]),
                         "raw_anchor_text": bool(metrics["rawAnchorText"]),
