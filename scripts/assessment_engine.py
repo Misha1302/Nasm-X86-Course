@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
-from pathlib import Path
-from typing import Any
+from dataclasses import asdict, dataclass
 import json
+from pathlib import Path
+from typing import Any, Mapping
 
 ROOT = Path(__file__).resolve().parents[1]
+
 
 @dataclass(frozen=True)
 class Decision:
@@ -21,70 +22,137 @@ class Decision:
 
 
 def load_contract(root: Path = ROOT) -> dict[str, Any]:
-    return json.loads((root / 'scripts/assessment_contract.json').read_text(encoding='utf-8'))
+    return json.loads((root / "scripts" / "assessment_contract.json").read_text(encoding="utf-8"))
 
 
-def evaluate(assessment_id: str, scores: dict[str, int], *, new_variants: set[str] | None = None, contract: dict[str, Any] | None = None, readiness: bool = False) -> Decision:
+def _normalize_scores(
+    assessment: Mapping[str, Any],
+    scores: object,
+    failures: list[str],
+) -> dict[str, int]:
+    """Return a fail-closed integer score map.
+
+    Invalid external values are reported and replaced with zero before any
+    arithmetic or comparison. This keeps evaluator behavior deterministic and
+    prevents malformed JSON/form input from turning a negative decision into an
+    exception or from contributing truthy/float values to the total.
+    """
+
+    if not isinstance(scores, Mapping):
+        failures.append(f"scores: expected a mapping, got {type(scores).__name__}")
+        raw_scores: Mapping[object, object] = {}
+    else:
+        raw_scores = scores
+
+    expected = set(assessment["tasks"])
+    unknown = [key for key in raw_scores if key not in expected]
+    if unknown:
+        rendered = ", ".join(sorted((repr(key) for key in unknown)))
+        failures.append("unknown tasks: " + rendered)
+
+    normalized: dict[str, int] = {}
+    for task, task_data in assessment["tasks"].items():
+        raw = raw_scores.get(task, 0)
+        maximum = task_data["maximum"]
+        valid = (
+            isinstance(raw, int)
+            and not isinstance(raw, bool)
+            and 0 <= raw <= maximum
+        )
+        if not valid:
+            failures.append(f"{task}: score {raw!r} outside integer range 0..{maximum}")
+            normalized[task] = 0
+        else:
+            normalized[task] = raw
+    return normalized
+
+
+def evaluate(
+    assessment_id: str,
+    scores: object,
+    *,
+    new_variants: set[str] | None = None,
+    contract: dict[str, Any] | None = None,
+    readiness: bool = False,
+) -> Decision:
     contract = contract or load_contract()
-    a = contract['assessments'][assessment_id]
-    new_variants = new_variants or set()
+    assessment = contract["assessments"][assessment_id]
+    variants = new_variants or set()
     failures: list[str] = []
     missing_skills: list[str] = []
     missing_variants: list[str] = []
 
-    expected = set(a['tasks'])
-    unknown = set(scores) - expected
-    if unknown:
-        failures.append('unknown tasks: ' + ', '.join(sorted(unknown)))
-    for task, td in a['tasks'].items():
-        score = scores.get(task, 0)
-        maximum = td['maximum']
-        if isinstance(score, bool) or not isinstance(score, int) or score < 0 or score > maximum:
-            failures.append(f'{task}: score {score!r} outside 0..{maximum}')
+    normalized = _normalize_scores(assessment, scores, failures)
 
-    total = sum(scores.get(task, 0) for task in a['tasks'])
-    if total < a['threshold']:
-        failures.append(f'total {total} < threshold {a["threshold"]}')
+    total = sum(normalized.values())
+    if total < assessment["threshold"]:
+        failures.append(f'total {total} < threshold {assessment["threshold"]}')
 
-    for block, bd in a['block_minimums'].items():
-        got = sum(scores.get(task, 0) for task in bd['tasks'])
-        if got < bd['minimum']:
-            failures.append(f'block {block}: {got} < {bd["minimum"]}')
+    for block, block_data in assessment["block_minimums"].items():
+        got = sum(normalized[task] for task in block_data["tasks"])
+        if got < block_data["minimum"]:
+            failures.append(f'block {block}: {got} < {block_data["minimum"]}')
 
-    for rule in a['critical_task_rules']:
-        got = scores.get(rule['task'], 0)
-        if got < rule['minimum_score']:
+    for rule in assessment["critical_task_rules"]:
+        got = normalized[rule["task"]]
+        if got < rule["minimum_score"]:
             failures.append(f'critical {rule["task"]}: {got} < {rule["minimum_score"]}')
 
-    for skill, sd in a['skills'].items():
-        if not sd.get('mandatory', False):
+    for skill, skill_data in assessment["skills"].items():
+        if not skill_data.get("mandatory", False):
             continue
-        evidence = sum(1 for ev in sd['acceptable_evidence'] if scores.get(ev['task'], 0) >= ev['minimum_score'])
-        if evidence < sd['minimum_evidence']:
+        evidence = sum(
+            normalized[evidence_rule["task"]] >= evidence_rule["minimum_score"]
+            for evidence_rule in skill_data["acceptable_evidence"]
+        )
+        if evidence < skill_data["minimum_evidence"]:
             missing_skills.append(skill)
-            failures.append(f'mandatory skill {skill}: evidence {evidence} < {sd["minimum_evidence"]}')
+            failures.append(
+                f'mandatory skill {skill}: evidence {evidence} < {skill_data["minimum_evidence"]}'
+            )
 
-    if a['kind'] == 'checkpoint':
-        for task, td in a['tasks'].items():
-            score = scores.get(task, 0)
-            if 0 < score < td['maximum'] and task not in new_variants:
+    require_variants = assessment["kind"] == "checkpoint" or readiness
+    if require_variants:
+        for task, task_data in assessment["tasks"].items():
+            score = normalized[task]
+            if 0 < score < task_data["maximum"] and task not in variants:
                 missing_variants.append(task)
-                failures.append(f'{task}: partial score requires a new variant')
-    elif readiness:
-        for task, td in a['tasks'].items():
-            score = scores.get(task, 0)
-            if 0 < score < td['maximum'] and task not in new_variants:
-                missing_variants.append(task)
-                failures.append(f'{task}: partial final evidence requires a new variant for full readiness')
+                suffix = (
+                    "partial score requires a new variant"
+                    if assessment["kind"] == "checkpoint"
+                    else "partial final evidence requires a new variant for full readiness"
+                )
+                failures.append(f"{task}: {suffix}")
 
-    return Decision(assessment_id, not failures, total, tuple(failures), tuple(missing_skills), tuple(missing_variants))
+    return Decision(
+        assessment_id,
+        not failures,
+        total,
+        tuple(failures),
+        tuple(missing_skills),
+        tuple(missing_variants),
+    )
 
 
-def evaluate_course(all_scores: dict[str, dict[str, int]], *, variants: dict[str, set[str]] | None = None, contract: dict[str, Any] | None = None) -> dict[str, Any]:
+def evaluate_course(
+    all_scores: Mapping[str, object],
+    *,
+    variants: dict[str, set[str]] | None = None,
+    contract: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     contract = contract or load_contract()
     variants = variants or {}
     decisions = {
-        aid: evaluate(aid, all_scores.get(aid, {}), new_variants=variants.get(aid, set()), contract=contract, readiness=True)
-        for aid in contract['course_readiness']['required_assessments']
+        assessment_id: evaluate(
+            assessment_id,
+            all_scores.get(assessment_id, {}),
+            new_variants=variants.get(assessment_id, set()),
+            contract=contract,
+            readiness=True,
+        )
+        for assessment_id in contract["course_readiness"]["required_assessments"]
     }
-    return {'ready': all(d.passed for d in decisions.values()), 'assessments': {k:v.to_dict() for k,v in decisions.items()}}
+    return {
+        "ready": all(decision.passed for decision in decisions.values()),
+        "assessments": {key: value.to_dict() for key, value in decisions.items()},
+    }

@@ -3,58 +3,59 @@
 ## Verdict policy
 
 ```text
-GO_FOR_REVIEW only when every required GitHub Actions check attached to the current PR head is successful.
-Any changed head without a complete green check set is NO-GO.
+GO_FOR_REVIEW only when every required check attached to the current PR head succeeds.
+Any changed head without a complete current-head check set remains NO-GO.
 ```
 
-This report deliberately does not embed a mutable commit SHA or historical workflow run IDs. The authoritative revision identity is the current head of pull request #11; the checks attached to that exact head are the release gate.
+This report intentionally does not embed a mutable commit SHA or historical workflow run ID. Pull request #11 and the checks attached to its exact current head are the authoritative revision identity.
 
-## Baseline and mutation boundary
+## Boundary
 
 - Repository: `Misha1302/Nasm-X86-Course`.
 - Baseline branch: `main`.
 - Reviewed baseline SHA: `d3a172f12d7a1f7e456a6a930007711a55d8d93c`.
 - Repair branch: `repair/nasm-course-complete-20260803`.
 - Pull request: `#11` into `main`.
-- Merge to `main`: not authorized and not performed by this repair.
+- Merge, release and deployment are not authorized and are not performed by this repair.
 
 ## Canonical owners
 
 | Contract | Canonical owner |
 |---|---|
-| assessment/tasks/skills/evidence | `scripts/assessment_contract.json` |
-| pedagogy stage sources | `scripts/pedagogy_contract.json` |
-| executable ASM classes and exact outcomes | `scripts/executable_contract.json` |
-| mutation cases | `scripts/mutation_contract.json` |
+| assessment/tasks/skills/evidence/outcomes | `scripts/assessment_contract.json` |
+| executable assessment decision | `scripts/assessment_engine.py` |
+| assessment schema and finite proof | `scripts/validate_assessment.py` |
+| mutation policy | `scripts/mutation_contract.json` |
+| mutation execution verdict | `scripts/verify_mutation_execution.py` |
+| semantic course contracts | `scripts/validate_semantics.py` |
+| executable ASM classes and outcomes | `scripts/executable_contract.json` |
 | generated-course source list | `scripts/course_manifest.py` |
-| answer fingerprints | `scripts/answer_fingerprints.json` |
 
-## Implemented hardening
+## Implemented professional hardening
 
-1. Assessment proof derives every score domain from each task's actual `maximum`; no hard-coded `0..2` domain remains.
-2. Duplicate evidence and asymmetric `task.skills ↔ skill.acceptable_evidence` mappings are rejected.
-3. Closed-book leakage is checked against browser-visible text after HTML comments, tags, entities and Markdown presentation syntax are normalized.
-4. The HTML-comment answer-splitting attack is a required mutation case.
-5. Pedagogy ordering is computed from actual source paths and anchor line positions, with required content checked inside the exact declared section.
-6. Mutation evidence is always regenerated from a canonical 26-case contract. Stale reports are deleted before adversarial verification.
-7. A dedicated regression replaces the mutation runner with a no-op and verifies that adversarial review fails closed.
-8. Generated-document provenance is content-addressed; it no longer embeds the checkout/merge commit SHA.
-9. `examples/14_scanf_call.asm` is an executable RUN fixture. It enters with `esp%16=12`, reserves 4 bytes, calls `scanf` with `esp%16=0`, cleans 12 bytes and returns the read value.
-10. Negative ASM fixtures require an exact supported outcome (`SIGFPE`); generic nonzero exit is not accepted.
-11. Every RUN/NEGATIVE example has a bounded timeout.
-12. Permanent CI renders nine decision-critical VitePress pages at desktop, mobile and 200% zoom, and fails on overflow, missing content, console errors, page errors or failed requests.
-13. Tracked proof reports are regenerated and compared with Git before the contract job can pass.
+1. Mandatory declared outcomes and executable assessment skills must be an exact one-to-one topology. Orphan outcomes, missing skills, duplicate owners and `owner_assessment` drift are rejected.
+2. `task.block_membership`, `block_minimums`, `score_domain` and `partial_error_rule` are mechanically cross-validated instead of remaining decorative duplicate fields.
+3. Assessment input is normalized before any arithmetic. Strings, `None`, floats, booleans, negative values, out-of-range values and non-mapping inputs fail closed without exceptions or type pollution.
+4. Checkpoint score domains remain derived from each task's actual `maximum`; partial evidence is defined as `0 < score < task.maximum`.
+5. The mutation policy contains 31 distinct target/operation cases, including outcome coverage, owner drift, partial-rule drift, block-membership drift and score-domain drift.
+6. The reporting mutation runner is non-authoritative. A separate implementation independently applies every mutation, verifies the exact changed-file allowlist, runs the canonical owner and decides whether the expected diagnostic was observed.
+7. The independent oracle locks the canonical mutation policy by count and SHA-256, rejecting replaced, duplicated or weakened coverage before execution.
+8. Evidence-integrity regressions prove that a forged runner report cannot hide a broken validator and that mutation-policy replacement is rejected.
+9. Generated proof reports are CI artifacts, not tracked repository state. Every workflow run regenerates revision-bearing evidence from the checked-out source.
+10. RUN/NEGATIVE ASM fixtures have bounded timeouts; negative fixtures require exact `SIGFPE`; RUN diagnostics preserve the real process/timeout exit status.
+11. The permanent VitePress browser gate remains responsible for real build, desktop/mobile/200% rendering, overflow, console, page and request failures.
 
 ## Deterministic local verification
 
-Commands executed from the repaired source tree:
+Executed against the reconstructed source state corresponding to the reviewed PR head, with current files independently matched against GitHub blobs before modification:
 
 ```bash
 python3 scripts/generate_course_docs.py
-python3 scripts/run_course_validation.py validate
-python3 scripts/run_course_validation.py pedagogy
+python3 scripts/validate_semantics.py
 python3 scripts/validate_assessment.py
+python3 tests/test_assessment_engine.py
 python3 scripts/run_mutations.py
+python3 scripts/verify_mutation_execution.py
 python3 scripts/run_adversarial_review.py
 python3 tests/test_evidence_integrity.py
 python3 -m compileall -q scripts tests
@@ -73,40 +74,37 @@ VALIDATE_DOCS_CONTRACT=PASS
 VALIDATE_LINKS=PASS
 ASSESSMENT_SCHEMA=PASS
 ASSESSMENT_SCHEMA_PROBES=PASS
-CHECKPOINT_EXHAUSTIVE=PASS
-  CP1=729
-  CP2=19683
-  CP3=729
-  CP4=243
-  CP5=6561
-  CP6=243
-  total=28188
+CHECKPOINT_EXHAUSTIVE=PASS CP1:729 CP2:19683 CP3:729 CP4:243 CP5:6561 CP6:243
 FINAL_CONSTRAINT_PROOF=PASS checked=17
 SCORING_REGRESSIONS=PASS count=16
-MUTATIONS_TOTAL=26
-MUTATIONS_CAUGHT=26
+ASSESSMENT_ENGINE_MALFORMED_CASES=7
+ASSESSMENT_ENGINE_FAIL_CLOSED=PASS
+MUTATIONS_TOTAL=31
+MUTATIONS_CAUGHT=31
 MUTATION_SUITE=PASS
+MUTATION_ORACLE_CASES=31
+MUTATION_ORACLE_RESULT=PASS
 ADVERSARIAL_MANDATORY_SKILL_ATTACKS=56
+ADVERSARIAL_MUTATION_CASES=31
+ADVERSARIAL_MUTATION_ORACLE=PASS
 ADVERSARIAL_MUTATION_SURVIVORS=0
-ADVERSARIAL_COMPETING_OWNER=NONE
 ADVERSARIAL_REVIEW=PASS
-EVIDENCE_NOOP_ATTACK=BLOCKED
+EVIDENCE_FORGED_RUNNER_WITH_BROKEN_OWNER=BLOCKED
+EVIDENCE_MUTATION_POLICY_REPLACEMENT=BLOCKED
+EVIDENCE_INTEGRITY=PASS
 ```
 
-Content-addressed receipts from this source state:
+Canonical mutation policy SHA-256:
 
 ```text
-GENERATED_SOURCE_TREE_SHA256=e271d0b2ebc8fd1504c9cacc73d4e7a4b0113b633ed7b2ad4cc1a6c73b23f49e
-ASSESSMENT_SOURCE_DIGEST=2e07ee936052ff83b3cba14f5d31950cad87c0e6de3887c6cebe687b49eb3864
-MUTATION_SOURCE_DIGEST=c0ddf7966cdc896f1db003fdc0b58100d34b17fd9e27ce059d7590a63a20b51c
-ADVERSARIAL_SOURCE_DIGEST=075e98888e1eb9b797d6afa567ca0977484d73833a102a5c2b85daf78cbeac18
+44fe038fabd2a071a2186c7346eb625d9e6768fe17fed81b2e4f29135b85ecdc
 ```
 
 ## Environment boundary
 
-The local environment could not complete `npm ci` because its internal npm proxy returned `404` for `zwitch@2.0.4`. This is not treated as a project PASS. VitePress, Playwright and IA-32/NASM are therefore required to pass on GitHub Actions for the exact final PR head before the PR can return to Ready for review.
+NASM is unavailable in the local execution container, so no local claim is made for assembly/link/runtime acceptance. The exact current PR head must pass the permanent GitHub Actions IA-32/NASM job and real VitePress/Playwright job before the PR may return to Ready for review.
 
-## Required current-head GitHub checks
+## Required current-head checks
 
 ```text
 Audit course quality
@@ -116,8 +114,10 @@ Course contracts / mutation
 Course contracts / docs-asm-visual
 ```
 
-The browser job must upload `vitepress-render-evidence`; the artifact must contain 27 cases and zero failures.
+The contract jobs must upload fresh `contract-evidence` and `mutation-evidence`; the browser job must upload `vitepress-render-evidence` with 27 cases and zero failures.
 
-## Release boundary
+## Current status
 
-This repair may update the dedicated PR branch and review metadata. It does not authorize merge, release, deployment or modification of `main`.
+```text
+PENDING_CURRENT_HEAD_CI
+```

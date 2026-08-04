@@ -1,5 +1,5 @@
 {
-  "schema_version": "3.0",
+  "schema_version": "4.0",
   "repository": "Misha1302/Nasm-X86-Course",
   "baseline_branch": "main",
   "baseline_sha": "d3a172f12d7a1f7e456a6a930007711a55d8d93c",
@@ -16,25 +16,32 @@
     "Course contracts / mutation",
     "Course contracts / docs-asm-visual"
   ],
-  "content_receipts": {
-    "generated_source_tree_sha256": "e271d0b2ebc8fd1504c9cacc73d4e7a4b0113b633ed7b2ad4cc1a6c73b23f49e",
-    "assessment_source_digest": "2e07ee936052ff83b3cba14f5d31950cad87c0e6de3887c6cebe687b49eb3864",
-    "mutation_source_digest": "c0ddf7966cdc896f1db003fdc0b58100d34b17fd9e27ce059d7590a63a20b51c",
-    "adversarial_source_digest": "075e98888e1eb9b797d6afa567ca0977484d73833a102a5c2b85daf78cbeac18"
+  "evidence_policy": {
+    "tracked_generated_reports": false,
+    "ci_artifacts": [
+      "contract-evidence",
+      "mutation-evidence",
+      "vitepress-render-evidence"
+    ],
+    "mutation_authority": "scripts/verify_mutation_execution.py",
+    "mutation_policy_sha256": "44fe038fabd2a071a2186c7346eb625d9e6768fe17fed81b2e4f29135b85ecdc"
   },
-  "verification": {
+  "local_verification": {
     "semantic_contracts": "pass",
+    "assessment_schema_and_proof": "pass",
+    "malformed_assessment_inputs": "fail_closed_7_of_7",
     "checkpoint_assignments_checked": 28188,
     "final_constraint_assignments_checked": 17,
     "scoring_regressions": 16,
-    "mutations_caught": 26,
-    "mutations_total": 26,
     "mandatory_skill_attacks_blocked": 56,
-    "mutation_noop_attack": "blocked",
-    "vitepress_build": "required_on_current_pr_head",
+    "mutations_reported": 31,
+    "mutations_independently_reexecuted": 31,
+    "mutation_survivors": 0,
+    "forged_runner_with_broken_owner": "blocked",
+    "mutation_policy_replacement": "blocked",
+    "python_compileall": "pass",
     "classified_nasm_ia32_suite": "required_on_current_pr_head",
-    "browser_cases": 27,
-    "browser_result": "required_on_current_pr_head"
+    "vitepress_browser_gate": "required_on_current_pr_head"
   },
   "verdict": "PENDING_CURRENT_HEAD_CI"
 }

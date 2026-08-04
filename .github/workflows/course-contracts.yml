@@ -11,7 +11,7 @@ permissions:
 jobs:
   fast-contracts:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -21,31 +21,54 @@ jobs:
         run: python3 scripts/generate_course_docs.py
       - name: Validate semantic contracts
         run: python3 scripts/validate_semantics.py
-      - name: Prove assessment constraints
+      - name: Prove assessment constraints and schema ownership
         run: python3 scripts/validate_assessment.py
-      - name: Run fresh adversarial and mutation review
+      - name: Reject malformed assessment input fail-closed
+        run: python3 tests/test_assessment_engine.py
+      - name: Run adversarial review with independent mutation oracle
         run: python3 scripts/run_adversarial_review.py
-      - name: Reject stale or forged evidence
+      - name: Reject forged mutation evidence and policy replacement
         run: python3 tests/test_evidence_integrity.py
-      - name: Verify tracked generated evidence is current
-        run: |
-          git diff --exit-code -- \
-            ASSESSMENT_PROOF.json \
-            MUTATION_REPORT.json \
-            MUTATION_REPORT.md \
-            ADVERSARIAL_REVIEW.json \
+      - name: Compile Python validation surface
+        run: python3 -m compileall -q scripts tests
+      - name: Upload revision-bearing contract evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: contract-evidence
+          path: |
+            ASSESSMENT_PROOF.json
+            MUTATION_REPORT.json
+            MUTATION_REPORT.md
+            MUTATION_ORACLE.json
+            ADVERSARIAL_REVIEW.json
             ADVERSARIAL_REVIEW.md
+          if-no-files-found: error
 
   mutation:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python3 scripts/generate_course_docs.py
-      - run: python3 scripts/run_mutations.py
+      - name: Generate closed-book artifacts used by mutations
+        run: python3 scripts/generate_course_docs.py
+      - name: Run reporting mutation suite
+        run: python3 scripts/run_mutations.py
+      - name: Independently re-execute mutation policy
+        run: python3 scripts/verify_mutation_execution.py
+      - name: Upload mutation evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mutation-evidence
+          path: |
+            MUTATION_REPORT.json
+            MUTATION_REPORT.md
+            MUTATION_ORACLE.json
+          if-no-files-found: error
 
   docs-asm-visual:
     runs-on: ubuntu-latest

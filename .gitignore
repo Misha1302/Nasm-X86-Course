@@ -20,4 +20,12 @@ project_code_bundle.md
 docs/textbook.md
 docs/course_migration.md
 docs/closed_book_workbook.md
+
+# Revision-bearing validation evidence (published by CI artifacts)
+ASSESSMENT_PROOF.json
+MUTATION_REPORT.json
+MUTATION_REPORT.md
+MUTATION_ORACLE.json
+ADVERSARIAL_REVIEW.json
+ADVERSARIAL_REVIEW.md
 docs/generated_source_manifest.json

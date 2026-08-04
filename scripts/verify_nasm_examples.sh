@@ -12,18 +12,21 @@ need() {
         exit 2
     }
 }
-for tool in python3 nasm gcc nm timeout base64; do need "$tool"; done
+for tool in python3 nasm gcc ld nm timeout base64; do
+    need "$tool"
+done
 
 mapfile -t records < <(python3 - "$CONTRACT" <<'PYBLOCK'
 import base64
 import json
 import sys
 from pathlib import Path
+
 contract = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-for rel, data in sorted(contract["blocks"].items()):
+for relative, data in sorted(contract["blocks"].items()):
     stdin = base64.b64encode(data.get("stdin", "").encode("utf-8")).decode("ascii")
     print("\x1f".join((
-        rel,
+        relative,
         data["class"],
         data.get("golden", ""),
         data.get("expected", ""),
@@ -111,7 +114,10 @@ for record in "${records[@]}"; do
     input="$TMP/$name.in"
 
     test -f "$file" || { printf 'ASM-MISSING: %s\n' "$rel" >&2; exit 1; }
-    [[ "$timeout_seconds" =~ ^[1-9][0-9]*$ ]] || { printf 'ASM-TIMEOUT: invalid timeout for %s\n' "$rel" >&2; exit 1; }
+    [[ "$timeout_seconds" =~ ^[1-9][0-9]*$ ]] || {
+        printf 'ASM-TIMEOUT: invalid timeout for %s\n' "$rel" >&2
+        exit 1
+    }
     printf '%s' "$stdin_b64" | base64 -d > "$input"
     nasm -f elf32 -g -F dwarf "$file" -o "$obj"
 
@@ -122,7 +128,9 @@ for record in "${records[@]}"; do
             if ! run_special_harness "$name" "$obj" "$exe"; then
                 link_object "$obj" "$exe"
             fi
-            if ! timeout --signal=KILL "${timeout_seconds}s" "$exe" < "$input" > "$out"; then
+            if timeout --signal=KILL "${timeout_seconds}s" "$exe" < "$input" > "$out"; then
+                :
+            else
                 status=$?
                 printf 'ASM-RUN: %s exited with status %d or timed out\n' "$rel" "$status" >&2
                 exit 1
