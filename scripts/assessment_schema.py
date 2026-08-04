@@ -58,7 +58,7 @@ def validate_schema(contract: dict[str, Any]) -> None:
     actual_owners: dict[str, str] = {}
     for assessment_id, assessment in contract["assessments"].items():
         require(assessment_id in REQUIRED_ASSESSMENTS, f"ASSESS-ID: unexpected assessment {assessment_id}")
-        expected_kind = "final" if assessment_id == "FINAL" else "checkpoint"
+        expected_kind = "final_exam" if assessment_id == "FINAL" else "checkpoint"
         require(
             assessment.get("kind") == expected_kind,
             f"ASSESS-KIND {assessment_id}: expected {expected_kind}, got {assessment.get('kind')!r}",
