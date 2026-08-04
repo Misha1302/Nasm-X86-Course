@@ -5,6 +5,7 @@ from typing import Any
 REQUIRED_ASSESSMENTS = ["CP1", "CP2", "CP3", "CP4", "CP5", "CP6", "FINAL"]
 PARTIAL_CONDITION = "0 < score < task.maximum"
 
+
 class ValidationError(RuntimeError):
     pass
 
@@ -57,6 +58,11 @@ def validate_schema(contract: dict[str, Any]) -> None:
     actual_owners: dict[str, str] = {}
     for assessment_id, assessment in contract["assessments"].items():
         require(assessment_id in REQUIRED_ASSESSMENTS, f"ASSESS-ID: unexpected assessment {assessment_id}")
+        expected_kind = "final" if assessment_id == "FINAL" else "checkpoint"
+        require(
+            assessment.get("kind") == expected_kind,
+            f"ASSESS-KIND {assessment_id}: expected {expected_kind}, got {assessment.get('kind')!r}",
+        )
         tasks = assessment["tasks"]
         require(tasks, f"ASSESS-TASKS {assessment_id}: assessment has no tasks")
 
@@ -85,7 +91,9 @@ def validate_schema(contract: dict[str, Any]) -> None:
         )
 
         if assessment["kind"] == "checkpoint":
-            task_domain = sorted({score for task_data in tasks.values() for score in range(task_data["maximum"] + 1)})
+            task_domain = sorted(
+                {score for task_data in tasks.values() for score in range(task_data["maximum"] + 1)}
+            )
             require(
                 assessment.get("score_domain") == task_domain,
                 f"ASSESS-SCORE-DOMAIN {assessment_id}: score_domain must equal {task_domain}",
@@ -168,7 +176,10 @@ def validate_schema(contract: dict[str, Any]) -> None:
             require(key not in actual_owners, f"ASSESS-OUTCOME-DUPLICATE {key}: multiple owners")
             actual_owners[key] = assessment_id
 
-            require(skill_data.get("mandatory") is True, f"ASSESS-MANDATORY {assessment_id}/{skill}: outcome is no longer mandatory")
+            require(
+                skill_data.get("mandatory") is True,
+                f"ASSESS-MANDATORY {assessment_id}/{skill}: outcome is no longer mandatory",
+            )
             evidence = skill_data.get("acceptable_evidence")
             require(evidence, f"ASSESS-EVIDENCE {assessment_id}/{skill}: no acceptable evidence")
 

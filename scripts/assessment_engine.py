@@ -30,13 +30,7 @@ def _normalize_scores(
     scores: object,
     failures: list[str],
 ) -> dict[str, int]:
-    """Return a fail-closed integer score map.
-
-    Invalid external values are reported and replaced with zero before any
-    arithmetic or comparison. This keeps evaluator behavior deterministic and
-    prevents malformed JSON/form input from turning a negative decision into an
-    exception or from contributing truthy/float values to the total.
-    """
+    """Return a fail-closed integer score map."""
 
     if not isinstance(scores, Mapping):
         failures.append(f"scores: expected a mapping, got {type(scores).__name__}")
@@ -54,11 +48,7 @@ def _normalize_scores(
     for task, task_data in assessment["tasks"].items():
         raw = raw_scores.get(task, 0)
         maximum = task_data["maximum"]
-        valid = (
-            isinstance(raw, int)
-            and not isinstance(raw, bool)
-            and 0 <= raw <= maximum
-        )
+        valid = isinstance(raw, int) and not isinstance(raw, bool) and 0 <= raw <= maximum
         if not valid:
             failures.append(f"{task}: score {raw!r} outside integer range 0..{maximum}")
             normalized[task] = 0
@@ -134,25 +124,69 @@ def evaluate(
     )
 
 
+def _normalize_variant_map(
+    variants: object,
+    required: set[str],
+    failures: list[str],
+) -> dict[str, set[str]]:
+    if variants is None:
+        return {}
+    if not isinstance(variants, Mapping):
+        failures.append(f"variants: expected a mapping, got {type(variants).__name__}")
+        return {}
+
+    unknown = [key for key in variants if key not in required]
+    if unknown:
+        failures.append("unknown variant assessments: " + ", ".join(sorted(repr(key) for key in unknown)))
+
+    normalized: dict[str, set[str]] = {}
+    for assessment_id in required:
+        raw = variants.get(assessment_id, set())
+        if isinstance(raw, (set, frozenset, list, tuple)) and all(isinstance(item, str) for item in raw):
+            normalized[assessment_id] = set(raw)
+        else:
+            failures.append(
+                f"variants[{assessment_id!r}]: expected a string collection, got {type(raw).__name__}"
+            )
+            normalized[assessment_id] = set()
+    return normalized
+
+
 def evaluate_course(
-    all_scores: Mapping[str, object],
+    all_scores: object,
     *,
-    variants: dict[str, set[str]] | None = None,
+    variants: object = None,
     contract: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     contract = contract or load_contract()
-    variants = variants or {}
+    required_order = contract["course_readiness"]["required_assessments"]
+    required = set(required_order)
+    course_failures: list[str] = []
+
+    if isinstance(all_scores, Mapping):
+        raw_scores: Mapping[object, object] = all_scores
+        unknown = [key for key in raw_scores if key not in required]
+        if unknown:
+            course_failures.append(
+                "unknown assessments: " + ", ".join(sorted(repr(key) for key in unknown))
+            )
+    else:
+        course_failures.append(f"all_scores: expected a mapping, got {type(all_scores).__name__}")
+        raw_scores = {}
+
+    normalized_variants = _normalize_variant_map(variants, required, course_failures)
     decisions = {
         assessment_id: evaluate(
             assessment_id,
-            all_scores.get(assessment_id, {}),
-            new_variants=variants.get(assessment_id, set()),
+            raw_scores.get(assessment_id, None if not isinstance(all_scores, Mapping) else {}),
+            new_variants=normalized_variants.get(assessment_id, set()),
             contract=contract,
             readiness=True,
         )
-        for assessment_id in contract["course_readiness"]["required_assessments"]
+        for assessment_id in required_order
     }
     return {
-        "ready": all(decision.passed for decision in decisions.values()),
+        "ready": not course_failures and all(decision.passed for decision in decisions.values()),
+        "course_failures": tuple(course_failures),
         "assessments": {key: value.to_dict() for key, value in decisions.items()},
     }

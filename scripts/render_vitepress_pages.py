@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from urllib.parse import urljoin
 
+from evidence_provenance import digest_paths
 from playwright.sync_api import ConsoleMessage, Error, Request, sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,10 +21,13 @@ PAGES = {
     "day_10": "День 10",
     "day_10_learning_path": "День 10",
 }
+# zoom200 uses a 720px layout viewport with an actual 2x CSS layout zoom,
+# yielding a 360 CSS-pixel effective width. device_scale_factor is kept
+# separate so high-DPI rendering is never mislabeled as browser/layout zoom.
 VIEWPORTS = [
-    ("desktop", 1440, 1000, 1.0, 100),
-    ("mobile", 390, 844, 1.0, 100),
-    ("zoom200", 360, 450, 2.0, 200),
+    ("desktop", 1440, 1000, 1.0, 1.0),
+    ("mobile", 390, 844, 1.0, 1.0),
+    ("zoom200", 720, 900, 1.0, 2.0),
 ]
 
 
@@ -46,10 +50,10 @@ def main() -> int:
         browser = playwright.chromium.launch(headless=True, args=["--no-sandbox", "--disable-dev-shm-usage"])
         try:
             for page_name, expected_text in PAGES.items():
-                for label, width, height, scale, zoom_percent in VIEWPORTS:
+                for label, width, height, device_scale, zoom_factor in VIEWPORTS:
                     context = browser.new_context(
                         viewport={"width": width, "height": height},
-                        device_scale_factor=scale,
+                        device_scale_factor=device_scale,
                     )
                     page = context.new_page()
                     page.set_default_timeout(20_000)
@@ -75,6 +79,11 @@ def main() -> int:
                     url = urljoin(ns.base_url.rstrip("/") + "/", page_name)
                     response = page.goto(url, wait_until="networkidle")
                     status = response.status if response else 0
+                    if zoom_factor != 1.0:
+                        page.evaluate(
+                            "factor => { document.documentElement.style.zoom = String(factor); }",
+                            zoom_factor,
+                        )
                     page.wait_for_timeout(150)
 
                     metrics = page.evaluate(
@@ -85,6 +94,8 @@ def main() -> int:
                           clientWidth: document.documentElement.clientWidth,
                           scrollWidth: document.documentElement.scrollWidth,
                           scrollHeight: document.documentElement.scrollHeight,
+                          computedZoom: Number.parseFloat(getComputedStyle(document.documentElement).zoom || '1'),
+                          visualViewportWidth: window.visualViewport?.width || 0,
                           doc: Boolean(document.querySelector('.VPDoc')),
                           nav: Boolean(document.querySelector('.VPNav')),
                           sidebar: Boolean(document.querySelector('.VPSidebar')),
@@ -94,6 +105,8 @@ def main() -> int:
                           visibleDetails: [...document.querySelectorAll('details')].filter(x => x.open).length
                         })"""
                     )
+                    computed_zoom = float(metrics["computedZoom"])
+                    zoom_applied = abs(computed_zoom - zoom_factor) < 0.01
                     overflow = int(metrics["scrollWidth"]) > int(metrics["clientWidth"]) + 1
                     max_y = max(0, int(metrics["scrollHeight"]) - height)
                     positions = [("top", 0)]
@@ -114,8 +127,12 @@ def main() -> int:
                         "viewport": label,
                         "width": width,
                         "height": height,
-                        "device_scale_factor": scale,
-                        "browser_zoom_percent": zoom_percent,
+                        "device_scale_factor": device_scale,
+                        "layout_zoom_percent": int(round(zoom_factor * 100)),
+                        "computed_layout_zoom": computed_zoom,
+                        "zoom_applied": zoom_applied,
+                        "effective_css_width": width / zoom_factor,
+                        "visual_viewport_width": float(metrics["visualViewportWidth"]),
                         "http_status": status,
                         "title": metrics["title"],
                         "h1": metrics["h1"],
@@ -141,6 +158,12 @@ def main() -> int:
                         failures.append(f"{prefix}: missing VitePress shell")
                     if expected_text.lower() not in str(metrics["bodyText"]).lower():
                         failures.append(f"{prefix}: expected visible text {expected_text!r} missing")
+                    if not zoom_applied:
+                        failures.append(
+                            f"{prefix}: requested layout zoom {zoom_factor} but computed {computed_zoom}"
+                        )
+                    if label == "zoom200" and abs(width / zoom_factor - 360.0) > 0.01:
+                        failures.append(f"{prefix}: effective CSS width is not 360px")
                     if overflow:
                         failures.append(f"{prefix}: horizontal overflow")
                     if metrics["rawAnchorText"]:
@@ -158,10 +181,26 @@ def main() -> int:
             browser.close()
 
     output.mkdir(parents=True, exist_ok=True)
+    source_digest = digest_paths(
+        ROOT,
+        [
+            "scripts/render_vitepress_pages.py",
+            "scripts/serve_built_site.py",
+            "package.json",
+            "package-lock.json",
+            "docs/.vitepress/theme/style.css",
+        ],
+    )
     (output / "visual_evidence.json").write_text(
-        json.dumps({"cases": evidence, "failures": failures}, ensure_ascii=False, indent=2) + "\n",
+        json.dumps(
+            {"source_digest": source_digest, "cases": evidence, "failures": failures},
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
         encoding="utf-8",
     )
+    print(f"VITEPRESS_VISUAL_SOURCE_DIGEST={source_digest}")
     print(f"VITEPRESS_VISUAL_CASES={len(evidence)}")
     print(f"VITEPRESS_VISUAL_SCREENSHOTS={sum(len(item['screenshots']) for item in evidence)}")
     print(f"VITEPRESS_VISUAL_FAILURES={len(failures)}")

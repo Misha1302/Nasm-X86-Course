@@ -2,9 +2,71 @@
 set -Eeuo pipefail
 
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-CONTRACT="$ROOT/scripts/executable_contract.json"
+CONTRACT="${NASM_EXECUTABLE_CONTRACT:-$ROOT/scripts/executable_contract.json}"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
+
+records_file="$TMP/records"
+if ! python3 - "$CONTRACT" "$ROOT" > "$records_file" <<'PYBLOCK'; then
+import base64
+import json
+import sys
+from pathlib import Path
+
+contract_path = Path(sys.argv[1])
+root = Path(sys.argv[2])
+try:
+    data = json.loads(contract_path.read_text(encoding="utf-8"))
+    if data.get("schema_version") != "2.0":
+        raise ValueError(f"schema_version must be 2.0, got {data.get('schema_version')!r}")
+    blocks = data.get("blocks")
+    if not isinstance(blocks, dict) or not blocks:
+        raise ValueError("blocks must be a non-empty object")
+    expected = sorted(str(path.relative_to(root).as_posix()) for path in (root / "examples").glob("*.asm"))
+    if not expected:
+        raise ValueError("repository contains no examples/*.asm files")
+    actual = sorted(blocks)
+    if actual != expected:
+        missing = sorted(set(expected) - set(actual))
+        extra = sorted(set(actual) - set(expected))
+        raise ValueError(f"contract/example coverage mismatch: missing={missing} extra={extra}")
+    for relative, item in sorted(blocks.items()):
+        if not isinstance(item, dict):
+            raise ValueError(f"{relative}: block data must be an object")
+        class_name = item.get("class")
+        if class_name not in {"TRACE_ONLY", "FRAGMENT", "PSEUDOCODE", "COMPILE", "RUN", "NEGATIVE"}:
+            raise ValueError(f"{relative}: unsupported class {class_name!r}")
+        timeout = item.get("timeout_seconds", 10)
+        if not isinstance(timeout, int) or isinstance(timeout, bool) or timeout < 1:
+            raise ValueError(f"{relative}: timeout_seconds must be a positive integer")
+        stdin = base64.b64encode(item.get("stdin", "").encode("utf-8")).decode("ascii")
+        print("\x1f".join((
+            relative,
+            class_name,
+            item.get("golden", ""),
+            item.get("expected", ""),
+            stdin,
+            str(timeout),
+        )))
+except (OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError) as exc:
+    print(f"ASM-CONTRACT-LOAD: {contract_path}: {exc}", file=sys.stderr)
+    raise SystemExit(1)
+PYBLOCK
+    printf 'ASM-CONTRACT-LOAD: failed to load executable contract %s\n' "$CONTRACT" >&2
+    exit 1
+fi
+
+mapfile -t records < "$records_file"
+if (( ${#records[@]} == 0 )); then
+    printf 'ASM-CONTRACT-EMPTY: executable contract produced zero records\n' >&2
+    exit 1
+fi
+
+if [[ "${NASM_CONTRACT_ONLY:-0}" == "1" ]]; then
+    printf 'ASM_CONTRACT_RECORDS=%d\n' "${#records[@]}"
+    printf 'ASM_CONTRACT_LOAD=PASS\n'
+    exit 0
+fi
 
 need() {
     command -v "$1" >/dev/null 2>&1 || {
@@ -15,26 +77,6 @@ need() {
 for tool in python3 nasm gcc ld nm timeout base64; do
     need "$tool"
 done
-
-mapfile -t records < <(python3 - "$CONTRACT" <<'PYBLOCK'
-import base64
-import json
-import sys
-from pathlib import Path
-
-contract = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-for relative, data in sorted(contract["blocks"].items()):
-    stdin = base64.b64encode(data.get("stdin", "").encode("utf-8")).decode("ascii")
-    print("\x1f".join((
-        relative,
-        data["class"],
-        data.get("golden", ""),
-        data.get("expected", ""),
-        stdin,
-        str(data.get("timeout_seconds", 10)),
-    )))
-PYBLOCK
-)
 
 link_object() {
     local obj="$1" out="$2"

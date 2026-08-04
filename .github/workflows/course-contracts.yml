@@ -8,6 +8,11 @@ on:
 permissions:
   contents: read
 
+env:
+  SOURCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  TESTED_COMMIT_SHA: ${{ github.sha }}
+  SOURCE_REPOSITORY: ${{ github.repository }}
+
 jobs:
   fast-contracts:
     runs-on: ubuntu-latest
@@ -25,10 +30,28 @@ jobs:
         run: python3 scripts/validate_assessment.py
       - name: Reject malformed assessment input fail-closed
         run: python3 tests/test_assessment_engine.py
+      - name: Reject fail-open ASM contract loading
+        run: python3 tests/test_nasm_harness.py
       - name: Run adversarial review with independent mutation oracle
         run: python3 scripts/run_adversarial_review.py
       - name: Reject forged mutation evidence and policy replacement
         run: python3 tests/test_evidence_integrity.py
+      - name: Test revision provenance binding
+        run: python3 tests/test_revision_provenance.py
+      - name: Bind contract evidence to source and tested revisions
+        run: |
+          python3 scripts/bind_evidence_revision.py \
+            ASSESSMENT_PROOF.json \
+            MUTATION_REPORT.json \
+            MUTATION_ORACLE.json \
+            ADVERSARIAL_REVIEW.json
+      - name: Verify contract evidence revision binding
+        run: |
+          python3 scripts/verify_evidence_revision.py \
+            ASSESSMENT_PROOF.json \
+            MUTATION_REPORT.json \
+            MUTATION_ORACLE.json \
+            ADVERSARIAL_REVIEW.json
       - name: Compile Python validation surface
         run: python3 -m compileall -q scripts tests
       - name: Upload revision-bearing contract evidence
@@ -59,6 +82,16 @@ jobs:
         run: python3 scripts/run_mutations.py
       - name: Independently re-execute mutation policy
         run: python3 scripts/verify_mutation_execution.py
+      - name: Bind mutation evidence to source and tested revisions
+        run: |
+          python3 scripts/bind_evidence_revision.py \
+            MUTATION_REPORT.json \
+            MUTATION_ORACLE.json
+      - name: Verify mutation evidence revision binding
+        run: |
+          python3 scripts/verify_evidence_revision.py \
+            MUTATION_REPORT.json \
+            MUTATION_ORACLE.json
       - name: Upload mutation evidence
         uses: actions/upload-artifact@v4
         if: always()
@@ -115,6 +148,14 @@ jobs:
           python3 scripts/render_vitepress_pages.py \
             --base-url http://127.0.0.1:4173/Nasm-X86-Course/ \
             --output render-evidence/vitepress
+      - name: Bind visual evidence to source and tested revisions
+        run: |
+          python3 scripts/bind_evidence_revision.py \
+            render-evidence/vitepress/visual_evidence.json
+      - name: Verify visual evidence revision binding
+        run: |
+          python3 scripts/verify_evidence_revision.py \
+            render-evidence/vitepress/visual_evidence.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
