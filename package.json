@@ -15,7 +15,9 @@
     "docs:preview": "vitepress preview docs --host 0.0.0.0",
     "course:asm": "bash scripts/verify_nasm_examples.sh",
     "docs:clean": "rm -rf docs/.vitepress/cache docs/.vitepress/dist docs/textbook.md docs/course_migration.md docs/closed_book_workbook.md docs/generated_source_manifest.json",
-    "course:visual:vitepress": "python3 scripts/render_vitepress_pages.py --base-url http://127.0.0.1:4173/Nasm-X86-Course/"
+    "course:visual:vitepress": "python3 scripts/render_vitepress_pages.py --base-url http://127.0.0.1:4173/Nasm-X86-Course/",
+    "course:ai-tutor:test": "python3 tests/test_ai_tutor_provider_eval.py",
+    "course:ai-tutor:dry-run": "python3 scripts/run_ai_tutor_provider_eval.py run --provider openai-compatible --base-url http://127.0.0.1:9/v1 --model dry-run --runs 3 --dry-run --output AI_TUTOR_PROVIDER_EVIDENCE.json"
   },
   "devDependencies": {
     "vitepress": "1.6.4"
