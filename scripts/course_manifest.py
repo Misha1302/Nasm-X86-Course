@@ -2,6 +2,17 @@ from __future__ import annotations
 
 DAY_RELATIVE_PATHS = tuple(f"docs/day_{i:02d}.md" for i in range(1, 26))
 
+REVIEWED_SUPPLEMENTARY_RELATIVE_PATHS = (
+    "docs/patterns/branchless.md",
+    "docs/patterns/bit_counting.md",
+    "docs/patterns/decimal.md",
+    "docs/patterns/recursion.md",
+    "docs/patterns/strings_files.md",
+    "docs/patterns/array_linked_list.md",
+    "docs/patterns/advanced_stack.md",
+    "docs/patterns/bigint.md",
+)
+
 STANDALONE_RELATIVE_PATHS = (
     "docs/prerequisites.md",
     "docs/prerequisite_refreshers.md",
@@ -14,6 +25,7 @@ STANDALONE_RELATIVE_PATHS = (
     *DAY_RELATIVE_PATHS[:10],
     "docs/day_10_learning_path.md",
     *DAY_RELATIVE_PATHS[10:24],
+    *REVIEWED_SUPPLEMENTARY_RELATIVE_PATHS,
     "docs/transfer_workbook.md",
     "docs/transfer_keys.md",
     "docs/transfer_walkthroughs.md",
