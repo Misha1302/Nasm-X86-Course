@@ -187,21 +187,46 @@ def run_provider(args: argparse.Namespace) -> int:
 
 def validate_capture(args: argparse.Namespace) -> int:
     report = load(Path(args.evidence).resolve())
+    cases_path, prompts_path = Path(args.cases).resolve(), Path(args.prompts).resolve()
+    cases_data = load(cases_path)
+    cases = cases_data.get("cases")
     errors: list[str] = []
+    if not isinstance(cases, list) or len(cases) != 10:
+        raise Error("exactly 10 current cases are required")
+    expected_ids = [case.get("id") for case in cases if isinstance(case, dict)]
+    if len(expected_ids) != 10 or not all(isinstance(case_id, str) and case_id for case_id in expected_ids) or len(set(expected_ids)) != 10:
+        raise Error("current case IDs must be ten unique nonempty strings")
+    markdown = prompts_path.read_text(encoding="utf-8")
+    expected_messages = {case["id"]: compile_case(case, markdown) for case in cases}
     runs = report.get("configuration", {}).get("runs_per_case") if isinstance(report.get("configuration"), dict) else None
     results = report.get("results")
     if report.get("provider_execution_status") != "COMPLETE": errors.append("capture is not COMPLETE")
     if report.get("semantic_adjudication_status") != "NOT_RUN": errors.append("capture overclaims semantic adjudication")
-    if not isinstance(runs, int) or runs < 1 or not isinstance(results, list) or len(results) != 10 * runs: errors.append("wrong result count")
-    seen: set[tuple[Any, Any]] = set()
-    for item in results if isinstance(results, list) else []:
+    if not isinstance(runs, int) or runs < 3: errors.append("at least three runs per case are required")
+    expected = {(case_id, index) for case_id in expected_ids for index in range(1, runs + 1)} if isinstance(runs, int) and runs >= 3 else set()
+    actual: set[tuple[Any, Any]] = set()
+    provenance = report.get("provenance")
+    if not isinstance(provenance, dict):
+        errors.append("missing provenance")
+    else:
+        for name, expected_digest in (("cases_sha256", digest(cases_path)), ("prompts_sha256", digest(prompts_path)), ("adapter_sha256", digest(Path(__file__).resolve()))):
+            if provenance.get(name) != expected_digest: errors.append(f"provenance mismatch: {name}")
+    if not re.fullmatch(r"[0-9a-f]{40}", str(report.get("source_revision", ""))): errors.append("source_revision must be a full lowercase Git SHA")
+    if not isinstance(results, list):
+        errors.append("results must be a list")
+        results = []
+    for item in results:
         ident = (item.get("case_id"), item.get("run_index")) if isinstance(item, dict) else (None, None)
-        if ident in seen: errors.append(f"duplicate result: {ident}")
-        seen.add(ident)
+        if ident in actual: errors.append(f"duplicate result: {ident}")
+        actual.add(ident)
         messages = item.get("request_messages") if isinstance(item, dict) else None
         content = item.get("response", {}).get("content") if isinstance(item, dict) and isinstance(item.get("response"), dict) else None
+        expected_for_case = expected_messages.get(ident[0])
         if not isinstance(messages, list) or digest_bytes(canon(messages)) != item.get("request_sha256"): errors.append(f"request digest mismatch: {ident}")
+        elif expected_for_case is None or canon(messages) != canon(expected_for_case): errors.append(f"request does not match current case/prompt: {ident}")
+        if item.get("error") is not None: errors.append(f"provider error is present: {ident}")
         if not isinstance(content, str) or not content.strip() or content == "DRY_RUN": errors.append(f"missing live response: {ident}")
+    if actual != expected: errors.append(f"result identity topology mismatch: expected {len(expected)}, got {len(actual)}")
     if errors: raise Error("capture validation failed:\n- " + "\n- ".join(errors))
     print("AI_TUTOR_PROVIDER_CAPTURE=PASS")
     print("AI_TUTOR_SEMANTIC_ADJUDICATION=NOT_RUN")
@@ -211,6 +236,8 @@ def validate_capture(args: argparse.Namespace) -> int:
 def template(args: argparse.Namespace) -> int:
     evidence_path = Path(args.evidence).resolve()
     evidence, cases_data = load(evidence_path), load(Path(args.cases).resolve())
+    if evidence.get("provider_execution_status") != "COMPLETE" or evidence.get("semantic_adjudication_status") != "NOT_RUN":
+        raise Error("template requires complete, not-yet-adjudicated provider evidence")
     by_id = {case.get("id"): case for case in cases_data.get("cases", []) if isinstance(case, dict)}
     rows = []
     for item in evidence.get("results", []):
@@ -219,7 +246,7 @@ def template(args: argparse.Namespace) -> int:
         checks = [{"name": name, "polarity": "must", "verdict": "UNREVIEWED", "evidence": ""} for name in case.get("must", [])]
         checks += [{"name": name, "polarity": "must_not", "verdict": "UNREVIEWED", "evidence": ""} for name in case.get("must_not", [])]
         rows.append({"case_id": item.get("case_id"), "run_index": item.get("run_index"), "checks": checks, "notes": ""})
-    value = {"schema_version": "1.0", "evidence_sha256": digest(evidence_path), "reviewer": {"kind": "UNSET", "id": "", "provider": None, "model": None}, "case_results": rows}
+    value = {"schema_version": "1.0", "evidence_sha256": digest(evidence_path), "reviewer": {"kind": "UNSET", "id": "", "provider": None, "model": None, "evidence_sha256": None}, "case_results": rows}
     output = Path(args.output).resolve(); output.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"AI_TUTOR_ADJUDICATION_TEMPLATE={output}")
     return 0
@@ -231,8 +258,14 @@ def score(args: argparse.Namespace) -> int:
     if evidence.get("provider_execution_status") != "COMPLETE" or adjudication.get("evidence_sha256") != digest(evidence_path): raise Error("adjudication is not bound to complete evidence")
     reviewer = adjudication.get("reviewer")
     if not isinstance(reviewer, dict) or reviewer.get("kind") not in {"manual", "independent_model"} or not str(reviewer.get("id", "")).strip(): raise Error("invalid reviewer")
-    if reviewer.get("kind") == "independent_model" and (not reviewer.get("provider") or not reviewer.get("model") or (reviewer.get("provider"), reviewer.get("model")) == (evidence.get("provider"), evidence.get("model"))): raise Error("independent reviewer must be a different identified model")
+    if reviewer.get("kind") == "independent_model":
+        if not reviewer.get("provider") or not reviewer.get("model") or (reviewer.get("provider"), reviewer.get("model")) == (evidence.get("provider"), evidence.get("model")):
+            raise Error("independent reviewer must be a different identified model")
+        if not re.fullmatch(r"[0-9a-f]{64}", str(reviewer.get("evidence_sha256", ""))):
+            raise Error("independent reviewer requires a SHA-256-bound evidence artifact")
     cases = cases_data.get("cases"); by_id = {case.get("id"): case for case in cases if isinstance(case, dict)} if isinstance(cases, list) else {}
+    runs_per_case = evidence.get("configuration", {}).get("runs_per_case") if isinstance(evidence.get("configuration"), dict) else None
+    if not isinstance(runs_per_case, int) or runs_per_case < 3: raise Error("score requires at least three runs per case")
     expected = {(item.get("case_id"), item.get("run_index")) for item in evidence.get("results", []) if isinstance(item, dict)}
     rows = adjudication.get("case_results")
     actual = {(item.get("case_id"), item.get("run_index")) for item in rows if isinstance(item, dict)} if isinstance(rows, list) else set()
@@ -262,7 +295,7 @@ def score(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(); sub = parser.add_subparsers(dest="command", required=True)
     run = sub.add_parser("run"); run.add_argument("--cases", default=str(CASES)); run.add_argument("--prompts", default=str(PROMPTS)); run.add_argument("--output", default="AI_TUTOR_PROVIDER_EVIDENCE.json"); run.add_argument("--provider", choices=sorted(BASE_URLS), required=True); run.add_argument("--model", required=True); run.add_argument("--base-url"); run.add_argument("--api-key-env", default="AI_TUTOR_API_KEY"); run.add_argument("--runs", type=int, default=3); run.add_argument("--temperature", type=float); run.add_argument("--max-tokens", type=int, default=700); run.add_argument("--token-limit-field", choices=("max_tokens", "max_completion_tokens"), default="max_tokens"); run.add_argument("--timeout", type=float, default=90); run.add_argument("--seed-base", type=int); run.add_argument("--source-revision"); run.add_argument("--dry-run", action="store_true"); run.set_defaults(handler=run_provider)
-    validate = sub.add_parser("validate"); validate.add_argument("evidence"); validate.set_defaults(handler=validate_capture)
+    validate = sub.add_parser("validate"); validate.add_argument("evidence"); validate.add_argument("--cases", default=str(CASES)); validate.add_argument("--prompts", default=str(PROMPTS)); validate.set_defaults(handler=validate_capture)
     make = sub.add_parser("template"); make.add_argument("evidence"); make.add_argument("--cases", default=str(CASES)); make.add_argument("--output", default="AI_TUTOR_ADJUDICATION.json"); make.set_defaults(handler=template)
     judge = sub.add_parser("score"); judge.add_argument("evidence"); judge.add_argument("adjudication"); judge.add_argument("--cases", default=str(CASES)); judge.add_argument("--output", default="AI_TUTOR_BEHAVIOR_REPORT.json"); judge.set_defaults(handler=score)
     return parser
@@ -270,7 +303,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
-    if getattr(args, "runs", 1) < 1: raise Error("--runs must be positive")
+    if getattr(args, "runs", 3) < 3: raise Error("--runs must be at least 3")
     return args.handler(args)
 
 
