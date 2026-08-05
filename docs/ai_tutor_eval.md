@@ -63,6 +63,9 @@ python3 tests/test_ai_tutor_provider_eval.py
 - компиляцию всех `10 × 3` запросов;
 - получение 30 транскриптов;
 - сохранение точных входных сообщений и их SHA-256;
+- точное соответствие case/run topology текущим сценариям;
+- минимум три запуска каждого сценария;
+- привязку к текущим case, prompt и adapter SHA-256;
 - отказ при подмене сохранённого запроса;
 - запрет самовольного объявления семантического `PASS`;
 - полноту topology ручной или независимой проверки.
@@ -104,7 +107,7 @@ python3 scripts/run_ai_tutor_provider_eval.py validate \
   AI_TUTOR_PROVIDER_EVIDENCE.json
 ```
 
-Эта команда доказывает только полноту и целостность provider capture. Она намеренно выводит:
+Эта команда требует точные 10 сценариев, не менее трёх запусков каждого, полный Git SHA и совпадение сохранённых сообщений с текущими case/prompt fixtures. Она доказывает только полноту и целостность provider capture и намеренно выводит:
 
 ```text
 AI_TUTOR_SEMANTIC_ADJUDICATION=NOT_RUN
@@ -125,6 +128,8 @@ python3 scripts/run_ai_tutor_provider_eval.py template \
 - `kind: manual` и идентификатор проверяющего; либо
 - `kind: independent_model`, provider и модель, отличающиеся от проверяемой пары provider/model.
 
+Для `independent_model` дополнительно обязателен `evidence_sha256` отдельного сохранённого артефакта работы модели-судьи. Кандидатная модель не может считаться независимым судьёй самой себя.
+
 Для каждого check замени `UNREVIEWED` на `PASS` или `FAIL` и добавь конкретное evidence-обоснование. Затем выполни:
 
 ```bash
@@ -134,7 +139,7 @@ python3 scripts/run_ai_tutor_provider_eval.py score \
   --output AI_TUTOR_BEHAVIOR_REPORT.json
 ```
 
-Скоринг fail-closed: отсутствующий запуск, check, verdict, evidence note или несовпадающий digest блокирует итог. Кандидатная модель не может считаться независимым судьёй самой себя.
+Скоринг fail-closed: отсутствующий запуск, check, verdict, evidence note, несовпадающий digest или менее трёх запусков сценария блокирует итог.
 
 ## Минимальный provider-backed прогон
 
