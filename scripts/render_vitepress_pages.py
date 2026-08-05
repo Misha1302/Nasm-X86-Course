@@ -150,7 +150,13 @@ def main() -> int:
                         r"""async () => {
                           const deadline = Date.now() + 10_000;
                           while (Date.now() < deadline) {
-                            const switches = [...document.querySelectorAll('.VPSwitchAppearance')];
+                            const switches = [...document.querySelectorAll('.VPSwitchAppearance')].filter(button => {
+                              const style = getComputedStyle(button);
+                              const rect = button.getBoundingClientRect();
+                              return style.display !== 'none' && style.visibility !== 'hidden' &&
+                                Number.parseFloat(style.opacity || '1') !== 0 &&
+                                rect.width > 0 && rect.height > 0;
+                            });
                             const ready = switches.length === 0 || switches.every(button =>
                               (button.getAttribute('aria-label') || button.getAttribute('title') || '').trim()
                             );
