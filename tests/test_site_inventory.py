@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
+from normalize_markdown_structure import markdown_sources, normalize  # noqa: E402
 from site_inventory import discover_site_pages, normalize_internal_route  # noqa: E402
 
 CONFIG = ROOT / "docs" / ".vitepress" / "config.mts"
@@ -54,6 +55,14 @@ def main() -> int:
     ):
         require(source in sources, f"site inventory lacks learner-facing page {source}")
 
+    structure_drift: list[str] = []
+    for path in markdown_sources():
+        relative = path.relative_to(ROOT).as_posix()
+        text = path.read_text(encoding="utf-8")
+        if normalize(text, relative=relative) != text:
+            structure_drift.append(relative)
+    require(not structure_drift, f"Markdown structure requires normalization: {structure_drift}")
+
     for relative in (
         "docs/textbook.md",
         "docs/closed_book_workbook.md",
@@ -88,6 +97,7 @@ def main() -> int:
 
     print(f"SITE_INVENTORY_PAGES={len(pages)}")
     print(f"SITE_INVENTORY_NAV_LINKS={len(links)}")
+    print("SITE_MARKDOWN_STRUCTURE=PASS")
     print("SITE_GENERATED_SINGLE_H1=PASS")
     print("SITE_INVENTORY_RESULT=PASS")
     return 0
