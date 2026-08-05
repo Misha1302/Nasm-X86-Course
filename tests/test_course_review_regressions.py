@@ -21,25 +21,62 @@ def main() -> int:
     require("NASM source → assembler → object" in day1, "REVIEW-DAY01-NASM-PIPELINE")
     require("C++ source → compiler" in day1, "REVIEW-DAY01-CPP-COMPILER")
     require(
-        "source → assembler → object → linker" not in day1,
+        "расположить этапы `source → assembler → object" not in day1,
         "REVIEW-DAY01-AMBIGUOUS-SOURCE-PIPELINE",
     )
 
     day13 = read("docs/day_13.md")
     require("uint32_t x" in day13, "REVIEW-DAY13-UNSIGNED-INPUT")
-    require("x = 0x80000000" in day13 and "x = 0xFFFFFFFF" in day13, "REVIEW-DAY13-BOUNDARIES")
-    require("int result = 0;\nwhile (x != 0)" not in day13, "REVIEW-DAY13-SIGNED-POPCOUNT")
+    require(
+        "x = 0x80000000" in day13 and "x = 0xFFFFFFFF" in day13,
+        "REVIEW-DAY13-BOUNDARIES",
+    )
+    require(
+        "int result = 0;\nwhile (x != 0)" not in day13,
+        "REVIEW-DAY13-SIGNED-POPCOUNT",
+    )
 
     day19 = read("docs/day_19.md")
     require("unsigned short flags" in day19, "REVIEW-DAY19-UNSIGNED-FLAGS")
     require("movzx esi, word [eax+8]" in day19, "REVIEW-DAY19-MOVZX-PAIR")
-    require("short flags" in day19 and "movsx esi, word [eax+8]" in day19, "REVIEW-DAY19-SIGNED-PAIR")
-    require("plain `char`" in day19 and "зависит от реализации" in day19, "REVIEW-DAY19-PLAIN-CHAR")
+    require(
+        "struct SignedItem" in day19 and "movsx esi, word [eax+8]" in day19,
+        "REVIEW-DAY19-SIGNED-PAIR",
+    )
+    require(
+        "plain `char`" in day19 and "зависит от реализации" in day19,
+        "REVIEW-DAY19-PLAIN-CHAR",
+    )
+
+    day21 = read("docs/day_21.md")
+    require("R → чтение" in day21 and "X → исполнение" in day21, "REVIEW-DAY21-PERMISSIONS")
+    require(
+        "разрешение относится к конкретным страницам" in day21,
+        "REVIEW-DAY21-MAPPING-BOUNDARY",
+    )
+    require(
+        "куча или стек по своей природе никогда не могут исполняться" in day21,
+        "REVIEW-DAY21-NEGATIVE-EXAMPLE",
+    )
+
+    day22 = read("docs/day_22.md")
+    require("absoluteEpsilon" in day22 and "relativeEpsilon" in day22, "REVIEW-DAY22-SCALE")
+    require(
+        "std::max(std::abs(x), std::abs(y))" in day22,
+        "REVIEW-DAY22-COMBINED-COMPARISON",
+    )
+    require("Когда точное равенство допустимо" in day22, "REVIEW-DAY22-EXACT-EQUALITY")
 
     day24 = read("docs/day_24.md")
     require("разрешение адреса цели" in day24.lower(), "REVIEW-DAY24-TARGET-RESOLUTION")
-    require("mov ecx, [p]" in day24 and "call dword [eax]" in day24, "REVIEW-DAY24-THIS-CALL")
-    require("выбирать адрес функции и забывать передать `this`" in day24, "REVIEW-DAY24-MISSING-THIS")
+    require(
+        "mov ecx, [p]" in day24 and "call dword [eax]" in day24,
+        "REVIEW-DAY24-THIS-CALL",
+    )
+    require(
+        "выбирать адрес функции и забывать передать `this`" in day24,
+        "REVIEW-DAY24-MISSING-THIS",
+    )
 
     manifest = read("scripts/course_manifest.py")
     require('"docs/sources.md"' in manifest, "REVIEW-MANIFEST-SOURCES")
@@ -57,6 +94,8 @@ def main() -> int:
     print("COURSE_REVIEW_DAY01_PIPELINES=PASS")
     print("COURSE_REVIEW_DAY13_SIGNEDNESS=PASS")
     print("COURSE_REVIEW_DAY19_FIELD_TYPES=PASS")
+    print("COURSE_REVIEW_DAY21_NX_PERMISSIONS=PASS")
+    print("COURSE_REVIEW_DAY22_FLOAT_COMPARISON=PASS")
     print("COURSE_REVIEW_DAY24_THIS_CONTRACT=PASS")
     print("COURSE_REVIEW_STANDALONE_MANIFEST=PASS")
     print("COURSE_REVIEW_AI_HISTORY=PASS")
