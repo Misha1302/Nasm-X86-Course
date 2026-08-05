@@ -197,7 +197,14 @@ def main() -> int:
 
                           const emptyButtons = [...document.querySelectorAll('button')]
                             .filter(visible).filter(button => !accessibleName(button));
-                          if (emptyButtons.length) failures.push(`visible buttons without accessible name: ${emptyButtons.length}`);
+                          if (emptyButtons.length) {
+                            const descriptions = emptyButtons.slice(0, 5).map(button => {
+                              const classes = [...button.classList].join('.');
+                              return button.tagName.toLowerCase() + (classes ? `.${classes}` : '') +
+                                ` html=${button.outerHTML.slice(0, 240)}`;
+                            });
+                            failures.push(`visible buttons without accessible name: ${emptyButtons.length}: ${descriptions.join(' | ')}`);
+                          }
 
                           const controlsWithoutLabel = [...document.querySelectorAll('input:not([type="hidden"]), select, textarea')]
                             .filter(visible).filter(control => {
@@ -230,13 +237,8 @@ def main() -> int:
                             .filter(details => !details.querySelector(':scope > summary'));
                           if (detailsWithoutSummary.length) failures.push(`details without summary: ${detailsWithoutSummary.length}`);
 
-                          const interactiveSelector = 'a[href],button,input:not([type="hidden"]),select,textarea,summary,[tabindex]';
-                          const isInteractive = element => {
-                            if (!(element instanceof Element)) return false;
-                            if (element.matches('a[href],button,input:not([type="hidden"]),select,textarea,summary')) return true;
-                            const tabindex = element.getAttribute('tabindex');
-                            return tabindex !== null && Number(tabindex) >= 0;
-                          };
+                          const interactiveSelector = 'a[href],button,input:not([type="hidden"]),select,textarea,summary,[role="button"],[role="link"],[role="checkbox"],[role="radio"],[role="switch"],[role="menuitem"],[role="option"]';
+                          const isInteractive = element => element instanceof Element && element.matches(interactiveSelector);
                           const nestedInteractive = [...document.querySelectorAll(interactiveSelector)]
                             .filter(isInteractive)
                             .filter(element => {

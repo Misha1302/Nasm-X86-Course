@@ -38,9 +38,14 @@ def route_for_source(path: Path, *, docs_root: Path = DOCS) -> str:
 
 def first_heading(text: str, *, source: str) -> str:
     if source == "docs/index.md":
-        hero = re.search(r'(?m)^  name:\s*["\'](.+?)["\']\s*$', text)
-        if hero:
-            return hero.group(1).strip()
+        hero_name = re.search(r'(?m)^  name:\s*["\'](.+?)["\']\s*$', text)
+        hero_text = re.search(r'(?m)^  text:\s*["\'](.+?)["\']\s*$', text)
+        if hero_name:
+            return " ".join(
+                part.strip()
+                for part in (hero_name.group(1), hero_text.group(1) if hero_text else "")
+                if part.strip()
+            )
     match = re.search(r"(?m)^#\s+(.+?)\s*$", text)
     if not match:
         raise ValueError(f"page lacks H1 heading: {source}")
