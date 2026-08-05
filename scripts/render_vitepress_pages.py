@@ -146,6 +146,24 @@ def main() -> int:
                     response = page.goto(url, wait_until="networkidle")
                     status = response.status if response else 0
                     page.wait_for_timeout(120)
+                    appearance_switch_ready = page.evaluate(
+                        r"""async () => {
+                          const deadline = Date.now() + 10_000;
+                          while (Date.now() < deadline) {
+                            const switches = [...document.querySelectorAll('.VPSwitchAppearance')];
+                            const ready = switches.length === 0 || switches.every(button =>
+                              (button.getAttribute('aria-label') || button.getAttribute('title') || '').trim()
+                            );
+                            if (ready) return true;
+                            await new Promise(resolve => setTimeout(resolve, 50));
+                          }
+                          return false;
+                        }"""
+                    )
+                    if not appearance_switch_ready:
+                        page_errors.append(
+                            "appearance switch did not receive an accessible name after hydration"
+                        )
 
                     metrics = page.evaluate(
                         r"""() => {
