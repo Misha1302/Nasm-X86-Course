@@ -1,4 +1,15 @@
-import DefaultTheme from 'vitepress/theme';
-import './style.css';
+import DefaultTheme from "vitepress/theme";
+import type { Theme } from "vitepress";
+import "./style.css";
 
-export default DefaultTheme;
+const theme: Theme = {
+    ...DefaultTheme,
+    enhanceApp(context) {
+        DefaultTheme.enhanceApp?.(context);
+        if (typeof document !== "undefined") {
+            document.documentElement.lang = "ru-RU";
+        }
+    }
+};
+
+export default theme;
