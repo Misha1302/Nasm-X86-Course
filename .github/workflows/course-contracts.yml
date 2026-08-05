@@ -30,6 +30,10 @@ jobs:
         run: python3 scripts/validate_assessment.py
       - name: Reject malformed assessment input fail-closed
         run: python3 tests/test_assessment_engine.py
+      - name: Verify learner-facing assessment CLI
+        run: python3 tests/test_score_attempt_cli.py
+      - name: Lock reviewed course semantics
+        run: python3 tests/test_course_review_regressions.py
       - name: Reject fail-open ASM contract loading
         run: python3 tests/test_nasm_harness.py
       - name: Run adversarial review with independent mutation oracle

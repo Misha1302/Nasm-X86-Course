@@ -14,15 +14,6 @@ on:
         description: Exact provider model ID
         required: true
         type: string
-      runs_per_case:
-        description: Independent runs for each of the 10 cases
-        required: true
-        default: '3'
-        type: choice
-        options:
-          - '3'
-          - '4'
-          - '5'
       temperature:
         description: Optional temperature; leave empty when unsupported
         required: false
@@ -59,7 +50,7 @@ jobs:
       DEEPSEEK_KEY: ${{ secrets.AI_TUTOR_DEEPSEEK_API_KEY }}
       PROVIDER: ${{ inputs.provider }}
       MODEL: ${{ inputs.model }}
-      RUNS_PER_CASE: ${{ inputs.runs_per_case }}
+      RUNS_PER_CASE: '3'
       TEMPERATURE: ${{ inputs.temperature }}
       TOKEN_LIMIT_FIELD: ${{ inputs.token_limit_field }}
       SEED_BASE: ${{ inputs.seed_base }}
@@ -87,7 +78,7 @@ jobs:
           fi
           printf 'AI_TUTOR_API_KEY=%s\n' "$key" >> "$GITHUB_ENV"
 
-      - name: Capture 10 x N live transcripts
+      - name: Capture exactly 10 x 3 live transcripts
         shell: bash
         run: |
           set -euo pipefail

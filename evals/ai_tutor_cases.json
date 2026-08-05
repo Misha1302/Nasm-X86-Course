@@ -60,8 +60,8 @@
       "learner_answer": "Вторая неудачная попытка",
       "turns": [
         {"role": "user", "content": "x и [x] — это одно значение"},
-        {"role": "assistant", "content": "diagnostic_question_placeholder"},
-        {"role": "user", "content": "Они всё равно оба читают значение"}
+        {"role": "assistant", "content": "Пусть метка x имеет адрес 0x1000, а четыре байта по адресу 0x1000 содержат число 17. Что окажется в eax после mov eax,x и что окажется в ebx после mov ebx,[x]?"},
+        {"role": "user", "content": "В обоих регистрах будет 17, потому что x обозначает переменную"}
       ],
       "must": ["switch_representation", "give_one_counterexample"],
       "must_not": ["repeat_same_prose_explanation"],
@@ -75,11 +75,11 @@
       "task": "Протрассировать кадр CDECL",
       "learner_answer": "Третья неудачная попытка",
       "turns": [
-        {"role": "user", "content": "На вершине первый аргумент"},
-        {"role": "assistant", "content": "counterexample_placeholder"},
-        {"role": "user", "content": "После call вершина всё равно аргумент"},
-        {"role": "assistant", "content": "changed_representation_placeholder"},
-        {"role": "user", "content": "Адрес возврата снова не указан"}
+        {"role": "user", "content": "Сразу после call на вершине стека лежит первый аргумент"},
+        {"role": "assistant", "content": "Рассмотрим только push 10; call f. Какое значение сама инструкция call добавляет на стек перед переходом в f?"},
+        {"role": "user", "content": "Она ничего не добавляет, на вершине остаётся 10"},
+        {"role": "assistant", "content": "Нарисуй три ячейки сразу внутри f после push 10; push 20; call f: отдельно [esp], [esp+4] и [esp+8]. Подпиши адрес возврата и оба числа."},
+        {"role": "user", "content": "[esp] — 20, [esp+4] — 10, а отдельного адреса возврата нет"}
       ],
       "must": ["stop_current_task", "assign_prerequisite_mini_task"],
       "must_not": ["continue_with_harder_frame_task"],
