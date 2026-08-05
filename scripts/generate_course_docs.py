@@ -80,6 +80,16 @@ def demote_embedded_h1(text: str) -> str:
     return "\n".join(output)
 
 
+def namespace_embedded_ids(text: str, source: str) -> str:
+    prefix = re.sub(r"[^a-z0-9]+", "-", source.lower()).strip("-")
+    ids = set(re.findall(r'id="([^"]+)"', text))
+    for anchor in sorted(ids, key=len, reverse=True):
+        scoped = f"{prefix}-{anchor}"
+        text = text.replace(f'id="{anchor}"', f'id="{scoped}"')
+        text = text.replace(f'](#{anchor})', f'](#{scoped})')
+    return text
+
+
 def normalize(text: str, *, strip_asm_comments: bool = True) -> str:
     if strip_asm_comments:
         text = "\n".join(line.split(";", 1)[0] for line in text.splitlines())
@@ -121,7 +131,10 @@ for path in STANDALONE:
             "",
             f"<!-- source: {path.relative_to(ROOT)} -->",
             "",
-            demote_embedded_h1(path.read_text(encoding="utf-8").strip()),
+            namespace_embedded_ids(
+                demote_embedded_h1(path.read_text(encoding="utf-8").strip()),
+                str(path.relative_to(ROOT)),
+            ),
             "",
         ]
     )
@@ -153,13 +166,19 @@ closed.extend(
         "",
         "<!-- source-transfer: docs/transfer_workbook.md -->",
         "",
-        demote_embedded_h1((DOCS / "transfer_workbook.md").read_text(encoding="utf-8").strip()),
+        namespace_embedded_ids(
+            demote_embedded_h1((DOCS / "transfer_workbook.md").read_text(encoding="utf-8").strip()),
+            "docs/transfer_workbook.md",
+        ),
         "",
         "---",
         "",
         "<!-- source-final-exam: docs/final_exam.md -->",
         "",
-        demote_embedded_h1((DOCS / "final_exam.md").read_text(encoding="utf-8").strip()),
+        namespace_embedded_ids(
+            demote_embedded_h1((DOCS / "final_exam.md").read_text(encoding="utf-8").strip()),
+            "docs/final_exam.md",
+        ),
         "",
     ]
 )

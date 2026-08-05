@@ -473,7 +473,7 @@ jl .less
 ---
 
 ## Практика
-#### 1. `cmp eax, ebx` + `je L`
+### 1. `cmp eax, ebx` + `je L`
 
 Что значит?
 

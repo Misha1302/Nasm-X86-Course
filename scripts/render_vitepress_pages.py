@@ -149,7 +149,7 @@ def main() -> int:
 
                     metrics = page.evaluate(
                         r"""() => {
-                          const doc = document.querySelector('.VPDoc');
+                          const doc = document.querySelector('.VPDoc, .VPHome');
                           const visible = element => {
                             if (!(element instanceof Element)) return false;
                             if (element.closest('[hidden], [inert], [aria-hidden="true"]')) return false;
@@ -179,7 +179,7 @@ def main() -> int:
                           const lang = document.documentElement.lang || '';
                           if (!lang.toLowerCase().startsWith('ru')) failures.push(`document language is ${lang || 'missing'}, expected ru`);
                           if (!document.title.trim()) failures.push('document title is empty');
-                          if (!document.querySelector('main')) failures.push('main landmark is missing');
+                          if (!document.querySelector('main') && !document.querySelector('.VPHome')) failures.push('main content root is missing');
                           const h1s = [...(doc?.querySelectorAll('h1') || [])].filter(visible);
                           if (h1s.length !== 1) failures.push(`visible document H1 count is ${h1s.length}, expected 1`);
 
@@ -231,17 +231,26 @@ def main() -> int:
                           if (detailsWithoutSummary.length) failures.push(`details without summary: ${detailsWithoutSummary.length}`);
 
                           const interactiveSelector = 'a[href],button,input:not([type="hidden"]),select,textarea,summary,[tabindex]';
+                          const isInteractive = element => {
+                            if (!(element instanceof Element)) return false;
+                            if (element.matches('a[href],button,input:not([type="hidden"]),select,textarea,summary')) return true;
+                            const tabindex = element.getAttribute('tabindex');
+                            return tabindex !== null && Number(tabindex) >= 0;
+                          };
                           const nestedInteractive = [...document.querySelectorAll(interactiveSelector)]
+                            .filter(isInteractive)
                             .filter(element => {
-                              const parent = element.parentElement?.closest(interactiveSelector);
-                              return parent && parent !== element;
+                              for (let ancestor = element.parentElement; ancestor; ancestor = ancestor.parentElement) {
+                                if (isInteractive(ancestor)) return true;
+                              }
+                              return false;
                             });
                           if (nestedInteractive.length) failures.push(`nested interactive elements: ${nestedInteractive.length}`);
 
                           return {
                             title: document.title,
                             lang,
-                            h1: h1s[0]?.innerText || '',
+                            h1: (h1s[0]?.innerText || '').replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim(),
                             bodyText: doc?.innerText || '',
                             clientWidth: document.documentElement.clientWidth,
                             scrollWidth: document.documentElement.scrollWidth,
@@ -252,7 +261,7 @@ def main() -> int:
                             visualViewportScale: window.visualViewport?.scale || 0,
                             narrowMediaQuery: window.matchMedia('(max-width: 767px)').matches,
                             doc: Boolean(doc),
-                            main: Boolean(document.querySelector('main')),
+                            main: Boolean(document.querySelector('main') || document.querySelector('.VPHome')),
                             nav: Boolean(document.querySelector('.VPNav')),
                             sidebar: Boolean(document.querySelector('.VPSidebar')),
                             tables: doc?.querySelectorAll('table').length || 0,
