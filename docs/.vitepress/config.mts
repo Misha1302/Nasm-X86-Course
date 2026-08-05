@@ -7,6 +7,10 @@ export default defineConfig({
     description: "Самостоятельный курс NASM IA-32: диагностика, главы, практика, контроль и финальный экзамен",
 
     themeConfig: {
+        darkModeSwitchLabel: "Оформление",
+        lightModeSwitchTitle: "Переключить на светлую тему",
+        darkModeSwitchTitle: "Переключить на тёмную тему",
+
         nav: [
             { text: "Диагностика", link: "/prerequisites" },
             { text: "Самостоятельно", link: "/self_study" },
