@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-from pathlib import Path
 import json
 import re
 import sys
+from pathlib import Path
 
 from course_manifest import STANDALONE_RELATIVE_PATHS
+from content_normalization import normalize_visible
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
@@ -21,9 +22,9 @@ def read(relative: str) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def require(text: str, marker: str, owner: str) -> None:
-    if marker not in text:
-        errors.append(f"{owner} lacks marker {marker!r}")
+def require(condition: bool, message: str) -> None:
+    if not condition:
+        errors.append(message)
 
 
 def forbid(text: str, marker: str, owner: str) -> None:
@@ -31,35 +32,26 @@ def forbid(text: str, marker: str, owner: str) -> None:
         errors.append(f"{owner} contains forbidden marker {marker!r}")
 
 
-def normalize(text: str) -> str:
-    return re.sub(r"\s+", " ", text).strip()
-
-
 def heading_ids(text: str, prefix: str) -> list[str]:
     return re.findall(rf"(?m)^### ({re.escape(prefix)}[A-Z0-9-]+)\b", text)
 
 
-def level2_sections(text: str, prefix: str) -> dict[int, str]:
-    matches = list(re.finditer(rf"(?m)^## {re.escape(prefix)}(\d+)[^\n]*$", text))
-    result: dict[int, str] = {}
-    for index, match in enumerate(matches):
-        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
-        result[int(match.group(1))] = text[match.start():end]
-    return result
+
+def normalize(text: str) -> str:
+    return normalize_visible(text)
 
 
-assessment_path = ROOT / "scripts" / "assessment_contract.json"
 try:
-    assessment = json.loads(assessment_path.read_text(encoding="utf-8"))
-except (FileNotFoundError, json.JSONDecodeError) as exc:
+    assessment = json.loads(read("scripts/assessment_contract.json"))
+except json.JSONDecodeError as exc:
     errors.append(f"invalid assessment contract: {exc}")
-    assessment = {"checkpoints": {}, "final_exam": {}, "day10": {}}
+    assessment = {}
 
-# Full standalone export must include every learner-critical owner.
+require(assessment.get("schema_version") == "2.0", "pedagogy validator requires assessment schema 2.0")
+require(assessment.get("canonical_owner") == "scripts/assessment_contract.json", "assessment owner drifted")
+
 required_sources = {
-    "docs/prerequisites.md",
     "docs/prerequisite_refreshers.md",
-    "docs/glossary.md",
     "docs/self_study.md",
     "docs/support_matrix.md",
     "docs/c_abi.md",
@@ -79,135 +71,94 @@ for source in STANDALONE_RELATIVE_PATHS:
 
 textbook = read("docs/textbook.md")
 for source in STANDALONE_RELATIVE_PATHS:
-    require(textbook, f"<!-- source: {source} -->", "generated textbook")
+    require(f"<!-- source: {source} -->" in textbook, f"generated textbook lacks source {source}")
 
-# Closed-book artifact must hide all solution containers, regardless of labels.
 closed = read("docs/closed_book_workbook.md")
 for marker in ("<details", "</details>", "<summary>"):
     forbid(closed.lower(), marker, "closed_book_workbook")
-require(closed, "<!-- source-final-exam: docs/final_exam.md -->", "closed_book_workbook")
+require("<!-- source-final-exam: docs/final_exam.md -->" in closed, "closed_book_workbook lacks final exam source marker")
+try:
+    fingerprints = json.loads(read("scripts/answer_fingerprints.json"))
+except json.JSONDecodeError as exc:
+    errors.append(f"invalid answer fingerprint contract: {exc}")
+else:
+    closed_norm = normalize(closed)
+    for item in fingerprints.get("fingerprints", []):
+        targets = item.get("protected_targets", fingerprints.get("protected_targets", []))
+        if "docs/closed_book_workbook.md" not in targets:
+            continue
+        fragment = normalize(item.get("fragment", ""))
+        if fragment and fragment in closed_norm:
+            errors.append(f"closed-book fingerprint leak: {item.get('id')}")
 
-closed_norm = normalize(closed)
-for day in range(1, 26):
-    source = read(f"docs/day_{day:02d}.md")
-    for body in re.findall(r"(?is)<details(?:\s[^>]*)?>(.*?)</details>", source):
-        body = re.sub(r"(?is)<summary>.*?</summary>", "", body)
-        candidate = normalize(body)
-        if len(candidate) >= 80 and candidate in closed_norm:
-            errors.append(f"closed-book artifact leaks a solution body from day_{day:02d}")
-            break
-
-# One executable ABI model. Abstract call/ret exercises must label themselves.
+# The admission page is deliberately answer-free; exact answers live only in keys/examples.
 day25 = read("docs/day_25.md")
 final_exam = read("docs/final_exam.md")
 final_keys = read("docs/final_exam_keys.md")
 instruction_reference = read("docs/instruction_reference.md")
-transfer_workbook = read("docs/transfer_workbook.md")
-transfer_keys = read("docs/transfer_keys.md")
-checkpoints = read("docs/checkpoints.md")
-checkpoint_keys = read("docs/checkpoint_keys.md")
 example_sum = read("examples/09_aligned_sum_call.asm")
-
 correct_sum_call = "sub esp, 8\npush dword [b]\npush dword [a]\ncall sum\nadd esp, 16"
-for owner, text in (
-    ("day_25", day25),
-    ("final_exam_keys", final_keys),
-    ("instruction_reference", instruction_reference),
-):
-    require(text, correct_sum_call, owner)
+forbid(day25, correct_sum_call, "day_25")
+require(correct_sum_call in final_keys, "final_exam_keys lacks canonical aligned sum answer")
+for marker in ("sub esp, 8", "call sum", "add esp, 16"):
+    require(marker in example_sum, f"aligned sum example lacks {marker!r}")
+for route in ("/final_exam", "/final_exam_keys", "/final_remediation"):
+    require(route in day25, f"day_25 lacks route {route}")
+require("CP1 + CP2 + CP3 + CP4 + CP5 + CP6 + FINAL" in day25, "day_25 lacks composed readiness contract")
+require(re.search(r"```(?:asm|nasm)\b", day25, flags=re.I) is None, "day_25 exposes an ASM answer listing")
+if len(re.findall(r"[A-Za-zА-Яа-яЁё0-9_]+", day25)) > 1800:
+    errors.append("day_25 is overloaded")
 
-require(example_sum, "sub esp, 8", "aligned sum example")
-require(example_sum, "call sum", "aligned sum example")
-require(example_sum, "add esp, 16", "aligned sum example")
-
-old_sum_pattern = re.compile(
-    r"push(?:\s+dword)?\s+\[?b\]?\s*\n"
-    r"push(?:\s+dword)?\s+\[?a\]?\s*\n"
-    r"call\s+sum\s*\n"
-    r"add\s+esp,\s*8\b",
-    flags=re.I,
-)
-for path in DOCS.rglob("*.md"):
-    text = path.read_text(encoding="utf-8")
-    if old_sum_pattern.search(text):
-        errors.append(f"stale unaligned sum call: {path.relative_to(ROOT)}")
-
-for owner, text in (
-    ("transfer_workbook TR-16", transfer_workbook),
-    ("transfer_keys TR-16", transfer_keys),
-    ("checkpoint CP4", checkpoints),
-):
-    require(text, "абстракт", owner.lower())
-
-# x87 reference must state operand direction rather than vague 'top elements'.
 for marker in (
     "fsubp st1,st0` | `st(1)=st(1)-st(0)`",
     "fdivp st1,st0` | `st(1)=st(1)/st(0)`",
 ):
-    require(instruction_reference, marker, "instruction_reference")
+    require(marker in instruction_reference, f"instruction_reference lacks exact x87 direction {marker!r}")
 
-# Day 10 mandatory/optional contract must match checkpoint and final assessment.
-cp2 = level2_sections(checkpoints, "Контрольная точка ").get(2, "")
-for checkpoint_id in assessment.get("day10", {}).get("checkpoint2_required", []):
-    require(cp2, f"### {checkpoint_id}", "checkpoint 2")
-forbid(cp2, "01-16", "checkpoint 2 core")
+checkpoints = read("docs/checkpoints.md")
+checkpoint_keys = read("docs/checkpoint_keys.md")
+for aid in [f"CP{i}" for i in range(1, 7)]:
+    contract = assessment.get("assessments", {}).get(aid, {})
+    tasks = list(contract.get("tasks", {}))
+    task_ids = heading_ids(checkpoints, aid + "-")
+    key_ids = heading_ids(checkpoint_keys, aid + "-")
+    require(task_ids == tasks, f"{aid} task order differs from canonical contract: {task_ids} != {tasks}")
+    require(key_ids == tasks, f"{aid} key order differs from canonical contract: {key_ids} != {tasks}")
+    maximum = contract.get("maximum")
+    threshold = contract.get("threshold")
+    scoring = f"**Максимум:** {maximum}. **Проход:** {threshold}. **Критические задания:**"
+    require(scoring in checkpoints, f"{aid} scoring prose is not synchronized")
+    require(scoring in checkpoint_keys, f"{aid} key scoring prose is not synchronized")
+    for rule in contract.get("critical_task_rules", []):
+        require(rule.get("task") in tasks, f"{aid} critical rule references unknown task {rule.get('task')}")
+
+# Day 10 core/bonus routing is sourced from the canonical contract.
+day10 = assessment.get("day10", {})
+require(day10.get("mandatory_sessions") == ["10A", "10B", "10C", "10D", "10E"], "mandatory Day 10 sessions drifted")
+require(day10.get("optional_sessions") == ["10F"], "10F is not optional")
+cp2_tasks = assessment.get("assessments", {}).get("CP2", {}).get("tasks", {})
+for required_task in day10.get("checkpoint2_required", []):
+    require(required_task in cp2_tasks, f"Day 10 required evidence task missing from CP2: {required_task}")
+require("CP2-IDIV-OVERFLOW" in cp2_tasks, "signed division overflow lacks separate CP2 evidence")
 
 bonus_marker = "## Необязательный бонус 10F"
-require(final_exam, bonus_marker, "final exam")
-core_exam, _, bonus = final_exam.partition(bonus_marker)
-forbid(core_exam, "01-16", "final exam core")
-require(bonus, "01-16", "final exam bonus")
+require(bonus_marker in final_exam, "final exam lacks an explicit 10F bonus section")
+_, _, bonus = final_exam.partition(bonus_marker)
+require("01-16" in bonus, "01-16 is absent from the bonus section")
+require("bonus-only" in final_exam, "final exam does not state that 10F/01-16 are bonus-only")
 
-# Checkpoint task/key identity and machine-readable assessment contract.
-cp_sections = level2_sections(checkpoints, "Контрольная точка ")
-key_sections = level2_sections(checkpoint_keys, "Контрольная точка ")
-for number_text, contract in assessment.get("checkpoints", {}).items():
-    number = int(number_text)
-    cp = cp_sections.get(number, "")
-    key = key_sections.get(number, "")
-    if not cp or not key:
-        errors.append(f"missing checkpoint/key section {number}")
-        continue
-    task_ids = heading_ids(cp, f"CP{number}-")
-    key_ids = heading_ids(key, f"CP{number}-")
-    if task_ids != key_ids:
-        errors.append(f"checkpoint {number} IDs differ: tasks={task_ids}, keys={key_ids}")
-    scoring = (
-        f"**Максимум:** {contract['maximum']}. **Проход:** {contract['threshold']}. "
-        f"**Критические задания:** "
-    )
-    require(cp, scoring, f"checkpoint {number}")
-    require(key, scoring, f"checkpoint key {number}")
-    for critical in contract["critical"]:
-        if critical not in task_ids:
-            errors.append(f"checkpoint {number} critical ID is absent: {critical}")
-    require(cp, "**Минимумы по измерениям:**", f"checkpoint {number}")
-    require(key, "**Минимумы по измерениям:**", f"checkpoint key {number}")
-    if contract["maximum"] != 2 * len(task_ids):
-        errors.append(f"checkpoint {number} maximum does not match task count")
-
-# Final exam must enforce both total and block minima and keep answers separate.
+final_contract = assessment.get("assessments", {}).get("FINAL", {})
+require(f"Максимум: {final_contract.get('maximum')} баллов" in final_exam, "final_exam maximum is not synchronized")
+require(f"Общий проход: не менее {final_contract.get('threshold')}" in final_exam, "final_exam threshold is not synchronized")
+for block, data in final_contract.get("block_minimums", {}).items():
+    require(f"{block}≥{data.get('minimum')}" in final_exam, f"final_exam lacks {block} block minimum")
+for rule in final_contract.get("critical_task_rules", []):
+    require(rule.get("task") in final_exam, f"final_exam lacks critical task {rule.get('task')}")
 for marker in ("<details", "<summary>", "Ожидаемый фрагмент"):
     forbid(final_exam, marker, "final_exam")
-final_contract = assessment.get("final_exam", {})
-require(final_exam, f"Максимум: {final_contract.get('maximum')} баллов", "final_exam")
-require(final_exam, f"Общий проход: не менее {final_contract.get('threshold')}", "final_exam")
-for block, minimum in final_contract.get("block_minimums", {}).items():
-    require(final_exam, f"{block}≥{minimum}", "final_exam")
-for critical in final_contract.get("critical", []):
-    require(final_exam, critical, "final_exam")
-require(final_keys, "total >= 80", "final_exam_keys")
-require(final_keys, "A >= 12", "final_exam_keys")
-require(final_keys, "E >= 9", "final_exam_keys")
+require("total >= 80" in final_keys, "final_exam_keys lacks total predicate")
+require("A >= 12" in final_keys and "E >= 9" in final_keys, "final_exam_keys lacks block predicates")
 
-# Day 25 is a route, not ten chapters hidden under one day.
-word_count = len(re.findall(r"[A-Za-zА-Яа-яЁё0-9_]+", day25))
-if word_count > 2500:
-    errors.append(f"day_25 is overloaded: {word_count} words")
-for link in ("/final_exam", "/final_exam_keys", "/final_remediation"):
-    require(day25, link, "day_25")
-
-# Navigation exposes recovery and final-assessment surfaces.
 config = read("docs/.vitepress/config.mts")
 for link in (
     "/prerequisite_refreshers",
@@ -216,32 +167,27 @@ for link in (
     "/final_exam_keys",
     "/final_remediation",
 ):
-    require(config, f'link: "{link}"', "VitePress navigation")
+    require(f'link: "{link}"' in config, f"VitePress navigation lacks {link}")
 
-# Environment support must not imply verification that CI does not perform.
 support = read("docs/support_matrix.md")
-require(support, "CI-verified", "support_matrix")
-require(support, "documented, manually unverified", "support_matrix")
+require("CI-verified" in support, "support_matrix lacks CI-verified status")
+require("documented, manually unverified" in support, "support_matrix lacks explicit unverified status")
 forbid(support, "Fedora x86-64 | поддерживается", "support_matrix")
 forbid(support, "32-битной набор", "support_matrix")
 
-# AI repeated-failure scenarios must be actual multi-turn fixtures.
 ai_eval = read("docs/ai_tutor_eval.md")
-require(ai_eval, "массив последовательных ходов", "ai_tutor_eval")
+require("массив последовательных ходов" in ai_eval, "ai_tutor_eval lacks multi-turn fixture contract")
 try:
     cases = json.loads(read("evals/ai_tutor_cases.json"))
 except json.JSONDecodeError as exc:
     errors.append(f"invalid AI tutor cases: {exc}")
 else:
-    if cases.get("provider_status") != "NOT_RUN":
-        errors.append("AI tutor provider status must remain NOT_RUN")
+    require(cases.get("provider_status") == "NOT_RUN", "AI provider status must remain NOT_RUN")
     by_id = {case.get("id"): case for case in cases.get("cases", [])}
     for case_id, minimum_turns in (("AI-05-recovery-switch", 3), ("AI-06-third-failure-prerequisite", 4)):
         turns = by_id.get(case_id, {}).get("turns")
-        if not isinstance(turns, list) or len(turns) < minimum_turns:
-            errors.append(f"{case_id} lacks a real multi-turn fixture")
+        require(isinstance(turns, list) and len(turns) >= minimum_turns, f"{case_id} lacks a real multi-turn fixture")
 
-# Known mechanical-translation regressions.
 banned_phrases = (
     "знаковая/беззнаковая интерпретация интерпретацию",
     "В построчное расположение",

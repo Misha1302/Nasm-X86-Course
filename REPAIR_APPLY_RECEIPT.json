@@ -1,0 +1,47 @@
+{
+  "schema_version": "4.0",
+  "repository": "Misha1302/Nasm-X86-Course",
+  "baseline_branch": "main",
+  "baseline_sha": "d3a172f12d7a1f7e456a6a930007711a55d8d93c",
+  "final_branch": "repair/nasm-course-complete-20260803",
+  "pull_request": 11,
+  "publication_performed": true,
+  "main_modified": false,
+  "merge_to_main_performed": false,
+  "revision_policy": "The current PR head is reviewable only when every required check attached to that exact head is successful.",
+  "required_checks": [
+    "Audit course quality",
+    "Validate course",
+    "Course contracts / fast-contracts",
+    "Course contracts / mutation",
+    "Course contracts / docs-asm-visual"
+  ],
+  "evidence_policy": {
+    "tracked_generated_reports": false,
+    "ci_artifacts": [
+      "contract-evidence",
+      "mutation-evidence",
+      "vitepress-render-evidence"
+    ],
+    "mutation_authority": "scripts/verify_mutation_execution.py",
+    "mutation_policy_sha256": "44fe038fabd2a071a2186c7346eb625d9e6768fe17fed81b2e4f29135b85ecdc"
+  },
+  "local_verification": {
+    "semantic_contracts": "pass",
+    "assessment_schema_and_proof": "pass",
+    "malformed_assessment_inputs": "fail_closed_7_of_7",
+    "checkpoint_assignments_checked": 28188,
+    "final_constraint_assignments_checked": 17,
+    "scoring_regressions": 16,
+    "mandatory_skill_attacks_blocked": 56,
+    "mutations_reported": 31,
+    "mutations_independently_reexecuted": 31,
+    "mutation_survivors": 0,
+    "forged_runner_with_broken_owner": "blocked",
+    "mutation_policy_replacement": "blocked",
+    "python_compileall": "pass",
+    "classified_nasm_ia32_suite": "required_on_current_pr_head",
+    "vitepress_browser_gate": "required_on_current_pr_head"
+  },
+  "verdict": "PENDING_CURRENT_HEAD_CI"
+}

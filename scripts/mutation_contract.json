@@ -1,0 +1,309 @@
+{
+  "schema_version": "3.0",
+  "cases": [
+    {
+      "id": "M01-cleanup-16-to-8",
+      "path": "examples/09_aligned_sum_call.asm",
+      "owner": "semantics",
+      "expected": "ASM-CALL-AREA",
+      "operation": {
+        "kind": "text_replace",
+        "old": "    add esp, 16\n\n    sub esp, 8",
+        "new": "    add esp, 8\n\n    sub esp, 8"
+      }
+    },
+    {
+      "id": "M02-remove-padding",
+      "path": "examples/09_aligned_sum_call.asm",
+      "owner": "semantics",
+      "expected": "ASM-CALL-AREA",
+      "operation": {
+        "kind": "text_replace",
+        "old": "    sub esp, 8\n    push dword 20",
+        "new": "    push dword 20"
+      }
+    },
+    {
+      "id": "M03-remove-cdq",
+      "path": "examples/11_idiv_overflow_negative.asm",
+      "owner": "semantics",
+      "expected": "ASM-IDIV-CDQ",
+      "operation": {
+        "kind": "text_replace",
+        "old": "    cdq\n",
+        "new": ""
+      }
+    },
+    {
+      "id": "M04-reverse-fsubp",
+      "path": "examples/13_x87_order.asm",
+      "owner": "semantics",
+      "expected": "ASM-X87-SUB",
+      "operation": {
+        "kind": "text_replace",
+        "old": "fsubp st1, st0",
+        "new": "fsubrp st1, st0"
+      }
+    },
+    {
+      "id": "M05-reverse-fdivp",
+      "path": "examples/13_x87_order.asm",
+      "owner": "semantics",
+      "expected": "ASM-X87-DIV",
+      "operation": {
+        "kind": "text_replace",
+        "old": "fdivp st1, st0",
+        "new": "fdivrp st1, st0"
+      }
+    },
+    {
+      "id": "M06-remove-restore-esi",
+      "path": "examples/12_callee_saved.asm",
+      "owner": "semantics",
+      "expected": "ASM-CALLEE-SAVED",
+      "operation": {
+        "kind": "text_replace",
+        "old": "    pop esi\n",
+        "new": ""
+      }
+    },
+    {
+      "id": "M07-scanf-value",
+      "path": "examples/14_scanf_call.asm",
+      "owner": "semantics",
+      "expected": "ASM-SCANF-ADDRESS",
+      "operation": {
+        "kind": "text_replace",
+        "old": "    push x\n",
+        "new": "    push dword [x]\n"
+      }
+    },
+    {
+      "id": "M08-idiv-immediate",
+      "path": "examples/11_idiv_overflow_negative.asm",
+      "owner": "semantics",
+      "expected": "ASM-IDIV-OPERAND",
+      "operation": {
+        "kind": "text_replace",
+        "old": "    idiv ecx\n",
+        "new": "    idiv -1\n"
+      }
+    },
+    {
+      "id": "M09-make-10F-core",
+      "path": "scripts/assessment_contract.json",
+      "owner": "assessment",
+      "expected": "ASSESS-DAY10-BONUS",
+      "operation": {
+        "kind": "json_set",
+        "pointer": ["day10", "optional_sessions"],
+        "value": []
+      }
+    },
+    {
+      "id": "M10-include-01-16-in-100",
+      "path": "scripts/assessment_contract.json",
+      "owner": "assessment",
+      "expected": "ASSESS-BONUS",
+      "operation": {
+        "kind": "json_set",
+        "pointer": ["assessments", "FINAL", "bonus_rules", "included_in_maximum"],
+        "value": true
+      }
+    },
+    {
+      "id": "M11-remove-cp3-loop-evidence",
+      "path": "scripts/assessment_contract.json",
+      "owner": "assessment",
+      "expected": "ASSESS-EVIDENCE-BIDIRECTIONAL",
+      "operation": {
+        "kind": "json_set",
+        "pointer": ["assessments", "CP3", "skills", "loop_lowering", "acceptable_evidence", 0, "task"],
+        "value": "CP3-TABLE"
+      }
+    },
+    {
+      "id": "M12-safety-optional",
+      "path": "scripts/assessment_contract.json",
+      "owner": "assessment",
+      "expected": "ASSESS-MANDATORY",
+      "operation": {
+        "kind": "json_set",
+        "pointer": ["assessments", "CP5", "skills", "memory_safety_boundaries", "mandatory"],
+        "value": false
+      }
+    },
+    {
+      "id": "M13-remove-refreshers-manifest",
+      "path": "scripts/course_manifest.py",
+      "owner": "semantics",
+      "expected": "MANIFEST-STANDALONE",
+      "operation": {
+        "kind": "text_replace",
+        "old": "    \"docs/prerequisite_refreshers.md\",\n",
+        "new": ""
+      }
+    },
+    {
+      "id": "M14-answer-in-closed-book",
+      "path": "docs/closed_book_workbook.md",
+      "owner": "semantics",
+      "expected": "LEAK-C3",
+      "operation": {
+        "kind": "text_replace",
+        "old": "# Тетрадь NASM IA-32 без встроенных ответов",
+        "new": "# Тетрадь NASM IA-32 без встроенных ответов\n\n## Ответ\nsub esp, 8\npush dword [b]\npush dword [a]\ncall sum\nadd esp, 16"
+      }
+    },
+    {
+      "id": "M15-transfer-without-key",
+      "path": "docs/transfer_workbook.md",
+      "owner": "semantics",
+      "expected": "TRANSFER-SYNC",
+      "operation": {
+        "kind": "text_replace",
+        "old": "`Container* c`",
+        "new": "`Holder* c`"
+      }
+    },
+    {
+      "id": "M16-change-final-threshold",
+      "path": "scripts/assessment_contract.json",
+      "owner": "semantics",
+      "expected": "DOCS-ASSESSMENT",
+      "operation": {
+        "kind": "json_set",
+        "pointer": ["assessments", "FINAL", "threshold"],
+        "value": 81
+      }
+    },
+    {
+      "id": "M17-break-anchor",
+      "path": "docs/day_10_learning_path.md",
+      "owner": "semantics",
+      "expected": "LINK-ANCHOR",
+      "operation": {
+        "kind": "text_replace",
+        "old": "<a id=\"10b-safe-ceil-machine-model\"></a>",
+        "new": "<a id=\"renamed\"></a>"
+      }
+    },
+    {
+      "id": "M18-reverse-startup",
+      "path": "docs/instruction_reference.md",
+      "owner": "semantics",
+      "expected": "STARTUP-DIRECTION",
+      "operation": {
+        "kind": "text_replace",
+        "old": "exec → loader → _start → runtime startup → main → exit",
+        "new": "main → runtime startup → _start → loader → exec"
+      }
+    },
+    {
+      "id": "M19-return-c3-to-day25",
+      "path": "docs/day_25.md",
+      "owner": "semantics",
+      "expected": "LEAK-C3",
+      "operation": {
+        "kind": "text_replace",
+        "old": "\n## Порядок после попытки",
+        "new": "\n```asm\nsub esp, 8\npush dword [b]\npush dword [a]\ncall sum\nadd esp, 16\n```\n\n## Порядок после попытки"
+      }
+    },
+    {
+      "id": "M20-accept-known-false-pass",
+      "path": "tests/fixtures/scoring.json",
+      "owner": "assessment",
+      "expected": "ASSESS-REGRESSION",
+      "operation": {
+        "kind": "text_replace",
+        "old": "\"expected_pass\": false",
+        "new": "\"expected_pass\": true"
+      }
+    },
+    {
+      "id": "M21-html-comment-leak",
+      "path": "docs/closed_book_workbook.md",
+      "owner": "semantics",
+      "expected": "LEAK-C3",
+      "operation": {
+        "kind": "text_replace",
+        "old": "# Тетрадь NASM IA-32 без встроенных ответов",
+        "new": "# Тетрадь NASM IA-32 без встроенных ответов\n\n<pre><code>sub<!--x--> esp, 8\npush<!--x--> dword [b]\npush<!--x--> dword [a]\ncall<!--x--> sum\nadd<!--x--> esp, 16</code></pre>"
+      }
+    },
+    {
+      "id": "M22-duplicate-evidence",
+      "path": "scripts/assessment_contract.json",
+      "owner": "assessment",
+      "expected": "ASSESS-EVIDENCE-DUPLICATE",
+      "operation": {"kind": "json_duplicate_first_evidence", "assessment": "CP1", "skill": "overlapping_register_trace"}
+    },
+    {
+      "id": "M23-asymmetric-evidence",
+      "path": "scripts/assessment_contract.json",
+      "owner": "assessment",
+      "expected": "ASSESS-EVIDENCE-BIDIRECTIONAL",
+      "operation": {"kind": "json_add_asymmetric_evidence", "assessment": "CP1", "skill": "overlapping_register_trace", "task": "CP1-SIZE-R", "minimum_score": 1}
+    },
+    {
+      "id": "M24-negative-without-outcome",
+      "path": "scripts/executable_contract.json",
+      "owner": "semantics",
+      "expected": "ASM-NEGATIVE-EXPECTED",
+      "operation": {
+        "kind": "json_delete",
+        "pointer": ["blocks", "examples/11_idiv_overflow_negative.asm", "expected"]
+      }
+    },
+    {
+      "id": "M25-move-explanation-content",
+      "path": "docs/day_10_learning_path.md",
+      "owner": "semantics",
+      "expected": "PEDAGOGY-CONTENT",
+      "operation": {"kind": "text_replace", "old": "mov ecx, edx", "new": "mov edi, edx"}
+    },
+    {
+      "id": "M26-wrong-scanf-padding",
+      "path": "examples/14_scanf_call.asm",
+      "owner": "semantics",
+      "expected": "ASM-CALL-AREA",
+      "operation": {"kind": "text_replace", "old": "    sub esp, 4\n", "new": "    sub esp, 8\n"}
+    },
+    {
+      "id": "M27-orphan-declared-outcome",
+      "path": "scripts/assessment_contract.json",
+      "owner": "assessment",
+      "expected": "ASSESS-OUTCOME-COVERAGE",
+      "operation": {"kind": "json_add_orphan_declared_outcome", "name": "orphan_outcome", "owner_assessment": "CP1"}
+    },
+    {
+      "id": "M28-outcome-owner-drift",
+      "path": "scripts/assessment_contract.json",
+      "owner": "assessment",
+      "expected": "ASSESS-OUTCOME-OWNER",
+      "operation": {"kind": "json_set", "pointer": ["declared_outcomes", "overlapping_register_trace", "owner_assessment"], "value": "FINAL"}
+    },
+    {
+      "id": "M29-partial-rule-drift",
+      "path": "scripts/assessment_contract.json",
+      "owner": "assessment",
+      "expected": "ASSESS-PARTIAL-RULE",
+      "operation": {"kind": "json_set", "pointer": ["assessments", "CP1", "partial_error_rule", "score"], "value": 0}
+    },
+    {
+      "id": "M30-block-membership-drift",
+      "path": "scripts/assessment_contract.json",
+      "owner": "assessment",
+      "expected": "ASSESS-BLOCK-MEMBERSHIP",
+      "operation": {"kind": "json_set", "pointer": ["assessments", "CP1", "tasks", "CP1-REG", "block_membership"], "value": []}
+    },
+    {
+      "id": "M31-score-domain-drift",
+      "path": "scripts/assessment_contract.json",
+      "owner": "assessment",
+      "expected": "ASSESS-SCORE-DOMAIN",
+      "operation": {"kind": "json_set", "pointer": ["assessments", "CP1", "score_domain"], "value": [0, 1]}
+    }
+  ]
+}

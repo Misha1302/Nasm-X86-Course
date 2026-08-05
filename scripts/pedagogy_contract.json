@@ -1,0 +1,86 @@
+{
+  "schema_version": "2.0",
+  "ordering_rule": "actual_source_position(explanation) < actual_source_position(required_use) < actual_source_position(assessment)",
+  "events": {
+    "branchless_safe_ceil": {
+      "mandatory": true,
+      "explanation": {
+        "source": "docs/day_10_learning_path.md#10b-safe-ceil-machine-model",
+        "required_markers": [
+          "mov ecx, edx",
+          "neg ecx",
+          "or ecx, edx",
+          "shr ecx, 31",
+          "add eax, ecx"
+        ]
+      },
+      "required_use": {
+        "source": "docs/tasks/spring-01/01-14-garden.md#required-solution",
+        "required_markers": [
+          "boxes = q + nonzero(r)",
+          "mov ecx, edx",
+          "shr ecx, 31"
+        ]
+      },
+      "assessment": {
+        "source": "docs/checkpoints.md#cp2-ceil",
+        "required_markers": [
+          "частное и остаток после div"
+        ]
+      },
+      "forbidden_future_dependencies": [
+        "setcc",
+        "test-as-condition",
+        "conditional-jump",
+        "cmov"
+      ]
+    },
+    "signed_division_overflow": {
+      "mandatory": true,
+      "explanation": {
+        "source": "docs/day_09.md#idiv-overflow",
+        "required_markers": [
+          "INT32_MIN / -1",
+          "2147483648",
+          "#DE"
+        ]
+      },
+      "required_use": {
+        "source": "docs/day_09.md#negative-fixture",
+        "required_markers": [
+          "examples/11_idiv_overflow_negative.asm",
+          "SIGFPE"
+        ]
+      },
+      "assessment": {
+        "source": "docs/checkpoints.md#cp2-idiv-overflow",
+        "required_markers": [
+          "INT32_MIN / -1",
+          "исключение"
+        ]
+      }
+    },
+    "callee_saved_all_returns": {
+      "mandatory": true,
+      "explanation": {
+        "source": "docs/instruction_reference.md#callee-saved",
+        "required_markers": [
+          "восстановлен на каждом достижимом пути ret"
+        ]
+      },
+      "required_use": {
+        "source": "docs/transfer_workbook.md#tr-17",
+        "required_markers": [
+          "временное значение хранится в esi",
+          "восстановление esi на каждом пути"
+        ]
+      },
+      "assessment": {
+        "source": "docs/checkpoints.md#cp4-ebx",
+        "required_markers": [
+          "симметричное сохранение и восстановление на всех возвратах"
+        ]
+      }
+    }
+  }
+}

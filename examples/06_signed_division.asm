@@ -1,3 +1,4 @@
+; BLOCK: RUN
 section .data
     fmtOut db "%d %d", 10, 0
     x dd -17

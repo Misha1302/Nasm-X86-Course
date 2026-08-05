@@ -1,3 +1,6 @@
+; BLOCK: RUN
+; CONTRACT: signed abs result is valid only for x != INT32_MIN.
+; For INT32_MIN the bit pattern 0x80000000 is a uint32_t magnitude, not positive int32_t.
 section .data
     fmtOut db "%d", 10, 0
     x dd -123

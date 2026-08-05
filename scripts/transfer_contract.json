@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0",
+  "tasks": {
+    "TR-05": {
+      "task_fingerprint": "149c893b3b1a27438bcc068acc3e1c1c21ea148e57e1a1ba3e69ab3a80d8e487",
+      "key_fingerprint": "c99277b675b3194f9b4e38746efe121469be098e478cce67ac0d50be758b7de8",
+      "required_features": [
+        "Container*",
+        "head->value",
+        "двум разыменованиям"
+      ],
+      "banned_old_fragments": [
+        "mov eax, [x]"
+      ],
+      "requires_diagnostic_counterexample": true
+    },
+    "TR-16": {
+      "task_fingerprint": "6f1ab1c339721f1b5d7b1ce20e1fa14c09fcf1de4cfb2a1e992c0a5ea6e5e63c",
+      "key_fingerprint": "ce62d85dd086e243e759780176d09984d01b24d60cf286b9757f79fd78e7fc95",
+      "required_features": [
+        "тремя аргументами",
+        "esp%16==8",
+        "12 байт scratch"
+      ],
+      "banned_old_fragments": [
+        "argument_bytes = 8 padding = 8 cleanup = 16"
+      ],
+      "requires_diagnostic_counterexample": true
+    },
+    "TR-17": {
+      "task_fingerprint": "5f1aa61896ea6bce72ec77f02342e00162c0af11e6dc1b5d98d1273c916c45f4",
+      "key_fingerprint": "98f640cd4b118a829480fd44d65588b8f14c00a77d4c004b5dcd80237834a5e7",
+      "required_features": [
+        "clamp_sum",
+        "ранний возврат",
+        "esi"
+      ],
+      "banned_old_fragments": [
+        "int sum(int a, int b)"
+      ],
+      "requires_diagnostic_counterexample": true
+    },
+    "TR-19": {
+      "task_fingerprint": "7b65dfb072f70a8966b6fb382017c6519000160eb98f516a32ed0868938d7f4d",
+      "key_fingerprint": "a0723e15c8097f13353a1d8c07471ce30981e2be7f9be7a7a5d6bbc8e9e0d9d7",
+      "required_features": [
+        "массив вложенных структур",
+        "Point",
+        "знаковым расширением"
+      ],
+      "banned_old_fragments": [
+        "struct Node { int value; Node* next; }"
+      ],
+      "requires_diagnostic_counterexample": true
+    },
+    "TR-23": {
+      "task_fingerprint": "1606e6d986d29384d37d166c089132ffd920ac4d1f5e93d2cf94b5183f622890",
+      "key_fingerprint": "63e568110cb4f27c60b287848fefe38d6d69e17f394028df9104bc3484f1c669",
+      "required_features": [
+        "(a+b)*(c-d)/(e+f)",
+        "максимальную глубину",
+        "числовую проверку"
+      ],
+      "banned_old_fragments": [
+        "(a-b)/c"
+      ],
+      "requires_diagnostic_counterexample": true
+    }
+  }
+}
