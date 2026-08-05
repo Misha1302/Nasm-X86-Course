@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from course_manifest import REVIEWED_SUPPLEMENTARY_RELATIVE_PATHS, STANDALONE_RELATIVE_PATHS  # noqa: E402
 
 
 def read(relative: str) -> str:
@@ -26,6 +30,26 @@ def forbid(text: str, markers: tuple[str, ...], owner: str) -> None:
 
 
 def main() -> int:
+    expected_supplementary = (
+        "docs/patterns/branchless.md",
+        "docs/patterns/bit_counting.md",
+        "docs/patterns/decimal.md",
+        "docs/patterns/recursion.md",
+        "docs/patterns/strings_files.md",
+        "docs/patterns/array_linked_list.md",
+        "docs/patterns/advanced_stack.md",
+        "docs/patterns/bigint.md",
+    )
+    if REVIEWED_SUPPLEMENTARY_RELATIVE_PATHS != expected_supplementary:
+        raise AssertionError("reviewed supplementary manifest drifted")
+    textbook = read("docs/textbook.md")
+    for relative in expected_supplementary:
+        if relative not in STANDALONE_RELATIVE_PATHS:
+            raise AssertionError(f"standalone manifest excludes reviewed supplementary page {relative}")
+        marker = f"<!-- source: {relative} -->"
+        if marker not in textbook:
+            raise AssertionError(f"generated textbook excludes reviewed supplementary page {relative}")
+
     branchless = read("docs/patterns/branchless.md")
     require(
         branchless,
@@ -117,6 +141,7 @@ def main() -> int:
             "padding + args_bytes",
             "ограничивать `n`",
             "Сам адрес `fn`",
+            "значения указателей из кадра `apply`",
         ),
         "advanced_stack",
     )
@@ -142,7 +167,8 @@ def main() -> int:
         "bigint",
     )
 
-    print("SUPPLEMENTARY_REVIEWED_PAGES=8")
+    print(f"SUPPLEMENTARY_REVIEWED_PAGES={len(expected_supplementary)}")
+    print("SUPPLEMENTARY_STANDALONE_INCLUSION=PASS")
     print("SUPPLEMENTARY_REVIEW_REGRESSIONS=PASS")
     return 0
 
