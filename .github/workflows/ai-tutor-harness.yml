@@ -1,0 +1,23 @@
+name: AI tutor harness
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  offline-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify provider runner and fail-closed adjudication
+        run: python3 tests/test_ai_tutor_provider_eval.py
+      - name: Compile validation surface
+        run: python3 -m compileall -q scripts tests
