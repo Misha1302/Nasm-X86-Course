@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 import re
+import subprocess
 import sys
 import time
 import urllib.error
@@ -40,6 +41,16 @@ def digest_bytes(value: bytes) -> str:
 
 def digest(path: Path) -> str:
     return digest_bytes(path.read_bytes())
+
+
+def source_revision(explicit: str | None) -> str:
+    candidate = explicit or os.getenv("SOURCE_HEAD_SHA") or os.getenv("GITHUB_SHA")
+    if candidate:
+        return candidate
+    completed = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, capture_output=True, check=False
+    )
+    return completed.stdout.strip() if completed.returncode == 0 else "UNKNOWN"
 
 
 def load(path: Path) -> dict[str, Any]:
@@ -154,7 +165,7 @@ def run_provider(args: argparse.Namespace) -> int:
     report: dict[str, Any] = {
         "schema_version": "1.0", "run_id": str(uuid.uuid4()), "provider_execution_status": "DRY_RUN" if args.dry_run else "RUNNING",
         "semantic_adjudication_status": "NOT_RUN", "provider": args.provider, "model": args.model, "base_url": base_url,
-        "source_revision": args.source_revision or os.getenv("SOURCE_HEAD_SHA") or os.getenv("GITHUB_SHA") or "UNKNOWN",
+        "source_revision": source_revision(args.source_revision),
         "capture_started_at": now(), "capture_finished_at": None,
         "configuration": {"runs_per_case": args.runs, "temperature": args.temperature, "max_tokens": args.max_tokens, "token_limit_field": args.token_limit_field, "timeout_seconds": args.timeout, "seed_base": args.seed_base},
         "provenance": {"cases_path": str(cases_path), "cases_sha256": digest(cases_path), "prompts_path": str(prompts_path), "prompts_sha256": digest(prompts_path), "adapter_path": str(Path(__file__).resolve()), "adapter_sha256": digest(Path(__file__).resolve())},
@@ -211,7 +222,13 @@ def validate_capture(args: argparse.Namespace) -> int:
     else:
         for name, expected_digest in (("cases_sha256", digest(cases_path)), ("prompts_sha256", digest(prompts_path)), ("adapter_sha256", digest(Path(__file__).resolve()))):
             if provenance.get(name) != expected_digest: errors.append(f"provenance mismatch: {name}")
-    if not re.fullmatch(r"[0-9a-f]{40}", str(report.get("source_revision", ""))): errors.append("source_revision must be a full lowercase Git SHA")
+    report_revision = str(report.get("source_revision", ""))
+    if not re.fullmatch(r"[0-9a-f]{40}", report_revision): errors.append("source_revision must be a full lowercase Git SHA")
+    expected_revision = os.getenv("SOURCE_HEAD_SHA") or os.getenv("GITHUB_SHA")
+    if expected_revision and report_revision != expected_revision: errors.append("source_revision does not match the executing workflow revision")
+    bound_revision = report.get("revision")
+    if isinstance(bound_revision, dict) and bound_revision.get("source_head_sha") != report_revision:
+        errors.append("bound revision disagrees with source_revision")
     if not isinstance(results, list):
         errors.append("results must be a list")
         results = []
@@ -235,6 +252,7 @@ def validate_capture(args: argparse.Namespace) -> int:
 
 def template(args: argparse.Namespace) -> int:
     evidence_path = Path(args.evidence).resolve()
+    validate_capture(argparse.Namespace(evidence=str(evidence_path), cases=args.cases, prompts=args.prompts))
     evidence, cases_data = load(evidence_path), load(Path(args.cases).resolve())
     if evidence.get("provider_execution_status") != "COMPLETE" or evidence.get("semantic_adjudication_status") != "NOT_RUN":
         raise Error("template requires complete, not-yet-adjudicated provider evidence")
@@ -254,6 +272,7 @@ def template(args: argparse.Namespace) -> int:
 
 def score(args: argparse.Namespace) -> int:
     evidence_path, adjudication_path = Path(args.evidence).resolve(), Path(args.adjudication).resolve()
+    validate_capture(argparse.Namespace(evidence=str(evidence_path), cases=args.cases, prompts=args.prompts))
     evidence, adjudication, cases_data = load(evidence_path), load(adjudication_path), load(Path(args.cases).resolve())
     if evidence.get("provider_execution_status") != "COMPLETE" or adjudication.get("evidence_sha256") != digest(evidence_path): raise Error("adjudication is not bound to complete evidence")
     reviewer = adjudication.get("reviewer")
@@ -296,8 +315,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(); sub = parser.add_subparsers(dest="command", required=True)
     run = sub.add_parser("run"); run.add_argument("--cases", default=str(CASES)); run.add_argument("--prompts", default=str(PROMPTS)); run.add_argument("--output", default="AI_TUTOR_PROVIDER_EVIDENCE.json"); run.add_argument("--provider", choices=sorted(BASE_URLS), required=True); run.add_argument("--model", required=True); run.add_argument("--base-url"); run.add_argument("--api-key-env", default="AI_TUTOR_API_KEY"); run.add_argument("--runs", type=int, default=3); run.add_argument("--temperature", type=float); run.add_argument("--max-tokens", type=int, default=700); run.add_argument("--token-limit-field", choices=("max_tokens", "max_completion_tokens"), default="max_tokens"); run.add_argument("--timeout", type=float, default=90); run.add_argument("--seed-base", type=int); run.add_argument("--source-revision"); run.add_argument("--dry-run", action="store_true"); run.set_defaults(handler=run_provider)
     validate = sub.add_parser("validate"); validate.add_argument("evidence"); validate.add_argument("--cases", default=str(CASES)); validate.add_argument("--prompts", default=str(PROMPTS)); validate.set_defaults(handler=validate_capture)
-    make = sub.add_parser("template"); make.add_argument("evidence"); make.add_argument("--cases", default=str(CASES)); make.add_argument("--output", default="AI_TUTOR_ADJUDICATION.json"); make.set_defaults(handler=template)
-    judge = sub.add_parser("score"); judge.add_argument("evidence"); judge.add_argument("adjudication"); judge.add_argument("--cases", default=str(CASES)); judge.add_argument("--output", default="AI_TUTOR_BEHAVIOR_REPORT.json"); judge.set_defaults(handler=score)
+    make = sub.add_parser("template"); make.add_argument("evidence"); make.add_argument("--cases", default=str(CASES)); make.add_argument("--prompts", default=str(PROMPTS)); make.add_argument("--output", default="AI_TUTOR_ADJUDICATION.json"); make.set_defaults(handler=template)
+    judge = sub.add_parser("score"); judge.add_argument("evidence"); judge.add_argument("adjudication"); judge.add_argument("--cases", default=str(CASES)); judge.add_argument("--prompts", default=str(PROMPTS)); judge.add_argument("--output", default="AI_TUTOR_BEHAVIOR_REPORT.json"); judge.set_defaults(handler=score)
     return parser
 
 
