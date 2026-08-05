@@ -8,6 +8,7 @@ STANDALONE_RELATIVE_PATHS = (
     "docs/glossary.md",
     "docs/self_study.md",
     "docs/support_matrix.md",
+    "docs/sources.md",
     "docs/c_abi.md",
     "docs/patterns/libc_alignment.md",
     *DAY_RELATIVE_PATHS[:10],
@@ -22,6 +23,7 @@ STANDALONE_RELATIVE_PATHS = (
     "docs/final_exam.md",
     "docs/final_exam_keys.md",
     "docs/final_remediation.md",
+    "docs/modern_x86_64_next.md",
     "docs/ai_tutor_prompts.md",
     "docs/ai_tutor_eval.md",
 )
