@@ -1,6 +1,7 @@
 import { defineConfig } from "vitepress";
 
 export default defineConfig({
+    lang: "ru-RU",
     base: "/Nasm-X86-Course/",
     title: "NASM x86 для олимпиадников",
     description: "Самостоятельный курс NASM IA-32: диагностика, главы, практика, контроль и финальный экзамен",
