@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 
 from evidence_provenance import digest_paths
@@ -11,7 +12,25 @@ from render_vitepress_pages import VIEWPORTS, page_url, route_slug
 from site_inventory import discover_site_pages
 
 ROOT = Path(__file__).resolve().parents[1]
-DETAIL_MARKERS = ("<details", "::: details")
+
+
+def source_has_rendered_details(text: str) -> bool:
+    """Find disclosure syntax outside fenced examples."""
+    fence: str | None = None
+    for line in text.splitlines():
+        stripped = line.lstrip()
+        marker = "```" if stripped.startswith("```") else ("~~~" if stripped.startswith("~~~") else None)
+        if marker is not None:
+            if fence is None:
+                fence = marker
+            elif fence == marker:
+                fence = None
+            continue
+        if fence is not None:
+            continue
+        if stripped.startswith("::: details") or re.search(r"<details(?:\s|>)", line, flags=re.I):
+            return True
+    return False
 
 
 def main() -> int:
@@ -28,7 +47,7 @@ def main() -> int:
     pages = tuple(
         page
         for page in discover_site_pages()
-        if any(marker in (ROOT / page.source).read_text(encoding="utf-8") for marker in DETAIL_MARKERS)
+        if source_has_rendered_details((ROOT / page.source).read_text(encoding="utf-8"))
     )
     output = Path(ns.output).resolve()
     shots = output / "screenshots"
@@ -87,9 +106,7 @@ def main() -> int:
                     )
                     page.wait_for_timeout(100)
 
-                    scroll_height = int(
-                        page.evaluate("() => document.documentElement.scrollHeight")
-                    )
+                    scroll_height = int(page.evaluate("() => document.documentElement.scrollHeight"))
                     max_y = max(0, scroll_height - height)
                     positions = [("top", 0)]
                     if max_y:
@@ -163,11 +180,9 @@ def main() -> int:
                     if status != 200:
                         case_failures.append(f"HTTP {status}")
                     if int(state["total"]) == 0:
-                        case_failures.append("source contains a disclosure marker but rendered page has no details")
+                        case_failures.append("source contains disclosure syntax but rendered page has no details")
                     if int(state["open"]) != int(state["total"]):
-                        case_failures.append(
-                            f"only {state['open']} of {state['total']} details opened"
-                        )
+                        case_failures.append(f"only {state['open']} of {state['total']} details opened")
                     if any(item["root_overflow"] or item["offenders"] for item in observations):
                         case_failures.append("horizontal overflow with all details expanded")
                     case_failures.extend(f"console error: {message}" for message in console_errors)
@@ -199,6 +214,7 @@ def main() -> int:
             "scripts/audit_expanded_details.py",
             "scripts/render_vitepress_pages.py",
             "scripts/site_inventory.py",
+            "docs/.vitepress/config.mts",
             "docs/.vitepress/theme/style.css",
         ],
     )
