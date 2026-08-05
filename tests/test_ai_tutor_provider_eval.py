@@ -127,6 +127,7 @@ def main() -> int:
             output = temp_path / "evidence.json"
             env = os.environ.copy()
             env["MOCK_KEY"] = "not-a-secret"
+            revision = env.get("SOURCE_HEAD_SHA") or env.get("GITHUB_SHA") or "a" * 40
             executed = run(
                 [
                     sys.executable,
@@ -149,7 +150,7 @@ def main() -> int:
                     "--output",
                     str(output),
                     "--source-revision",
-                    "a" * 40,
+                    revision,
                 ],
                 env,
             )
