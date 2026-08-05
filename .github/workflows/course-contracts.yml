@@ -156,14 +156,19 @@ jobs:
           python3 scripts/render_vitepress_pages.py \
             --base-url http://127.0.0.1:4173/Nasm-X86-Course/ \
             --output render-evidence/vitepress
+          python3 scripts/audit_expanded_details.py \
+            --base-url http://127.0.0.1:4173/Nasm-X86-Course/ \
+            --output render-evidence/vitepress/expanded-details
       - name: Bind visual evidence to source and tested revisions
         run: |
           python3 scripts/bind_evidence_revision.py \
-            render-evidence/vitepress/visual_evidence.json
+            render-evidence/vitepress/visual_evidence.json \
+            render-evidence/vitepress/expanded-details/expanded_details_evidence.json
       - name: Verify visual evidence revision binding
         run: |
           python3 scripts/verify_evidence_revision.py \
-            render-evidence/vitepress/visual_evidence.json
+            render-evidence/vitepress/visual_evidence.json \
+            render-evidence/vitepress/expanded-details/expanded_details_evidence.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
