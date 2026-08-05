@@ -1,0 +1,39 @@
+name: One-shot hydration readiness
+
+on:
+  push:
+    branches:
+      - compilationlab/course-completeness-20260806
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: ${{ !contains(github.event.head_commit.message, '[one-shot hydration readiness]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: compilationlab/course-completeness-20260806
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply bounded hydration-readiness repair
+        run: python3 .github/scripts/apply_hydration_readiness.py
+      - name: Validate Python surface
+        run: python3 -m compileall -q scripts tests .github/scripts
+      - name: Commit bounded repair
+        run: |
+          git diff --check
+          if git diff --quiet; then
+            echo 'ONE_SHOT_HYDRATION_CHANGES=0'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/render_vitepress_pages.py
+          git commit -m 'fix: wait for accessible hydration state [one-shot hydration readiness]'
+          git push origin HEAD:compilationlab/course-completeness-20260806
