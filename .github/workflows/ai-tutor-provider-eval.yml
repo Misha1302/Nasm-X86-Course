@@ -1,0 +1,133 @@
+name: Capture AI tutor provider evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: Provider API adapter
+        required: true
+        type: choice
+        options:
+          - openai
+          - deepseek
+      model:
+        description: Exact provider model ID
+        required: true
+        type: string
+      runs_per_case:
+        description: Independent runs for each of the 10 cases
+        required: true
+        default: '3'
+        type: choice
+        options:
+          - '3'
+          - '4'
+          - '5'
+      temperature:
+        description: Optional temperature; leave empty when unsupported
+        required: false
+        default: ''
+        type: string
+      token_limit_field:
+        description: Provider token-limit request field
+        required: true
+        default: max_tokens
+        type: choice
+        options:
+          - max_tokens
+          - max_completion_tokens
+      seed_base:
+        description: Optional integer seed base; leave empty when unsupported
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  SOURCE_HEAD_SHA: ${{ github.sha }}
+  TESTED_COMMIT_SHA: ${{ github.sha }}
+  SOURCE_REPOSITORY: ${{ github.repository }}
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      OPENAI_KEY: ${{ secrets.AI_TUTOR_OPENAI_API_KEY }}
+      DEEPSEEK_KEY: ${{ secrets.AI_TUTOR_DEEPSEEK_API_KEY }}
+      PROVIDER: ${{ inputs.provider }}
+      MODEL: ${{ inputs.model }}
+      RUNS_PER_CASE: ${{ inputs.runs_per_case }}
+      TEMPERATURE: ${{ inputs.temperature }}
+      TOKEN_LIMIT_FIELD: ${{ inputs.token_limit_field }}
+      SEED_BASE: ${{ inputs.seed_base }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Verify provider harness offline
+        run: python3 tests/test_ai_tutor_provider_eval.py
+
+      - name: Select provider credential
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$PROVIDER" in
+            openai) key="$OPENAI_KEY" ;;
+            deepseek) key="$DEEPSEEK_KEY" ;;
+            *) echo "Unsupported provider: $PROVIDER" >&2; exit 2 ;;
+          esac
+          if [[ -z "$key" ]]; then
+            echo "Missing repository secret for provider $PROVIDER" >&2
+            exit 2
+          fi
+          printf 'AI_TUTOR_API_KEY=%s\n' "$key" >> "$GITHUB_ENV"
+
+      - name: Capture 10 x N live transcripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(
+            run
+            --provider "$PROVIDER"
+            --model "$MODEL"
+            --runs "$RUNS_PER_CASE"
+            --token-limit-field "$TOKEN_LIMIT_FIELD"
+            --output AI_TUTOR_PROVIDER_EVIDENCE.json
+            --source-revision "$SOURCE_HEAD_SHA"
+          )
+          if [[ -n "$TEMPERATURE" ]]; then
+            args+=(--temperature "$TEMPERATURE")
+          fi
+          if [[ -n "$SEED_BASE" ]]; then
+            args+=(--seed-base "$SEED_BASE")
+          fi
+          python3 scripts/run_ai_tutor_provider_eval.py "${args[@]}"
+
+      - name: Validate captured transcript topology
+        run: python3 scripts/run_ai_tutor_provider_eval.py validate AI_TUTOR_PROVIDER_EVIDENCE.json
+
+      - name: Bind evidence to workflow revision
+        run: |
+          python3 scripts/bind_evidence_revision.py AI_TUTOR_PROVIDER_EVIDENCE.json
+          python3 scripts/verify_evidence_revision.py AI_TUTOR_PROVIDER_EVIDENCE.json
+
+      - name: Create semantic adjudication template
+        run: |
+          python3 scripts/run_ai_tutor_provider_eval.py template \
+            AI_TUTOR_PROVIDER_EVIDENCE.json \
+            --output AI_TUTOR_ADJUDICATION.json
+
+      - name: Upload provider evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ai-tutor-provider-evidence-${{ inputs.provider }}-${{ inputs.model }}
+          path: |
+            AI_TUTOR_PROVIDER_EVIDENCE.json
+            AI_TUTOR_ADJUDICATION.json
+          if-no-files-found: error
