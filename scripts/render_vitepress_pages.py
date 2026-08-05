@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import struct
 from pathlib import Path
 from urllib.parse import urljoin
 
@@ -21,14 +22,52 @@ PAGES = {
     "day_10": "День 10",
     "day_10_learning_path": "День 10",
 }
-# zoom200 uses a 720px layout viewport with an actual 2x CSS layout zoom,
-# yielding a 360 CSS-pixel effective width. device_scale_factor is kept
-# separate so high-DPI rendering is never mislabeled as browser/layout zoom.
+
+# Browser page zoom changes the effective CSS viewport and therefore responsive
+# media queries. Applying CSS `zoom` to <html> does not: it leaves the layout
+# viewport at the unzoomed width and can create false overflow in responsive
+# shells. The zoom200 case models a 720x900 physical viewport at 200% page zoom
+# as a 360x450 CSS viewport rendered at 2x raster scale. This is the observable
+# reflow state a browser exposes to page layout and media queries.
 VIEWPORTS = [
-    ("desktop", 1440, 1000, 1.0, 1.0),
-    ("mobile", 390, 844, 1.0, 1.0),
-    ("zoom200", 720, 900, 1.0, 2.0),
+    {
+        "label": "desktop",
+        "css_width": 1440,
+        "css_height": 1000,
+        "raster_scale": 1.0,
+        "zoom_percent": 100,
+        "physical_width": 1440,
+        "physical_height": 1000,
+        "zoom_emulation": "native-css-viewport",
+    },
+    {
+        "label": "mobile",
+        "css_width": 390,
+        "css_height": 844,
+        "raster_scale": 1.0,
+        "zoom_percent": 100,
+        "physical_width": 390,
+        "physical_height": 844,
+        "zoom_emulation": "native-css-viewport",
+    },
+    {
+        "label": "zoom200",
+        "css_width": 360,
+        "css_height": 450,
+        "raster_scale": 2.0,
+        "zoom_percent": 200,
+        "physical_width": 720,
+        "physical_height": 900,
+        "zoom_emulation": "effective-css-viewport",
+    },
 ]
+
+
+def png_dimensions(path: Path) -> tuple[int, int]:
+    header = path.read_bytes()[:24]
+    if len(header) != 24 or header[:8] != b"\x89PNG\r\n\x1a\n":
+        raise ValueError(f"not a PNG file: {path}")
+    return struct.unpack(">II", header[16:24])
 
 
 def main() -> int:
@@ -50,10 +89,19 @@ def main() -> int:
         browser = playwright.chromium.launch(headless=True, args=["--no-sandbox", "--disable-dev-shm-usage"])
         try:
             for page_name, expected_text in PAGES.items():
-                for label, width, height, device_scale, zoom_factor in VIEWPORTS:
+                for viewport in VIEWPORTS:
+                    label = str(viewport["label"])
+                    width = int(viewport["css_width"])
+                    height = int(viewport["css_height"])
+                    raster_scale = float(viewport["raster_scale"])
+                    zoom_percent = int(viewport["zoom_percent"])
+                    expected_physical_width = int(viewport["physical_width"])
+                    expected_physical_height = int(viewport["physical_height"])
+                    zoom_emulation = str(viewport["zoom_emulation"])
+
                     context = browser.new_context(
                         viewport={"width": width, "height": height},
-                        device_scale_factor=device_scale,
+                        device_scale_factor=raster_scale,
                     )
                     page = context.new_page()
                     page.set_default_timeout(20_000)
@@ -79,11 +127,6 @@ def main() -> int:
                     url = urljoin(ns.base_url.rstrip("/") + "/", page_name)
                     response = page.goto(url, wait_until="networkidle")
                     status = response.status if response else 0
-                    if zoom_factor != 1.0:
-                        page.evaluate(
-                            "factor => { document.documentElement.style.zoom = String(factor); }",
-                            zoom_factor,
-                        )
                     page.wait_for_timeout(150)
 
                     metrics = page.evaluate(
@@ -94,8 +137,11 @@ def main() -> int:
                           clientWidth: document.documentElement.clientWidth,
                           scrollWidth: document.documentElement.scrollWidth,
                           scrollHeight: document.documentElement.scrollHeight,
-                          computedZoom: Number.parseFloat(getComputedStyle(document.documentElement).zoom || '1'),
+                          innerWidth: window.innerWidth,
+                          devicePixelRatio: window.devicePixelRatio,
                           visualViewportWidth: window.visualViewport?.width || 0,
+                          visualViewportScale: window.visualViewport?.scale || 0,
+                          narrowMediaQuery: window.matchMedia('(max-width: 767px)').matches,
                           doc: Boolean(document.querySelector('.VPDoc')),
                           nav: Boolean(document.querySelector('.VPNav')),
                           sidebar: Boolean(document.querySelector('.VPSidebar')),
@@ -105,14 +151,32 @@ def main() -> int:
                           visibleDetails: [...document.querySelectorAll('details')].filter(x => x.open).length
                         })"""
                     )
-                    computed_zoom = float(metrics["computedZoom"])
-                    zoom_applied = abs(computed_zoom - zoom_factor) < 0.01
+                    viewport_model_valid = (
+                        int(metrics["clientWidth"]) == width
+                        and int(metrics["innerWidth"]) == width
+                        and abs(float(metrics["visualViewportWidth"]) - width) < 0.01
+                        and abs(float(metrics["visualViewportScale"]) - 1.0) < 0.01
+                        and abs(float(metrics["devicePixelRatio"]) - raster_scale) < 0.01
+                        and expected_physical_width == round(width * raster_scale)
+                        and expected_physical_height == round(height * raster_scale)
+                    )
+                    if label == "zoom200":
+                        viewport_model_valid = (
+                            viewport_model_valid
+                            and zoom_percent == 200
+                            and width == 360
+                            and height == 450
+                            and raster_scale == 2.0
+                            and bool(metrics["narrowMediaQuery"])
+                        )
+
                     root_scroll_overflow = int(metrics["scrollWidth"]) > int(metrics["clientWidth"]) + 1
                     max_y = max(0, int(metrics["scrollHeight"]) - height)
                     positions = [("top", 0)]
                     if max_y:
                         positions.extend([("middle", max_y // 2), ("bottom", max_y)])
                     screenshot_paths: list[str] = []
+                    screenshot_dimensions: list[dict[str, object]] = []
                     overflow_observations: list[dict[str, object]] = []
                     for position, y in positions:
                         page.evaluate("y => window.scrollTo(0, y)", y)
@@ -173,22 +237,48 @@ def main() -> int:
                         )
                         target = shots / f"{page_name}-{label}-{position}.png"
                         page.screenshot(path=str(target), full_page=False, animations="disabled")
+                        pixel_width, pixel_height = png_dimensions(target)
                         screenshot_paths.append(str(target.relative_to(output)))
-                    overflow = any(observation["offenders"] for observation in overflow_observations)
+                        screenshot_dimensions.append(
+                            {
+                                "path": str(target.relative_to(output)),
+                                "pixel_width": pixel_width,
+                                "pixel_height": pixel_height,
+                            }
+                        )
+                        if (pixel_width, pixel_height) != (
+                            expected_physical_width,
+                            expected_physical_height,
+                        ):
+                            failures.append(
+                                f"{page_name}/{label}: screenshot {position} is "
+                                f"{pixel_width}x{pixel_height}, expected "
+                                f"{expected_physical_width}x{expected_physical_height}"
+                            )
 
+                    visible_overflow_detected = any(
+                        observation["offenders"] for observation in overflow_observations
+                    )
+                    horizontal_overflow = root_scroll_overflow or visible_overflow_detected
                     item = {
                         "renderer": "vitepress-build-playwright",
                         "page": page_name,
                         "url": url,
                         "viewport": label,
-                        "width": width,
-                        "height": height,
-                        "device_scale_factor": device_scale,
-                        "layout_zoom_percent": int(round(zoom_factor * 100)),
-                        "computed_layout_zoom": computed_zoom,
-                        "zoom_applied": zoom_applied,
-                        "effective_css_width": width / zoom_factor,
+                        "css_width": width,
+                        "css_height": height,
+                        "raster_scale": raster_scale,
+                        "physical_width": expected_physical_width,
+                        "physical_height": expected_physical_height,
+                        "zoom_percent": zoom_percent,
+                        "zoom_emulation": zoom_emulation,
+                        "viewport_model_valid": viewport_model_valid,
+                        "inner_width": int(metrics["innerWidth"]),
+                        "client_width": int(metrics["clientWidth"]),
                         "visual_viewport_width": float(metrics["visualViewportWidth"]),
+                        "visual_viewport_scale": float(metrics["visualViewportScale"]),
+                        "device_pixel_ratio": float(metrics["devicePixelRatio"]),
+                        "narrow_media_query": bool(metrics["narrowMediaQuery"]),
                         "http_status": status,
                         "title": metrics["title"],
                         "h1": metrics["h1"],
@@ -196,7 +286,8 @@ def main() -> int:
                         "vp_nav": bool(metrics["nav"]),
                         "vp_sidebar": bool(metrics["sidebar"]),
                         "root_scroll_overflow": root_scroll_overflow,
-                        "horizontal_overflow": overflow,
+                        "visible_overflow_detected": visible_overflow_detected,
+                        "horizontal_overflow": horizontal_overflow,
                         "visible_overflow_observations": overflow_observations,
                         "tables": int(metrics["tables"]),
                         "code_blocks": int(metrics["codeBlocks"]),
@@ -206,6 +297,7 @@ def main() -> int:
                         "page_errors": page_errors,
                         "failed_requests": failed_requests,
                         "screenshots": screenshot_paths,
+                        "screenshot_dimensions": screenshot_dimensions,
                     }
                     evidence.append(item)
 
@@ -216,13 +308,9 @@ def main() -> int:
                         failures.append(f"{prefix}: missing VitePress shell")
                     if expected_text.lower() not in str(metrics["bodyText"]).lower():
                         failures.append(f"{prefix}: expected visible text {expected_text!r} missing")
-                    if not zoom_applied:
-                        failures.append(
-                            f"{prefix}: requested layout zoom {zoom_factor} but computed {computed_zoom}"
-                        )
-                    if label == "zoom200" and abs(width / zoom_factor - 360.0) > 0.01:
-                        failures.append(f"{prefix}: effective CSS width is not 360px")
-                    if overflow:
+                    if not viewport_model_valid:
+                        failures.append(f"{prefix}: viewport/zoom emulation is invalid")
+                    if horizontal_overflow:
                         failures.append(f"{prefix}: horizontal overflow")
                     if metrics["rawAnchorText"]:
                         failures.append(f"{prefix}: raw anchor text")
