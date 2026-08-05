@@ -1,34 +1,59 @@
 {
-  "schema_version": "4.0",
+  "schema_version": "5.0",
   "repository": "Misha1302/Nasm-X86-Course",
   "baseline_branch": "main",
   "baseline_sha": "d3a172f12d7a1f7e456a6a930007711a55d8d93c",
-  "final_branch": "repair/nasm-course-complete-20260803",
+  "repair_branch": "repair/nasm-course-complete-20260803",
   "pull_request": 11,
+  "source_head_sha": "2838c3eb2a231939c23ec24c7f8ba563f8d6e8b1",
+  "tested_merge_sha": "9e668a32aedaa21c2df384d5a32e15a58875b6e3",
+  "merge_commit_sha": "12c6b9cac1dc661d0c7a85582a3ee79237aa04cc",
+  "merged_at": "2026-08-05T07:35:56Z",
   "publication_performed": true,
-  "main_modified": false,
-  "merge_to_main_performed": false,
-  "revision_policy": "The current PR head is reviewable only when every required check attached to that exact head is successful.",
-  "required_checks": [
-    "Audit course quality",
-    "Validate course",
-    "Course contracts / fast-contracts",
-    "Course contracts / mutation",
-    "Course contracts / docs-asm-visual"
-  ],
+  "main_modified": true,
+  "merge_to_main_performed": true,
+  "release_performed": false,
+  "deployment_performed": false,
+  "revision_policy": "The repair is accepted only when every required check attached to the exact source head succeeds and the resulting merge commit is verified on main.",
+  "required_checks": {
+    "Audit course quality": {
+      "run_id": 30985269173,
+      "conclusion": "success"
+    },
+    "Validate course": {
+      "run_id": 30985269198,
+      "conclusion": "success"
+    },
+    "Course contracts": {
+      "run_id": 30985269353,
+      "fast_contracts": "success",
+      "mutation": "success",
+      "docs_asm_visual": "success"
+    }
+  },
   "evidence_policy": {
     "tracked_generated_reports": false,
-    "ci_artifacts": [
-      "contract-evidence",
-      "mutation-evidence",
-      "vitepress-render-evidence"
-    ],
     "mutation_authority": "scripts/verify_mutation_execution.py",
-    "mutation_policy_sha256": "44fe038fabd2a071a2186c7346eb625d9e6768fe17fed81b2e4f29135b85ecdc"
+    "mutation_policy_sha256": "44fe038fabd2a071a2186c7346eb625d9e6768fe17fed81b2e4f29135b85ecdc",
+    "artifacts": {
+      "contract-evidence": {
+        "artifact_id": 8921798088,
+        "sha256": "ecaca8c0e838528668cfeae7f5b4f06dd36aaa1a92db2abdfd5ccdc639567bdc"
+      },
+      "mutation-evidence": {
+        "artifact_id": 8921794457,
+        "sha256": "a5a853b112b22a2dd4925ea6917cce4077acb0b2414cce801f73a3e6fe1752c3"
+      },
+      "vitepress-render-evidence": {
+        "artifact_id": 8921848742,
+        "sha256": "2948f589d5ba9fcb3a05e10515b9d5a83b32842653e329be9100bd5e491231da"
+      }
+    }
   },
-  "local_verification": {
+  "verification": {
     "semantic_contracts": "pass",
     "assessment_schema_and_proof": "pass",
+    "assessment_schema_regression_probes": 5,
     "malformed_assessment_inputs": "fail_closed_7_of_7",
     "checkpoint_assignments_checked": 28188,
     "final_constraint_assignments_checked": 17,
@@ -39,9 +64,12 @@
     "mutation_survivors": 0,
     "forged_runner_with_broken_owner": "blocked",
     "mutation_policy_replacement": "blocked",
-    "python_compileall": "pass",
-    "classified_nasm_ia32_suite": "required_on_current_pr_head",
-    "vitepress_browser_gate": "required_on_current_pr_head"
+    "asm_contract_negative_cases": "blocked_4_of_4",
+    "classified_nasm_ia32_examples": "pass_14_of_14",
+    "vitepress_browser_cases": "pass_27_of_27",
+    "vitepress_screenshots": 81,
+    "vitepress_visual_failures": 0,
+    "zoom_200_reflow_cases": "pass_9_of_9"
   },
-  "verdict": "PENDING_CURRENT_HEAD_CI"
+  "verdict": "MERGED_VERIFIED"
 }
