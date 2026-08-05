@@ -33,10 +33,8 @@ replace_once(
 )
 replace_once(
     "scripts/render_vitepress_pages.py",
-    "main: Boolean(document.querySelector('main')),
-",
-    "main: Boolean(document.querySelector('main') || document.querySelector('.VPHome')),
-",
+    '''main: Boolean(document.querySelector('main')),\n''',
+    '''main: Boolean(document.querySelector('main') || document.querySelector('.VPHome')),\n''',
 )
 replace_once(
     "scripts/render_vitepress_pages.py",
