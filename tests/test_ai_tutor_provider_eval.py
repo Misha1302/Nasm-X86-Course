@@ -175,7 +175,7 @@ def main() -> int:
             adjudication = temp_path / "adjudication.json"
             templated = run([
                 sys.executable, str(SCRIPT), "template", str(output),
-                "--cases", str(cases), "--output", str(adjudication),
+                "--cases", str(cases), "--prompts", str(prompts), "--output", str(adjudication),
             ], env)
             if templated.returncode != 0:
                 raise RuntimeError(templated.stdout + templated.stderr)
@@ -192,7 +192,7 @@ def main() -> int:
             behavior = temp_path / "behavior.json"
             scored = run([
                 sys.executable, str(SCRIPT), "score", str(output), str(adjudication),
-                "--cases", str(cases), "--output", str(behavior),
+                "--cases", str(cases), "--prompts", str(prompts), "--output", str(behavior),
             ], env)
             if scored.returncode != 0:
                 raise RuntimeError(scored.stdout + scored.stderr)
@@ -205,7 +205,7 @@ def main() -> int:
             adjudication.write_text(json.dumps(bad_adjudication), encoding="utf-8")
             bad_score = run([
                 sys.executable, str(SCRIPT), "score", str(output), str(adjudication),
-                "--cases", str(cases), "--output", str(behavior),
+                "--cases", str(cases), "--prompts", str(prompts), "--output", str(behavior),
             ], env)
             if bad_score.returncode == 0:
                 raise RuntimeError("incomplete adjudication topology was accepted")
@@ -218,7 +218,7 @@ def main() -> int:
             adjudication.write_text(json.dumps(self_judge), encoding="utf-8")
             self_judged = run([
                 sys.executable, str(SCRIPT), "score", str(output), str(adjudication),
-                "--cases", str(cases), "--output", str(behavior),
+                "--cases", str(cases), "--prompts", str(prompts), "--output", str(behavior),
             ], env)
             if self_judged.returncode == 0:
                 raise RuntimeError("candidate model was accepted as its own independent reviewer")
