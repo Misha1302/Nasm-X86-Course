@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 from pathlib import Path
 
 from evidence_provenance import digest_paths
@@ -15,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def source_has_rendered_details(text: str) -> bool:
-    """Find disclosure syntax outside fenced examples."""
+    """Find block-level disclosure syntax outside fenced examples."""
     fence: str | None = None
     for line in text.splitlines():
         stripped = line.lstrip()
@@ -28,7 +27,8 @@ def source_has_rendered_details(text: str) -> bool:
             continue
         if fence is not None:
             continue
-        if stripped.startswith("::: details") or re.search(r"<details(?:\s|>)", line, flags=re.I):
+        lowered = stripped.lower()
+        if lowered.startswith("::: details") or lowered.startswith("<details"):
             return True
     return False
 
