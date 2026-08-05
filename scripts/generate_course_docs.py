@@ -33,7 +33,6 @@ def source_snapshot() -> dict[str, str]:
     return {str(path.relative_to(ROOT)): sha256_file(path) for path in sorted(set(paths))}
 
 
-
 def section(text: str, title: str) -> str:
     match = re.search(rf"(?m)^## {re.escape(title)}\s*$", text)
     if not match:
@@ -56,6 +55,29 @@ def strip_solution_blocks(text: str) -> str:
     )
     return text
 
+
+def demote_embedded_h1(text: str) -> str:
+    """Demote source-page H1 headings without changing fenced examples."""
+    output: list[str] = []
+    fence: str | None = None
+    for line in text.splitlines():
+        stripped = line.lstrip()
+        marker = None
+        if stripped.startswith("```"):
+            marker = "```"
+        elif stripped.startswith("~~~"):
+            marker = "~~~"
+        if marker is not None:
+            if fence is None:
+                fence = marker
+            elif fence == marker:
+                fence = None
+            output.append(line)
+            continue
+        if fence is None and line.startswith("# "):
+            line = "#" + line
+        output.append(line)
+    return "\n".join(output)
 
 
 def normalize(text: str, *, strip_asm_comments: bool = True) -> str:
@@ -99,7 +121,7 @@ for path in STANDALONE:
             "",
             f"<!-- source: {path.relative_to(ROOT)} -->",
             "",
-            path.read_text(encoding="utf-8").strip(),
+            demote_embedded_h1(path.read_text(encoding="utf-8").strip()),
             "",
         ]
     )
@@ -131,13 +153,13 @@ closed.extend(
         "",
         "<!-- source-transfer: docs/transfer_workbook.md -->",
         "",
-        (DOCS / "transfer_workbook.md").read_text(encoding="utf-8").strip(),
+        demote_embedded_h1((DOCS / "transfer_workbook.md").read_text(encoding="utf-8").strip()),
         "",
         "---",
         "",
         "<!-- source-final-exam: docs/final_exam.md -->",
         "",
-        (DOCS / "final_exam.md").read_text(encoding="utf-8").strip(),
+        demote_embedded_h1((DOCS / "final_exam.md").read_text(encoding="utf-8").strip()),
         "",
     ]
 )
