@@ -19,6 +19,23 @@ def require(condition: bool, message: str) -> None:
         raise AssertionError(message)
 
 
+def markdown_h1_count(path: Path) -> int:
+    in_fence: str | None = None
+    count = 0
+    for line in path.read_text(encoding="utf-8").splitlines():
+        stripped = line.lstrip()
+        marker = "```" if stripped.startswith("```") else ("~~~" if stripped.startswith("~~~") else None)
+        if marker is not None:
+            if in_fence is None:
+                in_fence = marker
+            elif in_fence == marker:
+                in_fence = None
+            continue
+        if in_fence is None and line.startswith("# "):
+            count += 1
+    return count
+
+
 def main() -> int:
     pages = discover_site_pages()
     routes = {page.route for page in pages}
@@ -36,6 +53,14 @@ def main() -> int:
         "docs/tasks/spring-01/01-04-books.md",
     ):
         require(source in sources, f"site inventory lacks learner-facing page {source}")
+
+    for relative in (
+        "docs/textbook.md",
+        "docs/closed_book_workbook.md",
+        "docs/course_migration.md",
+    ):
+        count = markdown_h1_count(ROOT / relative)
+        require(count == 1, f"generated compound page {relative} has {count} Markdown H1 headings")
 
     config = CONFIG.read_text(encoding="utf-8")
     theme = THEME.read_text(encoding="utf-8")
@@ -63,6 +88,7 @@ def main() -> int:
 
     print(f"SITE_INVENTORY_PAGES={len(pages)}")
     print(f"SITE_INVENTORY_NAV_LINKS={len(links)}")
+    print("SITE_GENERATED_SINGLE_H1=PASS")
     print("SITE_INVENTORY_RESULT=PASS")
     return 0
 
