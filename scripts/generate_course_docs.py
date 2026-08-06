@@ -33,7 +33,6 @@ def source_snapshot() -> dict[str, str]:
     return {str(path.relative_to(ROOT)): sha256_file(path) for path in sorted(set(paths))}
 
 
-
 def section(text: str, title: str) -> str:
     match = re.search(rf"(?m)^## {re.escape(title)}\s*$", text)
     if not match:
@@ -56,6 +55,39 @@ def strip_solution_blocks(text: str) -> str:
     )
     return text
 
+
+def demote_embedded_h1(text: str) -> str:
+    """Demote source-page H1 headings without changing fenced examples."""
+    output: list[str] = []
+    fence: str | None = None
+    for line in text.splitlines():
+        stripped = line.lstrip()
+        marker = None
+        if stripped.startswith("```"):
+            marker = "```"
+        elif stripped.startswith("~~~"):
+            marker = "~~~"
+        if marker is not None:
+            if fence is None:
+                fence = marker
+            elif fence == marker:
+                fence = None
+            output.append(line)
+            continue
+        if fence is None and line.startswith("# "):
+            line = "#" + line
+        output.append(line)
+    return "\n".join(output)
+
+
+def namespace_embedded_ids(text: str, source: str) -> str:
+    prefix = re.sub(r"[^a-z0-9]+", "-", source.lower()).strip("-")
+    ids = set(re.findall(r'id="([^"]+)"', text))
+    for anchor in sorted(ids, key=len, reverse=True):
+        scoped = f"{prefix}-{anchor}"
+        text = text.replace(f'id="{anchor}"', f'id="{scoped}"')
+        text = text.replace(f'](#{anchor})', f'](#{scoped})')
+    return text
 
 
 def normalize(text: str, *, strip_asm_comments: bool = True) -> str:
@@ -89,7 +121,7 @@ textbook_parts = [
     "",
     "> Этот файл сгенерирован из полного канонического маршрута. Не редактируй его вручную.",
     "",
-    "Он включает диагностику, короткие повторения, глоссарий, 24 учебные главы, маршрут Дня 10, задачи, ключи, пошаговые разборы, контрольные точки, финальный экзамен и восстановление.",
+    "Он включает диагностику, короткие повторения, глоссарий, 24 учебные главы, маршрут Дня 10, проверенные экзаменационные паттерны, задачи, ключи, пошаговые разборы, контрольные точки, финальный экзамен и восстановление.",
     "",
 ]
 for path in STANDALONE:
@@ -99,7 +131,10 @@ for path in STANDALONE:
             "",
             f"<!-- source: {path.relative_to(ROOT)} -->",
             "",
-            path.read_text(encoding="utf-8").strip(),
+            namespace_embedded_ids(
+                demote_embedded_h1(path.read_text(encoding="utf-8").strip()),
+                str(path.relative_to(ROOT)),
+            ),
             "",
         ]
     )
@@ -131,13 +166,19 @@ closed.extend(
         "",
         "<!-- source-transfer: docs/transfer_workbook.md -->",
         "",
-        (DOCS / "transfer_workbook.md").read_text(encoding="utf-8").strip(),
+        namespace_embedded_ids(
+            demote_embedded_h1((DOCS / "transfer_workbook.md").read_text(encoding="utf-8").strip()),
+            "docs/transfer_workbook.md",
+        ),
         "",
         "---",
         "",
         "<!-- source-final-exam: docs/final_exam.md -->",
         "",
-        (DOCS / "final_exam.md").read_text(encoding="utf-8").strip(),
+        namespace_embedded_ids(
+            demote_embedded_h1((DOCS / "final_exam.md").read_text(encoding="utf-8").strip()),
+            "docs/final_exam.md",
+        ),
         "",
     ]
 )

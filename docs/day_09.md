@@ -246,7 +246,6 @@ idiv ecx
 1. делитель не равен нулю;
 2. пара `(eax, divisor)` не равна `(INT32_MIN, -1)`.
 
-<a id="negative-fixture"></a>
 ### Negative fixture
 
 Negative fixture: `examples/11_idiv_overflow_negative.asm` обязан завершаться ожидаемым `SIGFPE`/divide exception, а не считаться успешным вычислением.

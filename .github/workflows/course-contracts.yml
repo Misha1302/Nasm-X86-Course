@@ -34,6 +34,10 @@ jobs:
         run: python3 tests/test_score_attempt_cli.py
       - name: Lock reviewed course semantics
         run: python3 tests/test_course_review_regressions.py
+      - name: Lock reviewed supplementary material
+        run: python3 tests/test_supplementary_review_regressions.py
+      - name: Validate complete site route inventory
+        run: python3 tests/test_site_inventory.py
       - name: Reject fail-open ASM contract loading
         run: python3 tests/test_nasm_harness.py
       - name: Run adversarial review with independent mutation oracle
@@ -109,7 +113,7 @@ jobs:
 
   docs-asm-visual:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -128,7 +132,7 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run docs:build
       - run: bash scripts/verify_nasm_examples.sh
-      - name: Render real VitePress build
+      - name: Render and audit every VitePress route
         run: |
           python3 scripts/serve_built_site.py \
             --root docs/.vitepress/dist \
@@ -152,14 +156,19 @@ jobs:
           python3 scripts/render_vitepress_pages.py \
             --base-url http://127.0.0.1:4173/Nasm-X86-Course/ \
             --output render-evidence/vitepress
+          python3 scripts/audit_expanded_details.py \
+            --base-url http://127.0.0.1:4173/Nasm-X86-Course/ \
+            --output render-evidence/vitepress/expanded-details
       - name: Bind visual evidence to source and tested revisions
         run: |
           python3 scripts/bind_evidence_revision.py \
-            render-evidence/vitepress/visual_evidence.json
+            render-evidence/vitepress/visual_evidence.json \
+            render-evidence/vitepress/expanded-details/expanded_details_evidence.json
       - name: Verify visual evidence revision binding
         run: |
           python3 scripts/verify_evidence_revision.py \
-            render-evidence/vitepress/visual_evidence.json
+            render-evidence/vitepress/visual_evidence.json \
+            render-evidence/vitepress/expanded-details/expanded_details_evidence.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
